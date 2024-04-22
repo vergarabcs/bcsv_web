@@ -14,7 +14,8 @@
     "aws-amplify": "latest",
     "next": "13.5.4",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "trie-typed": "^1.51.9"
   },
   "devDependencies": {
     "@aws-amplify/backend": "beta",
