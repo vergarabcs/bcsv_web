@@ -32,10 +32,17 @@ export const DISTRIBUTION = {
 }
 
 const DIRECTION_OFFSET = [
+  //adjacents
   [1, 0],
   [0, 1],
   [-1, 0],
-  [0, -1]
+  [0, -1],
+
+  // diagonals
+  [1, 1],
+  [-1, -1],
+  [-1, 1],
+  [1, -1]
 ]
 
 export const generateBoard = () => {
