@@ -1,7 +1,14 @@
 import { expect, test, describe } from '@jest/globals';
-import { DISTRIBUTION, TRIE, generateBoard, getHighlighted, squarify } from "../utils";
+import { DISTRIBUTION, TRIE, findValidWords, generateBoard, getHighlighted, squarify } from "../utils";
 
 describe("utils", () => {
+  const board = [
+    ['C', 'G', 'N', 'Y', 'D'],
+    ['A', 'O', 'R', 'V', 'R'],
+    ['X', 'C', 'Z', 'D', 'Z'],
+    ['T', 'E', 'Q', 'N', 'U'],
+    ['N', 'L', 'Z', 'O', 'A']
+  ]
   test("Board should have correct count", () => {
     const counter: Record<string, number> = {}
     let totalCount = 0;
@@ -28,18 +35,11 @@ describe("utils", () => {
   })
 
   test('globalTrie should function as expected', () => {
-    expect(TRIE.hasPurePrefix('car')).toBeTruthy()
-    expect(TRIE.has('cara')).toBeTruthy()
+    expect(TRIE.hasPurePrefix('CAR')).toBeTruthy()
+    expect(TRIE.has('CARD')).toBeTruthy()
   })
 
   test('getHighlighted returns correct indices', () => {
-    const board = [
-      ['C', 'G', 'N', 'Y', 'D'],
-      ['A', 'O', 'R', 'V', 'R'],
-      ['X', 'C', 'Z', 'D', 'Z'],
-      ['T', 'E', 'Q', 'N', 'U'],
-      ['N', 'L', 'Z', 'O', 'A']
-    ]
     expect(
       getHighlighted('CELN', board)
     ).toEqual(
@@ -50,5 +50,11 @@ describe("utils", () => {
     ).not.toEqual(
       [[2, 1], [3, 1], [4, 1], [4, 2]]
     )
+  })
+
+  test('findValidWords', () => {
+    findValidWords(board).forEach((word) => {
+      expect(getHighlighted(word, board).length).toBeGreaterThan(0)
+    })
   })
 })

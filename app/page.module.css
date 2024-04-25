@@ -228,3 +228,9 @@
   font-size: 3em;
   background-color: hsl(193, 90, 90)
 }
+
+.wordlist {
+  max-height: 25vh;
+  background-color: hsl(0, 0%, 95%);
+  overflow: scroll;
+}

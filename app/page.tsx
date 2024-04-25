@@ -4,21 +4,21 @@ import { Amplify } from 'aws-amplify';
 import config from '../amplifyconfiguration.json';
 import { Board } from './components/Board';
 import { useEffect, useState } from 'react';
-import { getHighlighted } from './hooks/utils';
+import { findValidWords, getHighlighted } from './hooks/utils';
 import { useWordFactory } from './hooks/useWordFactory';
 import { WordList } from './components/WordList';
 Amplify.configure(config);
 
 export default function Home() {
   const [inputTxt, setInputTxt] = useState('');
-  const [words, setWords] = useState<string[]>([]);
   const [highlighted, setHighLighted] = useState<number[][]>([]);
-
   const {
     createNewBoard,
     handlePressKey,
     board
   } = useWordFactory()
+  const [words, setWords] = useState<string[]>(findValidWords(board));
+
   useEffect(() => {
     createNewBoard()
   }, [])
@@ -26,6 +26,10 @@ export default function Home() {
   useEffect(() => {
     setHighLighted(getHighlighted(inputTxt, board))
   }, [inputTxt])
+
+  useEffect(() => {
+    setWords(findValidWords(board))
+  }, [board])
 
 
   return (
