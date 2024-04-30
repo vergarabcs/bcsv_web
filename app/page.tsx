@@ -15,7 +15,8 @@ export default function Home() {
   const {
     createNewBoard,
     handlePressKey,
-    board
+    board,
+    rotations
   } = useWordFactory()
   const [words, setWords] = useState<string[]>(findValidWords(board));
 
@@ -34,7 +35,7 @@ export default function Home() {
 
   return (
     <main className={styles.main}>
-      <Board board={board} highlighted={highlighted}/>
+      <Board board={board} highlighted={highlighted} rotations={rotations}/>
       <WordList words={words} onHoverWord={(word) => setHighLighted(getHighlighted(word, board))}/>
       <input 
         name='myInput'

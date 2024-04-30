@@ -1,6 +1,7 @@
 import { useState } from "react"
-import { generateBoard, squarify } from "./utils";
+import { generateBoard, generateRotations, squarify } from "./utils";
 import { BOARD_SIZE, DEFAULT_TIME } from "../constants";
+import { TCardinalRotations } from "../types";
 
 export const useWordFactory = () => {
   const [board, setBoard] = useState<string[][]>([]);
@@ -9,9 +10,11 @@ export const useWordFactory = () => {
   const [moves, setMoves] = useState<Record<string, string[]>>({});
   const [currWord, setCurrWord] = useState<string>('');
   const [selectedIndices, setSelectedIndices] = useState<number[][]>([]);
+  const [rotations, setRotations] = useState<TCardinalRotations[][]>([]);
 
   const createNewBoard = () => {
     setBoard(squarify(BOARD_SIZE, generateBoard()))
+    setRotations(squarify(BOARD_SIZE, generateRotations()))
   }
 
   const handlePressKey = (char: string) => {
@@ -25,6 +28,7 @@ export const useWordFactory = () => {
   return {
     createNewBoard,
     handlePressKey,
-    board
+    board,
+    rotations
   }
 }

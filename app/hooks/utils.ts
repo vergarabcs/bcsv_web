@@ -1,6 +1,6 @@
 import { Trie } from 'trie-typed'
 import {dictionaryString} from '../files/dictWithDef'
-import { MINIMUM_WORD_LENGTH } from '../constants'
+import { MINIMUM_WORD_LENGTH, ROTATION_DEG } from '../constants'
 
 export const DISTRIBUTION = {
   A: 9,
@@ -45,17 +45,26 @@ const DIRECTION_OFFSET = [
   [1, -1]
 ]
 
+export const randomPickElements = <ElementType>(list:ElementType[], n:number) => {
+  return Array(n).fill(null).map(
+    () => list[Math.floor(Math.random() * list.length)]
+  )
+}
+
 export const generateBoard = () => {
   const charSource: string[] = Object.entries(DISTRIBUTION).map(
     ([char, count]) => Array(count).fill(char)
   ).flat()
 
-  const getRandomChar = () => charSource[Math.floor(Math.random() * charSource.length)]
-  return Array(25).fill('').map(getRandomChar)
+  return randomPickElements(charSource, 25)
 }
 
-export const squarify = (dim: number, charList: string[]) => {
-  const newBoard: string[][] = []
+export const generateRotations = () => {
+  return randomPickElements(ROTATION_DEG, 25)
+}
+
+export const squarify = <GElement>(dim: number, charList: GElement[]) => {
+  const newBoard: GElement[][] = []
   charList.forEach((char, index) => {
     if (index % dim === 0) {
       newBoard.push([])
