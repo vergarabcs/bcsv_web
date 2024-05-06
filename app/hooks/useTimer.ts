@@ -18,7 +18,7 @@ export const useTimer = (
     const startTime = Date.now()
     timeOut.current = setInterval(() => {
       const elapsedTime = (Date.now() - startTime) / 1000;
-      let newRemainingTime = ((DEFAULT_TIME - elapsedTime))
+      let newRemainingTime = Math.round((DEFAULT_TIME - elapsedTime))
       if(newRemainingTime <= 0){
         newRemainingTime = 0
         clearInterval(timeOut.current)

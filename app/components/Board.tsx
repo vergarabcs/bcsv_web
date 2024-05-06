@@ -1,7 +1,7 @@
 import { CSSProperties } from "react";
 import { PropsBoard, TCardinalRotations } from "../types";
 import styles from '@/app/page.module.css'
-import { L_RANGE, ROTATION_DEG, UNDERLINED_STRING } from "../constants";
+import { L_RANGE, UNDERLINED_STRING } from "../constants";
 import { randomPickElements } from "../hooks/utils";
 
 const getCellStyle = (

@@ -7,36 +7,48 @@ import { useEffect, useState } from 'react';
 import { findValidWords, getHighlighted } from './hooks/utils';
 import { useWordFactory } from './hooks/useWordFactory';
 import { WordList } from './components/WordList';
+import { TGameStatus } from './types';
 Amplify.configure(config);
 
 export default function Home() {
-  const [inputTxt, setInputTxt] = useState('');
-  const [highlighted, setHighLighted] = useState<number[][]>([]);
   const {
-    createNewBoard,
-    handlePressKey,
     board,
-    rotations
+    rotations,
+    remainingTime,
+    highlighted,
+    inputTxt,
+    moves,
+    userName,
+    setHighLighted,
+    setInputTxt,
+    enterWord,
+    startGame,
+    allValidWords,
+    gameStatus
   } = useWordFactory()
-  const [words, setWords] = useState<string[]>(findValidWords(board));
 
-  useEffect(() => {
-    createNewBoard()
-  }, [])
+  const words = userName ? (
+    moves[userName] ?? []
+  ) : (
+    []
+  )
 
-  useEffect(() => {
-    setHighLighted(getHighlighted(inputTxt, board))
-  }, [inputTxt])
-
-  useEffect(() => {
-    setWords(findValidWords(board))
-  }, [board])
-
+  const renderValidWords = () => {
+    if(!allValidWords) return null;
+    if(gameStatus !== TGameStatus.FINISHED) return null;
+    return <WordList words={allValidWords} />
+  }
 
   return (
     <main className={styles.main}>
       <Board board={board} highlighted={highlighted} rotations={rotations}/>
-      <WordList words={words} onHoverWord={(word) => setHighLighted(getHighlighted(word, board))}/>
+      {renderValidWords()}
+      <WordList 
+        words={words} 
+        onHoverWord={(word) => setHighLighted(getHighlighted(word, board))}
+      />
+      <button onClick={startGame}>Start Game</button>
+      <div>{remainingTime}</div>
       <input 
         name='myInput'
         value={inputTxt}
@@ -46,7 +58,7 @@ export default function Home() {
           if(e.key !== 'Enter') return;
           if(highlighted.length <= 0) return;
           if(words.includes(inputTxt)) return;
-          setWords([...words, inputTxt])
+          enterWord(inputTxt)
           setInputTxt('')
         }}
       />

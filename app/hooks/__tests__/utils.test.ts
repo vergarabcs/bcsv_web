@@ -1,5 +1,5 @@
 import { expect, test, describe } from '@jest/globals';
-import { DISTRIBUTION, TRIE, findValidWords, generateBoard, getHighlighted, squarify } from "../utils";
+import { DISTRIBUTION, TRIE, findValidWords, generateBoard, getHighlighted, getListScore, squarify } from "../utils";
 
 describe("utils", () => {
   const board = [
@@ -56,5 +56,22 @@ describe("utils", () => {
     findValidWords(board).forEach((word) => {
       expect(getHighlighted(word, board).length).toBeGreaterThan(0)
     })
+  })
+
+  test('getListScore', () => {
+    const validWords = [
+      'BIRD',
+      'CHICKEN',
+      'RABBIT'
+    ]
+
+    const wordList = [
+      'BIRD', // 4 letters
+      'CHICKEN', // 7 letters
+      'RABBIT', // 6 letters
+      'TO', // 2 letters
+      'NOT_ON_THE_LIST'
+    ]
+    expect(getListScore(wordList, validWords)).toBe(6)
   })
 })

@@ -3,10 +3,11 @@ export type PropsBoard = {
   highlighted: number[][],
   rotations: TCardinalRotations[][]
 }
+export const CARDINAL_ROTATIONS = [0, 90, 180, 270] as const
+export type TCardinalRotations = typeof CARDINAL_ROTATIONS[number]
 
-export enum TCardinalRotations {
-  UP = 0,
-  RIGHT = 90,
-  DOWN = 180,
-  LEFT = 270
+export enum TGameStatus{
+  STANDBY,
+  PLAYING,
+  FINISHED
 }

@@ -1,6 +1,7 @@
 import { Trie } from 'trie-typed'
 import {dictionaryString} from '../files/dictWithDef'
-import { MINIMUM_WORD_LENGTH, ROTATION_DEG } from '../constants'
+import { MINIMUM_WORD_LENGTH } from '../constants'
+import { CARDINAL_ROTATIONS } from '../types'
 
 export const DISTRIBUTION = {
   A: 9,
@@ -60,7 +61,7 @@ export const generateBoard = () => {
 }
 
 export const generateRotations = () => {
-  return randomPickElements(ROTATION_DEG, 25)
+  return randomPickElements([...CARDINAL_ROTATIONS], 25)
 }
 
 export const squarify = <GElement>(dim: number, charList: GElement[]) => {
@@ -172,4 +173,22 @@ export const findValidWords = (board: string[][]): string[] => {
     dfs(i, j)
   }))
   return Array.from(words).sort()
+}
+
+export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const getWordScore = (word: string) => {
+  const retValue = word.length - MINIMUM_WORD_LENGTH + 1
+  return (retValue > 0)? retValue : 0
+}
+
+export const getListScore = (moves:string[], validWords:string[]) => {
+  const validSet = new Set(validWords)
+  return moves.reduce(
+    (prevVal, currVal) => {
+      if(!validSet.has(currVal)) return prevVal - 1;
+      return prevVal + getWordScore(currVal)
+    },
+    0
+  )
 }
