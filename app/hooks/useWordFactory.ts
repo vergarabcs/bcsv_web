@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { findValidWords, generateBoard, generateRotations, getHighlighted, squarify } from "./utils";
+import { findValidWords, generateBoard, generateRotations, getHighlighted, getListScore, squarify } from "./utils";
 import { BOARD_SIZE, STORE_KEYS } from "../constants";
 import { TCardinalRotations, TGameStatus } from "../types";
 import { useTimer } from "./useTimer";
@@ -31,9 +31,21 @@ export const useWordFactory = () => {
     setHighLighted(getHighlighted(inputTxt, board))
   }, [inputTxt])
 
+  const getPlayerMoves = () => {
+    if(!userName) return []
+    return moves[userName] ?? []
+  }
+
   const handleFinish = () => {
     setGameStatus(TGameStatus.FINISHED)
-    setAllValidWords(findValidWords(board))
+    const _vw = findValidWords(board)
+    setAllValidWords(_vw)
+    setScore(
+      getListScore(
+        getPlayerMoves(),
+        _vw
+      )
+    )
   }
 
   const {
@@ -49,11 +61,13 @@ export const useWordFactory = () => {
   const startGame = () => {
     createNewBoard()
     setGameStatus(TGameStatus.PLAYING)
+    setMoves({})
     startCountDown()
   }
 
   const enterWord = (word: string) => {
     if(!userName) return;
+    if(gameStatus !== TGameStatus.PLAYING) return;
     setMoves((prevValue) => ({
       ...prevValue,
       [userName]: [
@@ -80,6 +94,7 @@ export const useWordFactory = () => {
     startGame,
     userName,
     allValidWords,
-    gameStatus
+    gameStatus,
+    score
   }
 }

@@ -3,7 +3,7 @@ import { DISTRIBUTION, TRIE, findValidWords, generateBoard, getHighlighted, getL
 
 describe("utils", () => {
   const board = [
-    ['C', 'G', 'N', 'Y', 'D'],
+    ['C', 'G', 'N', 'C', 'A'],
     ['A', 'O', 'R', 'V', 'R'],
     ['X', 'C', 'Z', 'D', 'Z'],
     ['T', 'E', 'Q', 'N', 'U'],
@@ -54,6 +54,7 @@ describe("utils", () => {
 
   test('findValidWords', () => {
     findValidWords(board).forEach((word) => {
+      expect(word.length).toBeGreaterThan(3)
       expect(getHighlighted(word, board).length).toBeGreaterThan(0)
     })
   })
@@ -73,5 +74,12 @@ describe("utils", () => {
       'NOT_ON_THE_LIST'
     ]
     expect(getListScore(wordList, validWords)).toBe(6)
+
+    expect(
+      getListScore(
+        ['TO', 'BIRD'],
+        []
+      )
+    ).toBe(-2)
   })
 })

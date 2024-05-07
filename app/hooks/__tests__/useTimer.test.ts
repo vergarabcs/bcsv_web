@@ -6,7 +6,7 @@ import { act } from "react-dom/test-utils";
 
 describe("useTimer", () => {
   test('remaining time does not go negative', async () => {
-    const TEST_TIME = 3
+    const TEST_TIME = 1
     const mockOnFinishCallback = jest.fn(() => {})
     const {
       result,
@@ -18,7 +18,7 @@ describe("useTimer", () => {
       result.current.startCountDown()
     })
 
-    await sleep(4000);
+    await sleep(2000);
     expect(mockOnFinishCallback).toHaveBeenCalledTimes(1)
     expect(result?.current?.remainingTime).toBe(0)
     unmount()
