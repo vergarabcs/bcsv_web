@@ -53,10 +53,13 @@ describe("utils", () => {
   })
 
   test('findValidWords', () => {
-    findValidWords(board).forEach((word) => {
+    const validWords = findValidWords(board)
+    validWords.forEach((word) => {
       expect(word.length).toBeGreaterThan(3)
       expect(getHighlighted(word, board).length).toBeGreaterThan(0)
     })
+
+    expect(validWords[0].length).toBeGreaterThan(validWords[validWords.length - 1].length)
   })
 
   test('getListScore', () => {

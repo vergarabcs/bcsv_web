@@ -24,7 +24,8 @@ export default function Home() {
     enterWord,
     startGame,
     allValidWords,
-    gameStatus
+    gameStatus,
+    score
   } = useWordFactory()
 
   const words = userName ? (
@@ -34,34 +35,54 @@ export default function Home() {
   )
 
   const renderValidWords = () => {
-    if(!allValidWords) return null;
-    if(gameStatus !== TGameStatus.FINISHED) return null;
-    return <WordList words={allValidWords} />
+    if (!allValidWords) return null;
+    if (gameStatus !== TGameStatus.FINISHED) return null;
+    return <WordList words={allValidWords} onHoverWord={handleHover} />
   }
 
-  return (
-    <main className={styles.main}>
-      <Board board={board} highlighted={highlighted} rotations={rotations}/>
-      {renderValidWords()}
-      <WordList 
-        words={words} 
-        onHoverWord={(word) => setHighLighted(getHighlighted(word, board))}
-      />
-      <button onClick={startGame}>Start Game</button>
-      <div>{remainingTime}</div>
-      <input 
+  const renderScore = () => {
+    if (gameStatus !== TGameStatus.FINISHED) return null;
+    return <div>{`Score: ${score}`}</div>
+  }
+
+  const handleHover = (word: string) => setHighLighted(getHighlighted(word, board))
+
+  const renderInput = () => {
+    if (gameStatus !== TGameStatus.PLAYING) return null
+    return (
+      <input
         name='myInput'
         value={inputTxt}
         placeholder='Enter words here'
         onChange={e => setInputTxt(e.target.value.toUpperCase())}
         onKeyUp={e => {
-          if(e.key !== 'Enter') return;
-          if(highlighted.length <= 0) return;
-          if(words.includes(inputTxt)) return;
+          if (e.key !== 'Enter') return;
+          if (highlighted.length <= 0) return;
+          if (words.includes(inputTxt)) return;
           enterWord(inputTxt)
           setInputTxt('')
         }}
       />
+    )
+  }
+
+  const renderStartGameButton = () => {
+    if(gameStatus === TGameStatus.PLAYING) return null
+    return <button onClick={startGame}>Start Game</button>
+  }
+
+  return (
+    <main className={styles.main}>
+      <Board board={board} highlighted={highlighted} rotations={rotations} />
+      {renderValidWords()}
+      <WordList
+        words={words}
+        onHoverWord={handleHover}
+      />
+      {renderStartGameButton()}
+      <div>{remainingTime}</div>
+      {renderScore()}
+      {renderInput()}
     </main>
   )
 }

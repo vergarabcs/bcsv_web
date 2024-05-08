@@ -216,7 +216,7 @@
 }
 
 .cell {
-  width: 10vmin;
+  width: 7vmin;
   aspect-ratio: 1;
   border: solid black 1px;
   display: flex;
@@ -225,7 +225,7 @@
   place-content: center;
   text-align: center;
   flex-direction: column;
-  font-size: 3em;
+  font-size: 3vmin;
   background-color: hsl(193, 90, 90)
 }
 

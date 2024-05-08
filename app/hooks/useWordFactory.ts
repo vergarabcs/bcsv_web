@@ -63,6 +63,7 @@ export const useWordFactory = () => {
     setGameStatus(TGameStatus.PLAYING)
     setMoves({})
     startCountDown()
+    setHighLighted([])
   }
 
   const enterWord = (word: string) => {

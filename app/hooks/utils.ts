@@ -172,7 +172,12 @@ export const findValidWords = (board: string[][]): string[] => {
   board.forEach((row, i) => row.forEach((_cell, j) => {
     dfs(i, j)
   }))
-  return Array.from(words).sort()
+  return Array.from(words).sort((word1, word2) => {
+    let retVal = word2.length - word1.length;
+    if(retVal !== 0) return retVal;
+
+    return word1.localeCompare(word2)
+  })
 }
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
