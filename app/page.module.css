@@ -234,3 +234,11 @@
   background-color: hsl(0, 0%, 95%);
   overflow: scroll;
 }
+
+.greenBg {
+  background-color: palegreen;
+}
+
+.redBg {
+  background-color: palevioletred;
+}

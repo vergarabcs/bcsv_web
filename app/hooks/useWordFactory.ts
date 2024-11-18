@@ -78,10 +78,6 @@ export const useWordFactory = () => {
     }))
   }
 
-  const handleClickIndex = (index: number[]) => {
-
-  }
-
   return {
     board,
     enterWord,
