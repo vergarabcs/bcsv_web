@@ -232,13 +232,73 @@
 .wordlist {
   max-height: 25vh;
   background-color: hsl(0, 0%, 95%);
-  overflow: scroll;
+  overflow: auto;
+  width: 100%;
+  max-width: 300px;
+  margin: 1rem 0;
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(var(--card-border-rgb), 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wordlist ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.wordlist li {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(var(--card-border-rgb), 0.1);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wordlist li:last-child {
+  border-bottom: none;
+}
+
+.wordlist li:hover {
+  background-color: rgba(var(--card-rgb), 0.05);
 }
 
 .greenBg {
-  background-color: palegreen;
+  background-color: rgba(152, 251, 152, 0.5);
+  border-left: 4px solid palegreen;
 }
 
 .redBg {
-  background-color: palevioletred;
+  background-color: rgba(216, 112, 147, 0.2);
+  border-left: 4px solid palevioletred;
+}
+
+.wordCounter {
+  font-size: 0.8rem;
+  color: #666;
+  margin-left: auto;
+  background-color: rgba(var(--card-rgb), 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+}
+
+.wordListHeader {
+  padding: 0.5rem 1rem;
+  background-color: rgba(var(--card-rgb), 0.1);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(var(--card-border-rgb), 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.emptyList {
+  padding: 1rem;
+  text-align: center;
+  color: #777;
+  font-style: italic;
 }

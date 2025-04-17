@@ -21,19 +21,38 @@ export const WordList = ({
   onHoverWord,
   validWords
 }: WordListProps) => {
-  return <div className={styles.wordlist}><ul>
-    {words.map((word) => {
-      const className = getRowClassName(
-        word,
-        validWords,
-      )
-      return (<li
-        key={word}
-        className={className}
-        onMouseOver={() => onHoverWord?.(word)}
-      >
-        {word}
-      </li>)
-    })}
-  </ul></div>
+  // Sort words by length (longer words first)
+  const sortedWords = [...words].sort((a, b) => b.length - a.length);
+  const hasWords = sortedWords.length > 0;
+  const title = validWords ? 'Results' : 'Your Words';
+
+  return (
+    <div className={styles.wordlist}>
+      <div className={styles.wordListHeader}>
+        <div>{title}</div>
+        <span className={styles.wordCounter}>{sortedWords.length} words</span>
+      </div>
+      {hasWords ? (
+        <ul>
+          {sortedWords.map((word) => {
+            const className = getRowClassName(word, validWords);
+            return (
+              <li
+                key={word}
+                className={className}
+                onMouseOver={() => onHoverWord?.(word)}
+              >
+                <span>{word}</span>
+                {<span className={styles.wordCounter}>{word.length}</span>}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className={styles.emptyList}>
+          No words yet. Start typing to add words!
+        </div>
+      )}
+    </div>
+  );
 }
