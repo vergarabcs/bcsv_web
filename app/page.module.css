@@ -209,12 +209,18 @@
   display: flex;
   flex-direction: column;
   background-color: rgba(var(--card-rgb), 0.05);
-  padding: 1rem;
+  padding: 0.5rem;
   border-radius: var(--border-radius);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   margin: 1.5rem 0;
-  max-width: calc(5 * 8vmin + 2rem);
   position: relative;
+  max-width: 50vmin;
+}
+
+@media (max-width: 700px) {
+  .board {
+    max-width: 100%;
+  }
 }
 
 .board::before {
@@ -233,21 +239,20 @@
   display: flex;
   flex-direction: row;
   justify-content: center;
-  margin: 0.2rem 0;
 }
 
 .cell {
-  width: 8vmin;
+  width: 15vmin;
   aspect-ratio: 1;
   border: 2px solid rgba(var(--card-border-rgb), 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
-  font-size: 3vmin;
+  font-size: 5vmin;
   font-weight: 700;
-  background-color: hsl(193, 90%, 90%);
-  border-radius: 8px;
+  background-color: hsl(45, 88%, 90%);
+  border-radius: 20%;
   margin: 0.15rem;
   cursor: pointer;
   transition: all 0.2s ease;
