@@ -6,6 +6,7 @@ import { generateClient } from "aws-amplify/api";
 import { Schema } from "@/amplify/data/resource";
 import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react";
 import WordFactory from "./WordFactory";
+import styles from './main.module.css'
 
 const client = generateClient<Schema>();
 
