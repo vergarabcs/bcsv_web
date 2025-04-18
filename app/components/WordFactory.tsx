@@ -63,7 +63,7 @@ export default function WordFactory() {
   }
 
   const renderStartGameButton = () => {
-    if(gameStatus === TGameStatus.PLAYING) return null
+    if (gameStatus === TGameStatus.PLAYING) return null
     return <button onClick={startGame}>Start Game</button>
   }
 
@@ -74,7 +74,7 @@ export default function WordFactory() {
       <WordList
         words={words}
         onHoverWord={handleHover}
-        validWords={(gameStatus === TGameStatus.FINISHED)? allValidWords : undefined}
+        validWords={(gameStatus === TGameStatus.FINISHED) ? allValidWords : undefined}
       />
       {renderStartGameButton()}
       <div>{remainingTime}</div>
