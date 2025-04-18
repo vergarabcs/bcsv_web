@@ -1,7 +1,7 @@
 'use client'
 import styles from './page.module.css'
 import { Amplify } from 'aws-amplify';
-import config from '../amplify_outputs.json';
+import config from '../amplifyconfiguration.json';
 import { GuestAccessExperiment } from './components/GuestAccessExperiment';
 import { Authenticator } from '@aws-amplify/ui-react';
 
