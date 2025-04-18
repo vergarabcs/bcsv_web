@@ -9,7 +9,7 @@ import WordFactory from "./WordFactory";
 
 const client = generateClient<Schema>();
 
-export const GuestAccessExperiment = () => {
+export const Main = () => {
   const [id, setId] = useState<string | undefined>('');
   const { user, signOut } = useAuthenticator((context) => [context.user]);
   
