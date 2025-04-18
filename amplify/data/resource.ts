@@ -8,13 +8,13 @@ const schemaObj = {
     answers: a.hasMany('Answer', 'gameId'),
     allValidWords: a.string().array(),
     status: a.enum(['STANDBY', 'PLAYING', 'FINISHED'])
-  }).authorization(allow => [allow.publicApiKey()]),
+  }).authorization(allow => [allow.owner()]),
 
   Users: a.model({
     userId: a.string().required(),
     name: a.string().required(),
     answers: a.hasMany('Answer', 'userId')
-  }).authorization(allow => [allow.publicApiKey()])
+  }).authorization(allow => [allow.owner()])
   .identifier(["userId"]),
 
   Answer: a.model({
@@ -23,7 +23,7 @@ const schemaObj = {
     game: a.belongsTo('GameState', 'gameId'),
     userId: a.string().required(),
     user: a.belongsTo('Users', 'userId')
-  }).authorization(allow => [allow.publicApiKey()])
+  }).authorization(allow => [allow.owner()])
 }
 
 const schema = a.schema(schemaObj);
@@ -33,7 +33,7 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: 'userPool',
+    defaultAuthorizationMode: 'apiKey', // Default authorization mode for all models
     // API Key is used for a.allow.public() rules
     apiKeyAuthorizationMode: {
       expiresInDays: 365, // Changed from 30 days to maximum 365 days
