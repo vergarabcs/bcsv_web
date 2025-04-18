@@ -1,14 +1,18 @@
 'use client'
 import styles from './page.module.css'
-import TodoList from './components/TodoList'
 import { Amplify } from 'aws-amplify';
-import config from '../amplifyconfiguration.json';
-Amplify.configure(config);
+import config from '../amplify_outputs.json';
+import { GuestAccessExperiment } from './components/GuestAccessExperiment';
+import { Authenticator } from '@aws-amplify/ui-react';
 
+Amplify.configure(config);
 export default function Home() {
+  
   return (
     <main className={styles.main}>
-      <TodoList />
+      <Authenticator.Provider>
+        <GuestAccessExperiment />
+      </Authenticator.Provider>
     </main>
   )
 }
