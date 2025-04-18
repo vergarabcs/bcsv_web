@@ -1,0 +1,136 @@
+.mainContainer {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.signOutButton {
+  padding: 0.5rem 1rem;
+  background-color: #6649AE;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.signOutButton:hover {
+  background-color: #543c8b;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  margin: 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #6649AE;
+}
+
+.gameGrid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.gameCard {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.gameCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.gameCardHeader {
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.gameCardTitle {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.gameCardContent {
+  padding: 1rem;
+  flex: 1;
+}
+
+.gameCardDescription {
+  color: #666;
+  margin: 0;
+}
+
+.activeGame {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.backButton {
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.backButton:hover {
+  background-color: #e0e0e0;
+}
+
+/* Tablet and larger */
+@media (min-width: 640px) {
+  .gameGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .mainContainer {
+    padding: 3rem 2rem;
+  }
+  
+  .gameGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .title {
+    font-size: 2.5rem;
+  }
+}
