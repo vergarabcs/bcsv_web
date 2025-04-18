@@ -38,7 +38,7 @@ export default function WordFactory() {
 
   const renderScore = () => {
     if (gameStatus !== TGameStatus.FINISHED) return null;
-    return <div>{`Score: ${score}`}</div>
+    return <div className={styles.scoreDisplay}>Score: {score}</div>
   }
 
   const handleHover = (word: string) => setHighLighted(getHighlighted(word, board))
@@ -47,6 +47,7 @@ export default function WordFactory() {
     if (gameStatus !== TGameStatus.PLAYING) return null
     return (
       <input
+        className={styles.wordInput}
         name='myInput'
         value={inputTxt}
         placeholder='Enter words here'
@@ -64,22 +65,38 @@ export default function WordFactory() {
 
   const renderStartGameButton = () => {
     if (gameStatus === TGameStatus.PLAYING) return null
-    return <button onClick={startGame}>Start Game</button>
+    return <button className={styles.gameButton} onClick={startGame}>Start Game</button>
+  }
+
+  const renderTimer = () => {
+    if (gameStatus !== TGameStatus.PLAYING) return null;
+    return <div className={styles.timerDisplay}>{remainingTime}</div>;
   }
 
   return (
     <main className={styles.main}>
-      <Board board={board} highlighted={highlighted} rotations={rotations} />
-      {renderValidWords()}
-      <WordList
-        words={words}
-        onHoverWord={handleHover}
-        validWords={(gameStatus === TGameStatus.FINISHED) ? allValidWords : undefined}
+      <Board 
+        board={board} 
+        highlighted={highlighted} 
+        rotations={rotations}
+        gameStatus={gameStatus} 
       />
-      {renderStartGameButton()}
-      <div>{remainingTime}</div>
-      {renderScore()}
-      {renderInput()}
+      
+      <div className={styles.gameControls}>
+        {renderTimer()}
+        {renderStartGameButton()}
+        {renderScore()}
+        {renderInput()}
+      </div>
+      
+      <div className={styles.wordListContainer}>
+        <WordList
+          words={words}
+          onHoverWord={handleHover}
+          validWords={(gameStatus === TGameStatus.FINISHED) ? allValidWords : undefined}
+        />
+        {renderValidWords()}
+      </div>
     </main>
   )
 }
