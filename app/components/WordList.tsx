@@ -24,7 +24,7 @@ export const WordList = ({
   // Sort words by length (longer words first)
   const sortedWords = [...words].sort((a, b) => b.length - a.length);
   const hasWords = sortedWords.length > 0;
-  const title = validWords ? 'Results' : 'Your Words';
+  const title = validWords ? 'Results' : 'Existing Words';
 
   return (
     <div className={styles.wordlist}>
