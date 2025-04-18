@@ -197,3 +197,14 @@ export const getListScore = (moves:string[], validWords:string[]) => {
     0
   )
 }
+
+export const isValidHighlights = (indices: number[][]) => {
+  for (let i = 1; i < indices.length; i++) {
+    const [prevRow, prevCol] = indices[i - 1];
+    const [currRow, currCol] = indices[i];
+    if(Math.abs(prevRow - currRow) > 1) return false;
+    if(Math.abs(prevCol - currCol) > 1) return false;
+    if(prevRow === currRow && currCol === prevCol) return false;
+  }
+  return true;
+}

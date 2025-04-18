@@ -2,6 +2,7 @@ import { CSSProperties } from "react";
 import { PropsBoard, TCardinalRotations, TGameStatus } from "../types";
 import styles from '@/app/page.module.css'
 import { L_RANGE, UNDERLINED_STRING } from "../constants";
+import { isValidHighlights } from "../hooks/utils";
 
 const getCellStyle = (
   highlighted: number[][], 
@@ -27,6 +28,7 @@ export const Board = ({
   highlighted,
   rotations,
   gameStatus,
+  setHighLighted,
   inputTxt,
   setInputTxt
 }: PropsBoard) => {
@@ -48,12 +50,20 @@ export const Board = ({
     return `${styles.cell} ${isHighlighted ? styles.cellHighlighted : ''}`;
   };
 
+  const clickCell = (iRow: number, iCol: number, char: string) => {
+    const newIndices = [...highlighted, [iRow, iCol]];
+    if(isValidHighlights(newIndices)){
+      setInputTxt(inputTxt + char)
+      setHighLighted(newIndices)
+    }
+  }
+
   const renderRow = (row:string[], iRow:number) => {
     return <div key={iRow} className={styles.row}>
       {row.map((cell, iCol) => {
         return <div 
           key={iCol} 
-          onClick={() => setInputTxt(inputTxt + cell)}
+          onClick={() => clickCell(iRow, iCol, cell)}
           className={getCellClassName(iRow, iCol)}
           style={getCellStyle(highlighted, iRow, iCol, cell, rotations)}
         >

@@ -17,6 +17,7 @@ export default function WordFactory() {
     userName,
     setHighLighted,
     setInputTxt,
+    setInputAndHighlight,
     enterWord,
     startGame,
     allValidWords,
@@ -51,13 +52,14 @@ export default function WordFactory() {
         name='myInput'
         value={inputTxt}
         placeholder='Enter words here'
-        onChange={e => setInputTxt(e.target.value.toUpperCase())}
+        onChange={e => setInputAndHighlight(e.target.value.toUpperCase())}
         onKeyUp={e => {
           if (e.key !== 'Enter') return;
           if (highlighted.length <= 0) return;
           if (words.includes(inputTxt)) return;
           enterWord(inputTxt)
           setInputTxt('')
+          setHighLighted([])
         }}
       />
     )
@@ -82,6 +84,7 @@ export default function WordFactory() {
         gameStatus={gameStatus}
         inputTxt={inputTxt}
         setInputTxt={setInputTxt}
+        setHighLighted={setHighLighted}
       />
       
       <div className={styles.gameControls}>

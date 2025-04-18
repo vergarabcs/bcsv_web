@@ -27,10 +27,6 @@ export const useWordFactory = () => {
     localStorage.setItem(STORE_KEYS.USERNAME, newUsername)
   }, [userName])
 
-  useEffect(() => {
-    setHighLighted(getHighlighted(inputTxt, board))
-  }, [inputTxt])
-
   const getPlayerMoves = () => {
     if(!userName) return []
     return moves[userName] ?? []
@@ -58,6 +54,11 @@ export const useWordFactory = () => {
     setRotations(squarify(BOARD_SIZE, generateRotations()))
   }
 
+  const setInputAndHighlight = (newTxt: string) => {
+    setInputTxt(newTxt);
+    setHighLighted(getHighlighted(newTxt, board))
+  }
+
   const startGame = () => {
     createNewBoard()
     setGameStatus(TGameStatus.PLAYING)
@@ -79,19 +80,20 @@ export const useWordFactory = () => {
   }
 
   return {
+    allValidWords,
     board,
     enterWord,
+    gameStatus,
     highlighted,
     inputTxt,
     moves,
     remainingTime,
     rotations,
+    score,
     setHighLighted,
+    setInputAndHighlight,
     setInputTxt,
     startGame,
     userName,
-    allValidWords,
-    gameStatus,
-    score
   }
 }
