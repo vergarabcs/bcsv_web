@@ -79,7 +79,9 @@ export default function WordFactory() {
         board={board} 
         highlighted={highlighted} 
         rotations={rotations}
-        gameStatus={gameStatus} 
+        gameStatus={gameStatus}
+        inputTxt={inputTxt}
+        setInputTxt={setInputTxt}
       />
       
       <div className={styles.gameControls}>

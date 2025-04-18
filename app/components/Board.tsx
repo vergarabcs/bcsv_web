@@ -26,7 +26,9 @@ export const Board = ({
   board,
   highlighted,
   rotations,
-  gameStatus
+  gameStatus,
+  inputTxt,
+  setInputTxt
 }: PropsBoard) => {
   const getBoardTitle = () => {
     switch(gameStatus) {
@@ -51,6 +53,7 @@ export const Board = ({
       {row.map((cell, iCol) => {
         return <div 
           key={iCol} 
+          onClick={() => setInputTxt(inputTxt + cell)}
           className={getCellClassName(iRow, iCol)}
           style={getCellStyle(highlighted, iRow, iCol, cell, rotations)}
         >
