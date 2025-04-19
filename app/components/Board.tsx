@@ -28,6 +28,7 @@ export const Board = ({
   highlighted,
   rotations,
   gameStatus,
+  enterWord,
   setHighLighted,
   inputTxt,
   setInputTxt
@@ -73,10 +74,42 @@ export const Board = ({
     </div>
   }
 
+  const handleCancel = () => {
+    setInputTxt("");
+    setHighLighted([]);
+  };
+
+  const handleEnter = () => {
+    console.log("Word submitted:", inputTxt);
+    setInputTxt("");
+    setHighLighted([]);
+    enterWord(inputTxt);
+  };
+
   return (
     <div className={styles.board}>
       <div className={styles.boardTitle}>{getBoardTitle()}</div>
       {board.map(renderRow)}
+      {inputTxt && (
+        <div className={styles.gameControls}>
+          <div style={{ display: 'flex', gap: '0.5rem', width: '100%', justifyContent: 'space-between' }}>
+            <button 
+              className={styles.gameButton} 
+              onClick={handleCancel}
+              style={{ backgroundColor: '#dc3545', flex: 1 }}
+            >
+              Cancel
+            </button>
+            <button 
+              className={styles.gameButton} 
+              onClick={handleEnter}
+              style={{ backgroundColor: '#28a745', flex: 1 }}
+            >
+              Enter
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

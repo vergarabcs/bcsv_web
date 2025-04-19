@@ -85,6 +85,7 @@ export default function WordFactory() {
         inputTxt={inputTxt}
         setInputTxt={setInputTxt}
         setHighLighted={setHighLighted}
+        enterWord={enterWord}
       />
       
       <div className={styles.gameControls}>
