@@ -67,10 +67,19 @@ export const useScheduleFinder = () => {
     });
     return true;
   };
+
+  const removePerson = (name: PersonName) => {
+    const newRangeMap = {
+      ...personRangeMap
+    }
+    delete newRangeMap[name]
+    setPersonRangeMap(newRangeMap)
+  }
   
   return {
     personRangeMap,
     addPerson,
+    removePerson,
     addRange,
     setDate,
     removeRange,
