@@ -189,4 +189,27 @@ describe("findIntersections", () => {
     expect(result[0].dtRange.start).toEqual(sameTimeSlot.start);
     expect(result[0].dtRange.end).toEqual(sameTimeSlot.end);
   });
+
+  test("Should handle within superset", () => {
+    const personRangeMap: Record<string, Person> = {
+      "1": {
+        name: "Alice",
+        availableSlots: [{ 
+          start: new Date("2025-04-19T11:00:00Z"), 
+          end: new Date("2025-04-19T12:00:00Z") 
+        }]
+      },
+      "2": {
+        name: "Bob",
+        availableSlots: [{ 
+          start: new Date("2025-04-19T10:00:00Z"), 
+          end: new Date("2025-04-19T13:00:00Z") 
+        }]
+      }
+    };
+    const result = findIntersections(personRangeMap);
+    expect(result).toHaveLength(1);
+    expect(result[0].dtRange.start).toEqual(new Date("2025-04-19T11:00:00Z"));
+    expect(result[0].dtRange.end).toEqual(new Date("2025-04-19T12:00:00Z"));
+  })
 });
