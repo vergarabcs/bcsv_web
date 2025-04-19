@@ -1,5 +1,26 @@
-import { useScheduleFinder } from "./useScheduleFinder"
-import styles from './scheduleFinder.module.css'
+import { useState } from "react";
+import { useScheduleFinder } from "./useScheduleFinder";
+import { 
+  Box, 
+  Button, 
+  Card, 
+  CardContent, 
+  Container, 
+  Divider, 
+  Grid, 
+  IconButton, 
+  List, 
+  ListItem, 
+  ListItemText, 
+  Paper, 
+  TextField, 
+  Typography 
+} from "@mui/material";
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 
 const ScheduleFinder = () => {
   const {
@@ -11,7 +32,244 @@ const ScheduleFinder = () => {
     setDate
   } = useScheduleFinder();
 
-  return <div></div>
-}
+  const [newPersonName, setNewPersonName] = useState("");
+  const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-export default ScheduleFinder
+  const handleAddPerson = () => {
+    if (!newPersonName.trim()) {
+      setError("Please enter a name");
+      return;
+    }
+    
+    const success = addPerson(newPersonName);
+    if (success) {
+      setNewPersonName("");
+      setSelectedPerson(newPersonName);
+      setError(null);
+    } else {
+      setError("Person already exists");
+    }
+  };
+
+  const handleAddTimeSlot = (personName: string) => {
+    addRange(personName);
+  };
+
+  const handleSetDate = (
+    personName: string, 
+    id: string, 
+    boundName: 'start' | 'end', 
+    date: Date
+  ) => {
+    const person = personRangeMap[personName];
+    const slot = person.availableSlots.find(slot => slot.id === id);
+    
+    if (!slot) return;
+    
+    // Validate that end time is after start time
+    if (boundName === 'end' && date <= slot.start) {
+      setError("End time must be after start time");
+      return;
+    }
+    
+    if (boundName === 'start' && slot.end && date >= slot.end) {
+      setError("Start time must be before end time");
+      return;
+    }
+    
+    setError(null);
+    setDate(personName, id, boundName, date);
+  };
+
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Schedule Finder
+      </Typography>
+      
+      {/* Add Person Section */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <TextField
+            fullWidth
+            label="Person Name"
+            variant="outlined"
+            value={newPersonName}
+            onChange={(e) => setNewPersonName(e.target.value)}
+            error={!!error && error.includes("name")}
+            helperText={error && error.includes("name") ? error : ""}
+            sx={{ mr: 2 }}
+          />
+          <Button 
+            variant="contained" 
+            startIcon={<PersonAddIcon />}
+            onClick={handleAddPerson}
+          >
+            Add Person
+          </Button>
+        </Box>
+      </Paper>
+      
+      {/* People and Time Slots Section */}
+      <Grid container spacing={3}>
+        <Grid component="div" sx={{ gridColumn: { xs: "span 12", md: "span 4" } }}>
+          <Paper sx={{ p: 2, height: '100%' }}>
+            <Typography variant="h6" gutterBottom>
+              People
+            </Typography>
+            <List>
+              {Object.values(personRangeMap).map((person) => (
+                <ListItem 
+                  key={person.name}
+                  onClick={() => setSelectedPerson(person.name)}
+                  sx={{
+                    bgcolor: selectedPerson === person.name ? 'action.selected' : 'transparent',
+                    '&:hover': { bgcolor: 'action.hover' },
+                    cursor: 'pointer',
+                    borderRadius: 1
+                  }}
+                >
+                  <ListItemText 
+                    primary={person.name} 
+                    secondary={`${person.availableSlots.length} time slots`} 
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        </Grid>
+        
+        <Grid component="div" sx={{ gridColumn: { xs: "span 12", md: "span 8" } }}>
+          <Paper sx={{ p: 2, height: '100%' }}>
+            {selectedPerson ? (
+              <>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    Time Slots for {selectedPerson}
+                  </Typography>
+                  <Button 
+                    variant="outlined" 
+                    startIcon={<AddIcon />}
+                    onClick={() => handleAddTimeSlot(selectedPerson)}
+                  >
+                    Add Time Slot
+                  </Button>
+                </Box>
+                
+                {error && !error.includes("name") && (
+                  <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+                    {error}
+                  </Typography>
+                )}
+                
+                {personRangeMap[selectedPerson]?.availableSlots.length === 0 ? (
+                  <Typography variant="body1" color="text.secondary">
+                    No time slots added yet. Click "Add Time Slot" to get started.
+                  </Typography>
+                ) : (
+                  personRangeMap[selectedPerson]?.availableSlots.map((slot) => (
+                    <Card key={slot.id} sx={{ mb: 2 }}>
+                      <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="subtitle1">
+                            Time Slot
+                          </Typography>
+                          <IconButton 
+                            edge="end" 
+                            aria-label="delete"
+                            onClick={() => removeRange(selectedPerson, slot.id!)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                        <Grid container spacing={2}>
+                          <Grid component="div" sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
+                            <DateTimePicker
+                              label="Start Time"
+                              value={slot.start}
+                              onChange={(newDate) => newDate && handleSetDate(selectedPerson, slot.id!, 'start', newDate)}
+                              slotProps={{
+                                textField: {
+                                  fullWidth: true,
+                                  variant: 'outlined'
+                                }
+                              }}
+                            />
+                          </Grid>
+                          <Grid component="div" sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
+                            <DateTimePicker
+                              label="End Time"
+                              value={slot.end}
+                              onChange={(newDate) => newDate && handleSetDate(selectedPerson, slot.id!, 'end', newDate)}
+                              slotProps={{
+                                textField: {
+                                  fullWidth: true,
+                                  variant: 'outlined'
+                                }
+                              }}
+                            />
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </>
+            ) : (
+              <Typography variant="body1" color="text.secondary">
+                Select a person from the list to manage their time slots.
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+      
+      {/* Intersections Section */}
+      <Paper sx={{ p: 2, mt: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Common Available Times
+        </Typography>
+        {intersections.length === 0 ? (
+          <Typography variant="body1" color="text.secondary">
+            No common time slots found. Add more people and availability.
+          </Typography>
+        ) : (
+          <>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+              Showing time slots sorted by the number of available people
+            </Typography>
+            <List>
+              {intersections.map((intersection, index) => (
+                <div key={index}>
+                  {index > 0 && <Divider />}
+                  <ListItem>
+                    <ListItemText
+                      primary={
+                        <Typography variant="subtitle1">
+                          {new Date(intersection.dtRange.start).toLocaleString()} - {new Date(intersection.dtRange.end).toLocaleString()}
+                        </Typography>
+                      }
+                      secondary={
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Available People ({intersection.people.length}):
+                          </Typography>
+                          <Typography variant="body2">
+                            {intersection.people.join(", ")}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                </div>
+              ))}
+            </List>
+          </>
+        )}
+      </Paper>
+    </Container>
+  );
+};
+
+export default ScheduleFinder;
