@@ -254,12 +254,12 @@ const ScheduleFinder = () => {
                         }
                         secondary={
                           <Box sx={{ mt: 1 }}>
-                            <Typography variant="body2" color="text.secondary">
+                            <Box>
                               Available People ({intersection.people.length}):
-                            </Typography>
-                            <Typography variant="body2">
+                            </Box>
+                            <Box>
                               {intersection.people.join(", ")}
-                            </Typography>
+                            </Box>
                           </Box>
                         }
                       />
