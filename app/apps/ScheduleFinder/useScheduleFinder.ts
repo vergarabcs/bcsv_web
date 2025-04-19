@@ -53,7 +53,7 @@ export const useScheduleFinder = () => {
     return true;
   }
 
-  const setDate = (name: PersonName, id: string, rangeName: 'start' | 'end', date: Date) => {
+  const setDate = (name: PersonName, id: string, boundName: 'start' | 'end', date: Date) => {
     if (!personRangeMap[name]) return false;
 
     setPersonRangeMap({
@@ -61,7 +61,7 @@ export const useScheduleFinder = () => {
       [name]: {
         ...personRangeMap[name],
         availableSlots: personRangeMap[name].availableSlots.map(slot => 
-          slot.id === id ? { ...slot, [rangeName]: date } : slot
+          slot.id === id ? { ...slot, [boundName]: date } : slot
         )
       }
     });
