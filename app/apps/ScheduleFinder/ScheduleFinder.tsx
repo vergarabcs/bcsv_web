@@ -23,12 +23,22 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 
+const DeleteButton: React.FC<{ selectedPerson: string | null; onClick: () => void }> = ({ selectedPerson, onClick }) => {
+  
+  if(!selectedPerson) return null;
+
+  return <IconButton onClick={onClick}>
+    <DeleteIcon />
+  </IconButton>
+}
+
 const ScheduleFinder = () => {
   const {
     addPerson,
     addRange,
     intersections,
     personRangeMap,
+    removePerson,
     removeRange,
     setDate
   } = useScheduleFinder();
@@ -85,14 +95,11 @@ const ScheduleFinder = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Schedule Finder
-        </Typography>
+      <Box maxWidth="lg" sx={{ mt: 4, mb: 4, p: 1 }}>
         
         {/* Add Person Section */}
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Paper sx={{ p: 1, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <TextField
               fullWidth
               label="Person Name"
@@ -116,10 +123,13 @@ const ScheduleFinder = () => {
         {/* People and Time Slots Section */}
         <Grid container spacing={3}>
           <Grid component="div" sx={{ gridColumn: { xs: "span 12", md: "span 4" } }}>
-            <Paper sx={{ p: 2, height: '100%' }}>
-              <Typography variant="h6" gutterBottom>
-                People
-              </Typography>
+            <Paper sx={{ p: 1, height: '100%' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  People
+                </Typography>
+                <DeleteButton onClick={() => selectedPerson && removePerson(selectedPerson)} selectedPerson={selectedPerson}/>
+              </Box>
               <List>
                 {Object.values(personRangeMap).map((person) => (
                   <ListItem 
@@ -143,10 +153,10 @@ const ScheduleFinder = () => {
           </Grid>
           
           <Grid component="div" sx={{ gridColumn: { xs: "span 12", md: "span 8" } }}>
-            <Paper sx={{ p: 2, height: '100%' }}>
+            <Paper sx={{ p: 1, height: '100%' }}>
               {selectedPerson ? (
                 <>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, width: "100%" }}>
                     <Typography variant="h6">
                       Time Slots for {selectedPerson}
                     </Typography>
@@ -228,7 +238,7 @@ const ScheduleFinder = () => {
         </Grid>
         
         {/* Intersections Section */}
-        <Paper sx={{ p: 2, mt: 3 }}>
+        <Paper sx={{ p: 1, mt: 3 }}>
           <Typography variant="h6" gutterBottom>
             Common Available Times
           </Typography>
@@ -248,9 +258,9 @@ const ScheduleFinder = () => {
                     <ListItem>
                       <ListItemText
                         primary={
-                          <Typography variant="subtitle1">
+                          <Box>
                             {new Date(intersection.dtRange.start).toLocaleString()} - {new Date(intersection.dtRange.end).toLocaleString()}
-                          </Typography>
+                          </Box>
                         }
                         secondary={
                           <Box sx={{ mt: 1 }}>
@@ -270,7 +280,7 @@ const ScheduleFinder = () => {
             </>
           )}
         </Paper>
-      </Container>
+      </Box>
     </LocalizationProvider>
   );
 };
