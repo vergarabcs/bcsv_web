@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { findValidWords, generateBoard, generateRotations, getHighlighted, getListScore, squarify } from "./utils";
-import { BOARD_SIZE, STORE_KEYS } from "../constants";
+import { BOARD_SIZE, DEFAULT_TIME, STORE_KEYS } from "../constants";
 import { TCardinalRotations, TGameStatus } from "../types";
 import { useTimer } from "./useTimer";
 
@@ -37,9 +37,12 @@ export const useWordFactory = () => {
     const _vw = findValidWords(board)
     setAllValidWords(_vw)
     setScore(
-      getListScore(
-        getPlayerMoves(),
-        _vw
+      Math.max(
+        getListScore(
+          getPlayerMoves(),
+          _vw
+        ),
+        0
       )
     )
   }
@@ -47,7 +50,7 @@ export const useWordFactory = () => {
   const {
     remainingTime,
     startCountDown
-  } = useTimer(handleFinish)
+  } = useTimer(handleFinish, DEFAULT_TIME)
 
   const createNewBoard = () => {
     setBoard(squarify(BOARD_SIZE, generateBoard()))
