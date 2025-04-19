@@ -6,8 +6,8 @@
 import type {Config} from 'jest';
 
 const config: Config = {
-
-  testEnvironment: "node",
+  // Use jsdom for React component tests
+  testEnvironment: "jsdom",
 
   clearMocks: true,
   collectCoverage: true,

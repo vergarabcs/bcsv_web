@@ -1,0 +1,108 @@
+.scheduleFinder {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.title {
+  color: #6649AE;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.datePickerContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.sectionHeader {
+  color: #6649AE;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.formContainer {
+  margin-bottom: 1.5rem;
+}
+
+.timeSlotRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.personCard {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.personHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.personName {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.timeSlotsList {
+  padding-left: 1.5rem;
+}
+
+.timeSlotItem {
+  margin-bottom: 0.5rem;
+}
+
+.resultSection {
+  background-color: #f0f7ff;
+}
+
+.commonSlotCard {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.slotTime {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #6649AE;
+  margin-bottom: 0.5rem;
+}
+
+.participants {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.participantsList {
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.emptyMessage {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 1.5rem 0;
+}

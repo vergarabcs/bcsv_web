@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "next dev",
+    "start": "npm run printIp && next dev -H 0.0.0.0",
+    "printIp": "node -e \"console.log('Local IP:', require('os').networkInterfaces()['en0'].find(i => i.family === 'IPv4').address)\"",
     "build": "next build",
     "dev": "next start",
     "lint": "next lint",
@@ -13,11 +14,19 @@
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^6.5.5",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^7.0.2",
+    "@mui/material": "^7.0.2",
+    "@mui/x-date-pickers": "^8.0.0",
+    "@types/uuid": "^10.0.0",
     "aws-amplify": "latest",
-    "next": "14.2.28",
+    "date-fns": "^4.1.0",
+    "next": "^15.3.1",
     "react": "^18",
     "react-dom": "^18",
-    "trie-typed": "^1.51.9"
+    "trie-typed": "^1.51.9",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@aws-amplify/backend": "^1.5.1",

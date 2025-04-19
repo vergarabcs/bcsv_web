@@ -1,4 +1,10 @@
 {
     "editor.tabSize": 2,
-    "javascript.preferences.importModuleSpecifier": "relative"
+    "javascript.preferences.importModuleSpecifier": "relative",
+    "github.copilot.enable": {
+        "*": false,
+        "plaintext": false,
+        "markdown": false,
+        "scminput": false
+    }
 }
