@@ -1,6 +1,6 @@
 import { CommonTimeSlot, Person, PersonName } from "./constants";
 
-export const findIntersections = (personRangeMap: Record<string, Person>): CommonTimeSlot[] => {
+export const findIntersections = (personRangeMap: Record<PersonName, Person>): CommonTimeSlot[] => {
   const allSlots: { time: Date; type: 'start' | 'end'; person: PersonName }[] = [];
 
   // Collect all start and end times with their respective person
@@ -27,8 +27,8 @@ export const findIntersections = (personRangeMap: Record<string, Person>): Commo
       activePeople.delete(current.person);
     }
 
-    // If there are active people and the next time is different, record the intersection
-    if (activePeople.size > 0 && current.time.getTime() !== next.time.getTime()) {
+    // If there are more than one active people and the next time is different, record the intersection
+    if (activePeople.size > 1 && current.time.getTime() !== next.time.getTime()) {
       intersections.push({
         dtRange: {
           start: current.time,
