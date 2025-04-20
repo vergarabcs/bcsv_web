@@ -15,3 +15,5 @@ export interface CommonTimeSlot {
   dtRange: DateTimeRange;
   people: PersonName[]; // Names of people available during this slot
 }
+
+export type PersonRangeRecord = Record<PersonName, Person>

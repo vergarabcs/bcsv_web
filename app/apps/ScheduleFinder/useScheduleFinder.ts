@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { v4 } from 'uuid';
-import { CommonTimeSlot, DateTimeRange, Person, PersonName } from './constants';
+import { CommonTimeSlot, DateTimeRange, Person, PersonName, PersonRangeRecord } from './constants';
 import { findIntersections } from './utils';
 
 export const useScheduleFinder = () => {
-  const [personRangeMap, setPersonRangeMap] = useState<Record<PersonName, Person>>({});
+  const [personRangeMap, setPersonRangeMap] = useState<PersonRangeRecord>({});
   const intersections: CommonTimeSlot[] = findIntersections(personRangeMap)
 
   const addPerson = (name: PersonName) => {

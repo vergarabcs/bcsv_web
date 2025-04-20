@@ -1,6 +1,6 @@
-import { CommonTimeSlot, Person, PersonName } from "./constants";
+import { CommonTimeSlot, Person, PersonName, PersonRangeRecord } from "./constants";
 
-export const findIntersections = (personRangeMap: Record<PersonName, Person>): CommonTimeSlot[] => {
+export const findIntersections = (personRangeMap: PersonRangeRecord): CommonTimeSlot[] => {
   const allSlots: { time: Date; type: 'start' | 'end'; person: PersonName }[] = [];
 
   // Collect all start and end times with their respective person

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "@jest/globals";
 import { findIntersections } from "../utils";
-import { CommonTimeSlot, Person, PersonName } from "../constants";
+import { CommonTimeSlot, Person, PersonName, PersonRangeRecord } from "../constants";
 
 describe("findIntersections", () => {
   test("should return empty array when no persons provided", () => {
@@ -9,7 +9,7 @@ describe("findIntersections", () => {
   });
 
   test("should find intersections between two people with overlapping slots", () => {
-    const personRangeMap: Record<PersonName, Person> = {
+    const personRangeMap: PersonRangeRecord = {
       "1": {
         name: "Alice",
         availableSlots: [
