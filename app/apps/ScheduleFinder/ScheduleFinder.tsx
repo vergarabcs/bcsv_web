@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { FC, useState } from "react";
 import { useScheduleFinder } from "./useScheduleFinder";
 import { 
   Box, 
@@ -33,7 +33,7 @@ const DeleteButton: React.FC<{ selectedPerson: string | null; onClick: () => voi
   </IconButton>
 }
 
-const ScheduleFinder = () => {
+const ScheduleFinder: FC<{sessionId: string}> = ({sessionId}) => {
   const {
     addPerson,
     addRange,
@@ -42,7 +42,7 @@ const ScheduleFinder = () => {
     removePerson,
     removeRange,
     setDate
-  } = useScheduleFinder();
+  } = useScheduleFinder(sessionId);
 
   const [newPersonName, setNewPersonName] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null);

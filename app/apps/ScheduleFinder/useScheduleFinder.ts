@@ -3,7 +3,7 @@ import { v4 } from 'uuid';
 import { CommonTimeSlot, DateTimeRange, Person, PersonName, PersonRangeRecord } from './constants';
 import { findIntersections } from './utils';
 
-export const useScheduleFinder = () => {
+export const useScheduleFinder = (scheduleFinderId: string) => {
   const [personRangeMap, setPersonRangeMap] = useState<PersonRangeRecord>({});
   const intersections: CommonTimeSlot[] = findIntersections(personRangeMap)
 
