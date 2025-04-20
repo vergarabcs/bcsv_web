@@ -22,6 +22,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import withSession from "@/app/components/withSession";
 
 const DeleteButton: React.FC<{ selectedPerson: string | null; onClick: () => void }> = ({ selectedPerson, onClick }) => {
   
@@ -285,4 +286,4 @@ const ScheduleFinder = () => {
   );
 };
 
-export default ScheduleFinder;
+export default withSession(ScheduleFinder);
