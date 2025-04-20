@@ -33,7 +33,7 @@ const DeleteButton: React.FC<{ selectedPerson: string | null; onClick: () => voi
   </IconButton>
 }
 
-const ScheduleFinder: FC<{sessionId: string}> = ({sessionId}) => {
+const ScheduleFinder = () => {
   const {
     addPerson,
     addRange,
@@ -42,7 +42,7 @@ const ScheduleFinder: FC<{sessionId: string}> = ({sessionId}) => {
     removePerson,
     removeRange,
     setDate
-  } = useScheduleFinder(sessionId);
+  } = useScheduleFinder();
 
   const [newPersonName, setNewPersonName] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null);

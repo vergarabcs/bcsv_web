@@ -14,6 +14,7 @@ import {
   Paper,
   CircularProgress
 } from '@mui/material';
+import { SessionContext } from '../constants';
 
 // Local storage key for the session ID
 const SESSION_ID_KEY = 'app_session_id';
@@ -153,7 +154,11 @@ export function withSession<P extends WithSessionProps>(
 
     // If we have a valid session ID, render the wrapped component with the session ID prop
     if (sessionId) {
-      return <WrappedComponent {...(props as P)} sessionId={sessionId} />;
+      return (
+        <SessionContext.Provider value={{ sessionId }}>
+          <WrappedComponent {...(props as P)}/>
+        </SessionContext.Provider>
+      );
     }
 
     // Render the session dialog
