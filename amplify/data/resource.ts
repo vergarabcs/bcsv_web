@@ -23,7 +23,11 @@ const schemaObj = {
     game: a.belongsTo('GameState', 'gameId'),
     userId: a.string().required(),
     user: a.belongsTo('Users', 'userId')
-  }).authorization(allow => [allow.owner()])
+  }).authorization(allow => [allow.owner()]),
+
+  ScheduleFinder: a.model({
+    personRangeMap: a.json()
+  }).authorization(allow => [allow.guest()])
 }
 
 const schema = a.schema(schemaObj);
