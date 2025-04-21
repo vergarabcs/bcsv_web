@@ -14,7 +14,6 @@ export const useScheduleFinder = () => {
   }
   
   const personRangeMap = data.sfState ?? {}
-  console.log(personRangeMap)
   const intersections: CommonTimeSlot[] = findIntersections(personRangeMap)
   const addPerson = (name: PersonName) => {
     if(personRangeMap[name]) return false;
