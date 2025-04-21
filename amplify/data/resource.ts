@@ -26,8 +26,8 @@ const schemaObj = {
   }).authorization(allow => [allow.owner()]),
 
   ScheduleFinder: a.model({
-    personRangeMap: a.json()
-  }).authorization(allow => [allow.guest()])
+    personRangeMap: a.string()
+  }).authorization(allow => [allow.publicApiKey()])
 }
 
 const schema = a.schema(schemaObj);

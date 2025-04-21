@@ -105,7 +105,7 @@ export function withSession<P extends WithSessionProps>(
         // Create a new game state with the generated session ID
         await client.models.ScheduleFinder.create({
           id: newSessionId,
-          personRangeMap: {}
+          personRangeMap: "{}"
         });
         
         // Store the new session ID

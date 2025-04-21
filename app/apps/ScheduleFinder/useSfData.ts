@@ -44,11 +44,11 @@ export const useSfData = () => {
   // Function to update the ScheduleFinder data
   const updateSfState = async (personRangeMap: PersonRangeRecord) => {
     if (!scheduleFinderId || !sfState) return
-    
+
     try {
       const updatedItem = await client.models.ScheduleFinder.update({
         id: scheduleFinderId,
-        personRangeMap: personRangeMap
+        personRangeMap: JSON.stringify(personRangeMap)
       })
       
       // The state will be updated automatically through the subscription

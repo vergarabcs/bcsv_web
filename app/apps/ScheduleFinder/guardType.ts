@@ -4,7 +4,14 @@ import { PersonRangeRecord, Person, DateTimeRange } from './constants';
  * Type guard function for PersonRangeRecord
  * Returns the object as PersonRangeRecord if valid, or undefined if invalid
  */
-export const guardType = (someObject: unknown): PersonRangeRecord | undefined => {
+export const guardType = (_someObject: unknown): PersonRangeRecord | undefined => {
+  const someObject = (() => {
+    if(typeof _someObject !== 'string') return undefined;
+    try {
+      return JSON.parse(_someObject)
+    } catch (error) {return undefined}
+  })()
+
   if (!someObject || typeof someObject !== 'object' || someObject === null) {
     return undefined;
   }
@@ -53,13 +60,18 @@ const isDateTimeRange = (obj: unknown): obj is DateTimeRange => {
   }
   
   const rangeObj = obj as Partial<DateTimeRange>;
+  if(typeof rangeObj.start === 'string'){
+    rangeObj.start = new Date(rangeObj.start)
+  }
+
+  if(typeof rangeObj.end === 'string'){
+    rangeObj.end = new Date(rangeObj.end)
+  }
   
   // Check if start and end are Date objects or can be converted to Date objects
-  const hasValidStart = rangeObj.start instanceof Date || 
-                        (typeof rangeObj.start === 'string' && !isNaN(new Date(rangeObj.start).getTime()));
-  
-  const hasValidEnd = rangeObj.end instanceof Date || 
-                      (typeof rangeObj.end === 'string' && !isNaN(new Date(rangeObj.end).getTime()));
+  const hasValidStart = rangeObj.start instanceof Date
+
+  const hasValidEnd = rangeObj.end instanceof Date
   
   return hasValidStart && hasValidEnd;
 };

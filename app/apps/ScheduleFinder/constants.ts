@@ -1,7 +1,7 @@
 export interface DateTimeRange {
   id?: string;
-  start: Date; // HH:MM format
-  end: Date; // HH:MM format
+  start: Date;
+  end: Date;
 }
 
 export type PersonName = string;
