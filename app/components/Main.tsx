@@ -7,6 +7,26 @@ import { Schema } from "@/amplify/data/resource";
 import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react";
 import styles from '../main.module.css'
 
+// Material UI imports
+import { 
+  Button, 
+  Box, 
+  Typography, 
+  Divider, 
+  Paper, 
+  Container,
+  CircularProgress,
+  AppBar,
+  Toolbar
+} from '@mui/material';
+import PersonIcon from '@mui/icons-material/Person';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import LogoutIcon from '@mui/icons-material/Logout';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardActionArea from '@mui/material/CardActionArea';
+import Grid from '@mui/material/Grid';
+
 // Lazy load the games components
 const WordFactory = lazy(() => import("./WordFactory"));
 const ScheduleFinder = lazy(() => import("../apps/ScheduleFinder/ScheduleFinder"));
@@ -27,6 +47,7 @@ export const Main = () => {
   const [id, setId] = useState<string | undefined>('');
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const { user, route } = useAuthenticator((context) => [context.user, context.route]);
   
   // Define your games collection - easy to add more games in the future
@@ -71,14 +92,17 @@ export const Main = () => {
   // Handle guest access
   const handleGuestAccess = async () => {
     try {
+      setLoading(true);
       // For guest access, just call fetchAuthSession to get credentials
       const session = await fetchAuthSession();
       if (session.identityId) {
         setId(session.identityId);
         setIsGuest(true);
       }
+      setLoading(false);
     } catch (error) {
       console.error('Error accessing as guest:', error);
+      setLoading(false);
     }
   };
 
@@ -102,41 +126,59 @@ export const Main = () => {
         const GameComponent = game.component;
         
         return (
-          <div className={styles.activeGame}>
-            <button 
-              className={styles.backButton} 
+          <Box sx={{ width: '100%' }}>
+            <Button 
+              variant="contained" 
+              startIcon={<ArrowBackIcon />}
               onClick={() => setActiveGame(null)}
+              sx={{ mb: 2 }}
             >
-              ← Back to Games
-            </button>
-            <h2>{game.title}</h2>
-            <Suspense fallback={<div>Loading game...</div>}>
-              <GameComponent />
-            </Suspense>
-          </div>
+              Back to Games
+            </Button>
+            <Typography variant="h4" gutterBottom>{game.title}</Typography>
+            <Paper elevation={3} sx={{ p: 3 }}>
+              <Suspense fallback={
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                  <CircularProgress />
+                </Box>
+              }>
+                <GameComponent />
+              </Suspense>
+            </Paper>
+          </Box>
         );
       }
     }
 
     return (
       <>
-        <h2 className={styles.sectionTitle}>My Games Collection</h2>
-        <div className={styles.gameGrid}>
+        <Typography variant="h4" component="h2" sx={{ mb: 3 }}>
+          My Games Collection
+        </Typography>
+        <Grid container spacing={3}>
           {games.map((game) => (
-            <div 
-              key={game.id} 
-              className={styles.gameCard}
-              onClick={() => setActiveGame(game.id)}
-            >
-              <div className={styles.gameCardHeader}>
-                <h3 className={styles.gameCardTitle}>{game.title}</h3>
-              </div>
-              <div className={styles.gameCardContent}>
-                <p className={styles.gameCardDescription}>{game.description}</p>
-              </div>
-            </div>
+            <Grid item xs={12} sm={6} md={4} key={game.id}>
+              <Card 
+                elevation={3} 
+                sx={{ height: '100%', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}
+              >
+                <CardActionArea 
+                  sx={{ height: '100%' }} 
+                  onClick={() => setActiveGame(game.id)}
+                >
+                  <CardContent>
+                    <Typography variant="h6" component="h3" gutterBottom>
+                      {game.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {game.description}
+                    </Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
           ))}
-        </div>
+        </Grid>
       </>
     );
   };
@@ -144,25 +186,73 @@ export const Main = () => {
   return (
     <>
       {route === 'signIn' && !isGuest ? (
-        <Authenticator>
-          {/* This slot provides a default Sign In form */}
-          <div style={{ marginTop: '20px', textAlign: 'center' }}>
-            <p>Or continue without an account</p>
-            <button onClick={handleGuestAccess}>Continue as Guest</button>
-          </div>
-        </Authenticator>
+        <Container maxWidth="sm">
+          <Paper 
+            elevation={3} 
+            sx={{ 
+              mt: 8, 
+              p: 4, 
+              display: 'flex', 
+              flexDirection: 'column',
+              borderRadius: 2
+            }}
+          >
+            <Typography variant="h4" align="center" gutterBottom>
+              Welcome
+            </Typography>
+            
+            <Authenticator>
+              {/* This slot provides the default Sign In form */}
+            </Authenticator>
+            
+            <Box sx={{ mt: 3, mb: 2 }}>
+              <Divider>
+                <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>
+                  OR
+                </Typography>
+              </Divider>
+            </Box>
+            
+            <Button
+              variant="outlined"
+              color="primary"
+              size="large"
+              startIcon={<PersonIcon />}
+              onClick={handleGuestAccess}
+              disabled={loading}
+              sx={{ 
+                py: 1.5,
+                borderRadius: 2,
+                textTransform: 'none'
+              }}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Continue as Guest'}
+            </Button>
+          </Paper>
+        </Container>
       ) : (
-        <main className={styles.mainContainer}>
-          <div className={styles.header}>
-            <h1 className={styles.title}>
-              {isGuest 
-                ? 'Welcome, Guest' 
-                : `Welcome, ${user?.signInDetails?.loginId || 'User'}`}
-            </h1>
-            <button className={styles.signOutButton} onClick={handleSignOut}>Sign out</button>
-          </div>
-          {renderContent()}
-        </main>
+        <>
+          <AppBar position="static" color="primary" elevation={0}>
+            <Toolbar>
+              <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                {isGuest 
+                  ? 'Game Center (Guest)' 
+                  : `Welcome, ${user?.signInDetails?.loginId || 'User'}`}
+              </Typography>
+              <Button 
+                color="inherit" 
+                endIcon={<LogoutIcon />}
+                onClick={handleSignOut}
+              >
+                Sign out
+              </Button>
+            </Toolbar>
+          </AppBar>
+          
+          <Container sx={{ py: 4 }}>
+            {renderContent()}
+          </Container>
+        </>
       )}
     </>
   )
