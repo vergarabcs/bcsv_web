@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { v4 } from 'uuid';
 import { CommonTimeSlot, DateTimeRange, Person, PersonName, PersonRangeRecord } from './constants';
-import { findIntersections } from './utils';
+import { findIntersections, getDateAtHourToday } from './utils';
+import { useSfData } from './useSfData';
 
 export const useScheduleFinder = () => {
-  const [personRangeMap, setPersonRangeMap] = useState<PersonRangeRecord>({});
+  const data = useSfData()
+  // const [personRangeMap, _setPersonRangeMap] = useState<PersonRangeRecord>(data.sfState ?? {});
+  
+  const setPersonRangeMap = (val: PersonRangeRecord) => {
+    // _setPersonRangeMap(val)
+    data.setSfState(val)
+  }
+  
+  const personRangeMap = data.sfState ?? {}
+  console.log(personRangeMap)
   const intersections: CommonTimeSlot[] = findIntersections(personRangeMap)
-
   const addPerson = (name: PersonName) => {
     if(personRangeMap[name]) return false;
     setPersonRangeMap({
@@ -23,8 +32,8 @@ export const useScheduleFinder = () => {
     if(!personRangeMap[name]) return false;
     const newRange: DateTimeRange = {
       id: v4(),
-      start: new Date(),
-      end: new Date()
+      start: getDateAtHourToday(1),
+      end: getDateAtHourToday(5)
     }
 
     setPersonRangeMap({
