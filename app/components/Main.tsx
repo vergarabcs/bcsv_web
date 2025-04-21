@@ -157,7 +157,7 @@ export const Main = () => {
         </Typography>
         <Grid container spacing={3}>
           {games.map((game) => (
-            <Grid item xs={12} sm={6} md={4} key={game.id}>
+            <Grid key={game.id}>
               <Card 
                 elevation={3} 
                 sx={{ height: '100%', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}
