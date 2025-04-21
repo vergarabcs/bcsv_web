@@ -44,3 +44,8 @@ export const findIntersections = (personRangeMap: PersonRangeRecord): CommonTime
 
   return intersections;
 };
+export const getDateAtHourToday = (hour: number): Date => {
+  const now = new Date();
+  now.setHours(hour);
+  return now;
+};
