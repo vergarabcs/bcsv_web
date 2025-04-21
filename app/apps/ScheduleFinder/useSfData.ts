@@ -6,7 +6,7 @@ import { PersonRangeRecord } from "./constants"
 import { guardType } from "./guardType"
 
 export const useSfData = () => {
-  const { sessionId: scheduleFinderId } = useContext(SessionContext)
+  const { sessionId } = useContext(SessionContext)
   const [sfState, setSfState] = useState<Schema['ScheduleFinder']['type'] | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -14,11 +14,11 @@ export const useSfData = () => {
   const client = generateClient<Schema>()
 
   useEffect(() => {
-    if (!scheduleFinderId) return
+    if (!sessionId) return
 
     // Set up the observeQuery subscription for real-time updates
     const subscription = client.models.ScheduleFinder.observeQuery({
-      filter: { id: { eq: scheduleFinderId } }
+      filter: { id: { eq: sessionId } }
     }).subscribe({
       next: ({ items, isSynced }) => {
         if (items.length > 0) {
@@ -39,15 +39,15 @@ export const useSfData = () => {
     return () => {
       subscription.unsubscribe()
     }
-  }, [scheduleFinderId])
+  }, [sessionId])
 
   // Function to update the ScheduleFinder data
   const updateSfState = async (personRangeMap: PersonRangeRecord) => {
-    if (!scheduleFinderId || !sfState) return
+    if (!sessionId || !sfState) return
 
     try {
       const updatedItem = await client.models.ScheduleFinder.update({
-        id: scheduleFinderId,
+        id: sessionId,
         personRangeMap: JSON.stringify(personRangeMap)
       })
       
@@ -61,6 +61,7 @@ export const useSfData = () => {
   }
 
   return {
+    sessionId,
     sfState: guardType(sfState?.personRangeMap),
     setSfState: updateSfState,
     isLoading,

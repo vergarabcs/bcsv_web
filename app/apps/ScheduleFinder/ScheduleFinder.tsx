@@ -41,7 +41,8 @@ const ScheduleFinder = () => {
     personRangeMap,
     removePerson,
     removeRange,
-    setDate
+    setDate,
+    sessionId
   } = useScheduleFinder();
 
   const [newPersonName, setNewPersonName] = useState("");
@@ -102,7 +103,9 @@ const ScheduleFinder = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box maxWidth="lg" sx={{ mt: 4, mb: 4, p: 1 }}>
-        
+        <Typography>
+          Session Id: {sessionId ?? ''}
+        </Typography>
         {/* Add Person Section */}
         <Paper sx={{ p: 1, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>

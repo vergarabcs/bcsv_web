@@ -91,6 +91,7 @@ export const useScheduleFinder = () => {
     addRange,
     setDate,
     removeRange,
-    intersections
+    intersections,
+    sessionId: data.sessionId
   };
 };
