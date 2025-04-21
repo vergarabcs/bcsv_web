@@ -31,8 +31,8 @@ export const useScheduleFinder = () => {
     if(!personRangeMap[name]) return false;
     const newRange: DateTimeRange = {
       id: v4(),
-      start: getDateAtHourToday(1),
-      end: getDateAtHourToday(5)
+      start: getDateAtHourToday(12),
+      end: getDateAtHourToday(23)
     }
 
     setPersonRangeMap({
