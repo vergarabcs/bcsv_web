@@ -94,6 +94,11 @@ const ScheduleFinder = () => {
     setDate(personName, id, boundName, date);
   };
 
+  const handleSelectPerson = (personName: string) => {
+    setSelectedPerson(personName)
+    setError(null)
+  }
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box maxWidth="lg" sx={{ mt: 4, mb: 4, p: 1 }}>
@@ -135,7 +140,7 @@ const ScheduleFinder = () => {
                 {Object.values(personRangeMap).map((person) => (
                   <ListItem 
                     key={person.name}
-                    onClick={() => setSelectedPerson(person.name)}
+                    onClick={() => handleSelectPerson(person.name)}
                     sx={{
                       bgcolor: selectedPerson === person.name ? 'action.selected' : 'transparent',
                       '&:hover': { bgcolor: 'action.hover' },
