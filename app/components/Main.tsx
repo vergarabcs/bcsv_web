@@ -2,7 +2,7 @@
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
 import { useState, Suspense } from "react"
 import { useAsyncEffectOnce } from "../hooks/useAsyncEffectOnce";
-import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react";
+import { useAuthenticator } from "@aws-amplify/ui-react";
 
 // Material UI imports
 import { 
@@ -16,7 +16,6 @@ import {
   AppBar,
   Toolbar
 } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LogoutIcon from '@mui/icons-material/Logout';
 import Card from '@mui/material/Card';
@@ -24,6 +23,7 @@ import CardContent from '@mui/material/CardContent';
 import CardActionArea from '@mui/material/CardActionArea';
 import Grid from '@mui/material/Grid';
 import { appList } from "./appList";
+import { AuthView } from "./AuthView";
 
 export const Main = () => {
   const [id, setId] = useState<string | undefined>('');
@@ -146,50 +146,10 @@ export const Main = () => {
   return (
     <>
       {route === 'signIn' && !isGuest ? (
-        <Container maxWidth="sm">
-          <Paper 
-            elevation={3} 
-            sx={{ 
-              mt: 8, 
-              p: 4, 
-              display: 'flex', 
-              flexDirection: 'column',
-              borderRadius: 2
-            }}
-          >
-            <Typography variant="h4" align="center" gutterBottom>
-              Welcome
-            </Typography>
-            
-            <Authenticator>
-              {/* This slot provides the default Sign In form */}
-            </Authenticator>
-            
-            <Box sx={{ mt: 3, mb: 2 }}>
-              <Divider>
-                <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>
-                  OR
-                </Typography>
-              </Divider>
-            </Box>
-            
-            <Button
-              variant="outlined"
-              color="primary"
-              size="large"
-              startIcon={<PersonIcon />}
-              onClick={handleGuestAccess}
-              disabled={loading}
-              sx={{ 
-                py: 1.5,
-                borderRadius: 2,
-                textTransform: 'none'
-              }}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Continue as Guest'}
-            </Button>
-          </Paper>
-        </Container>
+        <AuthView
+          loading={loading} 
+          handleGuestAccess={handleGuestAccess}
+        />
       ) : (
         <>
           <AppBar position="static" color="primary" elevation={0}>
