@@ -17,3 +17,11 @@ export enum TGameStatus{
   PLAYING,
   FINISHED
 }
+
+// Define game interfaces
+export interface Game {
+  id: string;
+  title: string;
+  description: string;
+  component: React.LazyExoticComponent<any>;
+}

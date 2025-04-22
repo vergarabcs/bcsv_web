@@ -1,11 +1,8 @@
 'use client'
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
-import { useEffect, useState, lazy, Suspense } from "react"
+import { useState, Suspense } from "react"
 import { useAsyncEffectOnce } from "../hooks/useAsyncEffectOnce";
-import { generateClient } from "aws-amplify/api";
-import { Schema } from "@/amplify/data/resource";
 import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react";
-import styles from '../main.module.css'
 
 // Material UI imports
 import { 
@@ -26,22 +23,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardActionArea from '@mui/material/CardActionArea';
 import Grid from '@mui/material/Grid';
-
-// Lazy load the games components
-const WordFactory = lazy(() => import("./WordFactory"));
-const ScheduleFinder = lazy(() => import("../apps/ScheduleFinder/ScheduleFinder"));
-// You can add more games here as you develop them
-// Example: const GameTwo = lazy(() => import("./GameTwo"));
-
-const client = generateClient<Schema>();
-
-// Define game interfaces
-interface Game {
-  id: string;
-  title: string;
-  description: string;
-  component: React.LazyExoticComponent<any>;
-}
+import { appList } from "./appList";
 
 export const Main = () => {
   const [id, setId] = useState<string | undefined>('');
@@ -51,28 +33,6 @@ export const Main = () => {
   const { user, route } = useAuthenticator((context) => [context.user, context.route]);
   
   // Define your games collection - easy to add more games in the future
-  const games: Game[] = [
-    {
-      id: 'word-factory',
-      title: 'Word Factory',
-      description: 'Create words from a set of letters in this fun word game!',
-      component: WordFactory
-    },
-    {
-      id: 'scheduleFinder',
-      title: 'Schedule Finder',
-      description: 'Find common schedule with your friends',
-      component: ScheduleFinder
-    }
-    // You can add more games here as you develop them
-    // Example:
-    // {
-    //   id: 'game-two',
-    //   title: 'Game Two',
-    //   description: 'Description for Game Two',
-    //   component: GameTwo
-    // },
-  ];
 
   // Get the current authentication state
   useAsyncEffectOnce(async () => {
@@ -120,7 +80,7 @@ export const Main = () => {
   // Render the active game or show the game selection grid
   const renderContent = () => {
     if (activeGame) {
-      const game = games.find(g => g.id === activeGame);
+      const game = appList.find(g => g.id === activeGame);
       
       if (game) {
         const GameComponent = game.component;
@@ -156,22 +116,22 @@ export const Main = () => {
           My Games Collection
         </Typography>
         <Grid container spacing={3}>
-          {games.map((game) => (
-            <Grid key={game.id}>
+          {appList.map((app) => (
+            <Grid key={app.id}>
               <Card 
                 elevation={3} 
                 sx={{ height: '100%', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}
               >
                 <CardActionArea 
                   sx={{ height: '100%' }} 
-                  onClick={() => setActiveGame(game.id)}
+                  onClick={() => setActiveGame(app.id)}
                 >
                   <CardContent>
                     <Typography variant="h6" component="h3" gutterBottom>
-                      {game.title}
+                      {app.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {game.description}
+                      {app.description}
                     </Typography>
                   </CardContent>
                 </CardActionArea>
