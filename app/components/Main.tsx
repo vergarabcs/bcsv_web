@@ -27,7 +27,7 @@ import { appList } from "./appList";
 
 export const Main = () => {
   const [id, setId] = useState<string | undefined>('');
-  const [activeGame, setActiveGame] = useState<string | null>(null);
+  const [activeApp, setActiveApp] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const { user, route } = useAuthenticator((context) => [context.user, context.route]);
@@ -79,30 +79,30 @@ export const Main = () => {
 
   // Render the active game or show the game selection grid
   const renderContent = () => {
-    if (activeGame) {
-      const game = appList.find(g => g.id === activeGame);
+    if (activeApp) {
+      const app = appList.find(g => g.id === activeApp);
       
-      if (game) {
-        const GameComponent = game.component;
+      if (app) {
+        const AppComponent = app.component;
         
         return (
           <Box sx={{ width: '100%' }}>
             <Button 
               variant="contained" 
               startIcon={<ArrowBackIcon />}
-              onClick={() => setActiveGame(null)}
+              onClick={() => setActiveApp(null)}
               sx={{ mb: 2 }}
             >
-              Back to Games
+              Back to Apps
             </Button>
-            <Typography variant="h4" gutterBottom>{game.title}</Typography>
+            <Typography variant="h4" gutterBottom>{app.title}</Typography>
             <Paper elevation={3} sx={{ p: 3 }}>
               <Suspense fallback={
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                   <CircularProgress />
                 </Box>
               }>
-                <GameComponent />
+                <AppComponent />
               </Suspense>
             </Paper>
           </Box>
@@ -113,7 +113,7 @@ export const Main = () => {
     return (
       <>
         <Typography variant="h4" component="h2" sx={{ mb: 3 }}>
-          My Games Collection
+          My Apps Collection
         </Typography>
         <Grid container spacing={3}>
           {appList.map((app) => (
@@ -124,7 +124,7 @@ export const Main = () => {
               >
                 <CardActionArea 
                   sx={{ height: '100%' }} 
-                  onClick={() => setActiveGame(app.id)}
+                  onClick={() => setActiveApp(app.id)}
                 >
                   <CardContent>
                     <Typography variant="h6" component="h3" gutterBottom>
@@ -196,7 +196,7 @@ export const Main = () => {
             <Toolbar>
               <Typography variant="h6" sx={{ flexGrow: 1 }}>
                 {isGuest 
-                  ? 'Game Center (Guest)' 
+                  ? 'App Center (Guest)' 
                   : `Welcome, ${user?.signInDetails?.loginId || 'User'}`}
               </Typography>
               <Button 
