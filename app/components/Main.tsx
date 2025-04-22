@@ -30,13 +30,14 @@ export const Main = () => {
   const [activeApp, setActiveApp] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const { user, route } = useAuthenticator((context) => [context.user, context.route]);
+  const { user, route, authStatus } = useAuthenticator((context) => [context.user, context.route, context.authStatus]);
   
   // Define your games collection - easy to add more games in the future
 
   // Get the current authentication state
   useAsyncEffectOnce(async () => {
     try {
+      setLoading(true);
       const session = await fetchAuthSession();
       setId(session.identityId);
       
@@ -44,7 +45,9 @@ export const Main = () => {
       if (session.identityId && !user) {
         setIsGuest(true);
       }
+      setLoading(false)
     } catch (error) {
+      setLoading(false)
       console.error('Error fetching auth session:', error);
     }
   });
@@ -143,9 +146,14 @@ export const Main = () => {
     );
   };
 
+  if(authStatus === 'configuring' || loading){
+    return <>
+      <CircularProgress />
+    </>
+  }
   return (
     <>
-      {route === 'signIn' && !isGuest ? (
+      {route !== 'authenticated' && !isGuest ? (
         <AuthView
           loading={loading} 
           handleGuestAccess={handleGuestAccess}

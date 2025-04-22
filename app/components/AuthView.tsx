@@ -1,3 +1,4 @@
+'use client'
 import { Authenticator } from "@aws-amplify/ui-react"
 import { Box, Button, CircularProgress, Container, Divider, Paper, Typography } from "@mui/material"
 import PersonIcon from '@mui/icons-material/Person';
