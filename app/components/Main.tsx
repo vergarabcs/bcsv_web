@@ -14,7 +14,7 @@ import {
   Toolbar
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { AppList } from "./AppList";
+import { AppRouter } from "./AppRouter";
 import { AuthView } from "./AuthView";
 
 export const Main = () => {
@@ -103,7 +103,7 @@ export const Main = () => {
           </AppBar>
           
           <Container sx={{ py: 4 }}>
-            <AppList />
+            <AppRouter />
           </Container>
         </>
       )}

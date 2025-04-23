@@ -22,7 +22,7 @@ const appList: AppMeta[] = [
   }
 ];
 
-export const AppList = () => {
+export const AppRouter = () => {
   const [activeApp, setActiveApp] = useState<string | null>(null);
 
   if (activeApp) {
