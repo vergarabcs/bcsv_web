@@ -19,7 +19,7 @@ export enum TGameStatus{
 }
 
 // Define game interfaces
-export interface Game {
+export interface AppMeta {
   id: string;
   title: string;
   description: string;
