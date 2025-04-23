@@ -15,6 +15,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { SessionContext } from '../constants';
+import { useAsyncEffectOnce } from '../hooks/useAsyncEffectOnce';
 
 // Local storage key for the session ID
 const SESSION_ID_KEY = 'app_session_id';
@@ -47,7 +48,7 @@ export function withSession<P extends WithSessionProps>(
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     // Check for existing session ID in localStorage on component mount
-    useEffect(() => {
+    useAsyncEffectOnce(async () => {
       const storedSessionId = localStorage.getItem(SESSION_ID_KEY);
       
       if (storedSessionId) {
@@ -64,7 +65,7 @@ export function withSession<P extends WithSessionProps>(
         setLoading(false);
         setIsDialogOpen(true);
       }
-    }, []);
+    });
 
     // Verify session exists in database
     const verifySession = async (id: string) => {
