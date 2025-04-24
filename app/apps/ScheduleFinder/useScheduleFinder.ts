@@ -85,13 +85,13 @@ export const useScheduleFinder = () => {
   }
   
   return {
-    personRangeMap,
     addPerson,
-    removePerson,
     addRange,
-    setDate,
-    removeRange,
     intersections,
-    sessionId: data.sessionId
+    personRangeMap,
+    removePerson,
+    removeRange,
+    sessionId: data.sessionId,
+    setDate,
   };
 };
