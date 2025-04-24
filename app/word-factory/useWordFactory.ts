@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { findValidWords, generateBoard, generateRotations, getHighlighted, getListScore, squarify } from "./utils";
+import { findValidWords, generateBoard, generateRotations, getHighlighted, getListScore, getTrie, squarify } from "./utils";
 import { BOARD_SIZE, DEFAULT_TIME, STORE_KEYS } from "../constants";
 import { TCardinalRotations, TGameStatus } from "../types";
 import { useTimer } from "../hooks/useTimer";
@@ -19,6 +19,9 @@ export const useWordFactory = () => {
   const [rotations, setRotations] = useState<TCardinalRotations[][]>([]);
 
   useEffect(() => {
+    // warm up the cache
+    getTrie()
+    
     if (userName) return;
     const newUsername = localStorage.getItem(STORE_KEYS.USERNAME) ??
     window.prompt('Who are you?') ??
@@ -32,9 +35,9 @@ export const useWordFactory = () => {
     return moves[userName] ?? []
   }
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     setGameStatus(TGameStatus.FINISHED)
-    const _vw = findValidWords(board)
+    const _vw = await findValidWords(board)
     setAllValidWords(_vw)
     setScore(
       Math.max(

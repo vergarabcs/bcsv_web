@@ -1,5 +1,5 @@
 import { expect, test, describe } from '@jest/globals';
-import { DISTRIBUTION, TRIE, findValidWords, generateBoard, getHighlighted, getListScore, squarify } from "./utils";
+import { DISTRIBUTION, findValidWords, generateBoard, getHighlighted, getListScore, getTrie, squarify } from "./utils";
 
 describe("utils", () => {
   const board = [
@@ -34,7 +34,8 @@ describe("utils", () => {
     })
   })
 
-  test('globalTrie should function as expected', () => {
+  test('globalTrie should function as expected', async () => {
+    const TRIE = await getTrie()
     expect(TRIE.hasPurePrefix('CAR')).toBeTruthy()
     expect(TRIE.has('CARD')).toBeTruthy()
   })
@@ -52,8 +53,8 @@ describe("utils", () => {
     )
   })
 
-  test('findValidWords', () => {
-    const validWords = findValidWords(board)
+  test('findValidWords', async () => {
+    const validWords = await findValidWords(board)
     validWords.forEach((word) => {
       expect(word.length).toBeGreaterThan(3)
       expect(getHighlighted(word, board).length).toBeGreaterThan(0)

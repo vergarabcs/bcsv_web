@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
-export const DEFAULT_TIME = 180;
+export const DEFAULT_TIME = 15;
 export const BOARD_SIZE = 5;
 export const MINIMUM_WORD_LENGTH = 4;
 export const L_RANGE = {
@@ -11,7 +11,8 @@ export const L_RANGE = {
 export const UNDERLINED_STRING = ['W', 'M']
 
 export const STORE_KEYS = {
-  USERNAME: 'username'
+  USERNAME: 'username',
+  DICTIONARY: 'wf_dictionary'
 }
 
 export const SessionContext = createContext<{sessionId?: string}>({});

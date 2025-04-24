@@ -1,6 +1,5 @@
 import { Trie } from 'trie-typed'
-import {dictionaryString} from './dictWithDef'
-import { MINIMUM_WORD_LENGTH } from '../constants'
+import { MINIMUM_WORD_LENGTH, STORE_KEYS } from '../constants'
 import { CARDINAL_ROTATIONS } from '../types'
 
 export const DISTRIBUTION = {
@@ -127,19 +126,80 @@ export const getHighlighted = (word: string, board: string[][]) => {
 }
 
 // TODO: serializable prefix trie for smaller size
-export const TRIE = new Trie(
-  dictionaryString.split('\n')
-  .map(
-    (line) => line.split('\t')[0].toUpperCase()
-  ).filter(
-    (key) => key.length >= MINIMUM_WORD_LENGTH
-  )
-)
 
-export const findValidWords = (board: string[][]): string[] => {
+let dictionaryString: string = ''
+let TRIE: Trie<string>
+
+// Get dictionary from CacheStorage
+const getDictionaryFromCache = async (): Promise<string | null> => {
+  try {
+    // Open or create the cache
+    const cache = await caches.open('word-factory-cache');
+    
+    // Try to get the dictionary from cache
+    const response = await cache.match(`/cache/${STORE_KEYS.DICTIONARY}`);
+    
+    if (response && response.ok) {
+      return response.text();
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error reading from CacheStorage:", error);
+    return null;
+  }
+};
+
+// Save dictionary to CacheStorage
+const saveDictionaryToCache = async (dictionary: string): Promise<void> => {
+  try {
+    // Open or create the cache
+    const cache = await caches.open('word-factory-cache');
+    
+    // Create a response object with the dictionary string
+    const response = new Response(dictionary);
+    
+    // Store the response in cache
+    await cache.put(`/cache/${STORE_KEYS.DICTIONARY}`, response);
+  } catch (error) {
+    console.error("Error writing to CacheStorage:", error);
+  }
+};
+
+export const getTrie = async () => {
+  if(!dictionaryString){
+    // Try to get dictionary from CacheStorage first
+    const cachedDictionary = await getDictionaryFromCache();
+    
+    if (cachedDictionary) {
+      dictionaryString = cachedDictionary;
+    } else {
+      // Fall back to import if not in CacheStorage
+      dictionaryString = (await import('./dictWithDef')).dictionaryString;
+      
+      // Cache the dictionary in CacheStorage for future use
+      await saveDictionaryToCache(dictionaryString);
+    }
+  }
+
+  if(!TRIE){
+    TRIE = new Trie(
+      dictionaryString.split('\n')
+      .map(
+        (line) => line.split('\t')[0].toUpperCase()
+      ).filter(
+        (key) => key.length >= MINIMUM_WORD_LENGTH
+      )
+    )
+  }
+  return TRIE
+}
+
+export const findValidWords = async (board: string[][]): Promise<string[]> => {
   const words: Set<string> = new Set()
   const indices: number[][] = []
   const isVisited: boolean[][] = board.map((row): boolean[] => row.map((_cell) => false))
+  const trie = await getTrie()
 
   const dfs = (currX: number, currY: number): boolean => {
     if (
@@ -152,12 +212,12 @@ export const findValidWords = (board: string[][]): string[] => {
     indices.push([currX, currY])
     const currWord = indices.map((gridIndex) => board[gridIndex[0]][gridIndex[1]]).join('')
 
-    if (!TRIE.hasPrefix(currWord)) {
+    if (!trie.hasPrefix(currWord)) {
       isVisited[currX][currY] = false
       indices.pop()
       return false
     }
-    if (TRIE.has(currWord)) words.add(currWord)
+    if (trie.has(currWord)) words.add(currWord)
 
 
     for (const offset of DIRECTION_OFFSET) {
