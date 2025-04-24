@@ -8,6 +8,7 @@ import { useRouter, usePathname } from 'next/navigation';
 // Lazy load the games components
 const WordFactory = lazy(() => import("../word-factory/WordFactory"));
 const ScheduleFinder = lazy(() => import("../apps/ScheduleFinder/ScheduleFinder"));
+const ServerSideValidationApp = lazy(() => import("../serverSideValidationApp/ServerSideValidationApp"));
 
 const appList: AppMeta[] = [
   {
@@ -21,6 +22,12 @@ const appList: AppMeta[] = [
     title: 'Schedule Finder',
     description: 'Find common schedule with your friends',
     component: ScheduleFinder
+  },
+  {
+    id: 'serverSideValidationApp',
+    title: 'Form Validation',
+    description: 'Demo of server-side validation with Next.js API routes',
+    component: ServerSideValidationApp
   }
 ];
 
