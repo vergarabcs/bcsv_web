@@ -1,5 +1,5 @@
 import { expect, test, describe } from '@jest/globals';
-import { DISTRIBUTION, TRIE, findValidWords, generateBoard, getHighlighted, getListScore, squarify } from "../utils";
+import { DISTRIBUTION, TRIE, findValidWords, generateBoard, getHighlighted, getListScore, squarify } from "./utils";
 
 describe("utils", () => {
   const board = [

@@ -2,7 +2,7 @@ import { CSSProperties } from "react";
 import { PropsBoard, TCardinalRotations, TGameStatus } from "../types";
 import styles from '@/app/page.module.css'
 import { L_RANGE, UNDERLINED_STRING } from "../constants";
-import { isValidHighlights } from "../hooks/utils";
+import { isValidHighlights } from "../word-factory/utils";
 
 const getCellStyle = (
   highlighted: number[][], 

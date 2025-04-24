@@ -1,5 +1,5 @@
 import { Trie } from 'trie-typed'
-import {dictionaryString} from '../files/dictWithDef'
+import {dictionaryString} from './dictWithDef'
 import { MINIMUM_WORD_LENGTH } from '../constants'
 import { CARDINAL_ROTATIONS } from '../types'
 

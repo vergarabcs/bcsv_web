@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 
 // Lazy load the games components
-const WordFactory = lazy(() => import("./WordFactory"));
+const WordFactory = lazy(() => import("../word-factory/WordFactory"));
 const ScheduleFinder = lazy(() => import("../apps/ScheduleFinder/ScheduleFinder"));
 
 const appList: AppMeta[] = [

@@ -1,10 +1,10 @@
 'use client'
-import { useWordFactory } from "../hooks/useWordFactory";
-import { getHighlighted } from "../hooks/utils";
+import { useWordFactory } from "./useWordFactory";
+import { getHighlighted } from "./utils";
 import { TGameStatus } from "../types";
-import { WordList } from "./WordList";
+import { WordList } from "../components/WordList";
 import styles from '../page.module.css';
-import { Board } from "./Board";
+import { Board } from "../components/Board";
 
 export default function WordFactory() {
   const {
