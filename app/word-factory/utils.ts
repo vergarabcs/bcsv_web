@@ -259,12 +259,20 @@ export const getListScore = (moves:string[], validWords:string[]) => {
 }
 
 export const isValidHighlights = (indices: number[][]) => {
+  // Check for uniqueness of indices
+  const seen = new Set<string>();
+  for (const [row, col] of indices) {
+    const key = `${row},${col}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+  }
+  
+  // Check for adjacency
   for (let i = 1; i < indices.length; i++) {
     const [prevRow, prevCol] = indices[i - 1];
     const [currRow, currCol] = indices[i];
-    if(Math.abs(prevRow - currRow) > 1) return false;
-    if(Math.abs(prevCol - currCol) > 1) return false;
-    if(prevRow === currRow && currCol === prevCol) return false;
+    if (Math.abs(prevRow - currRow) > 1) return false;
+    if (Math.abs(prevCol - currCol) > 1) return false;
   }
   return true;
 }
