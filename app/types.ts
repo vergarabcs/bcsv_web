@@ -8,8 +8,8 @@ export type PropsBoard = {
   setHighLighted: (indices: number[][]) => void,
   enterWord: (value: string) => void
 }
-// export const CARDINAL_ROTATIONS = [0, 90, 180, 270] as const
-export const CARDINAL_ROTATIONS = [0] as const
+export const CARDINAL_ROTATIONS = [0, 90, 180, 270] as const
+// export const CARDINAL_ROTATIONS = [0] as const
 export type TCardinalRotations = typeof CARDINAL_ROTATIONS[number]
 
 export enum TGameStatus{

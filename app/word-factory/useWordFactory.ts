@@ -7,8 +7,8 @@ import { useTimer } from "../hooks/useTimer";
 export const useWordFactory = () => {
   const [board, setBoard] = useState<string[][]>([]);
   const [players, setPlayers] = useState<string[]>([]);
+  const userName = 'Player' // temporary
   const [gameStatus, setGameStatus] = useState<TGameStatus>(TGameStatus.STANDBY);
-  const [userName, setUserName] = useState<string | undefined>();
   const [allValidWords, setAllValidWords] = useState<string[]>([]);
   const [score, setScore] = useState<number>(0);
 
@@ -21,14 +21,7 @@ export const useWordFactory = () => {
   useEffect(() => {
     // warm up the cache
     getTrie()
-    
-    if (userName) return;
-    const newUsername = localStorage.getItem(STORE_KEYS.USERNAME) ??
-    window.prompt('Who are you?') ??
-    ''
-    setUserName(newUsername)
-    localStorage.setItem(STORE_KEYS.USERNAME, newUsername)
-  }, [userName])
+  }, [])
 
   const getPlayerMoves = () => {
     if(!userName) return []

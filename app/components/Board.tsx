@@ -52,6 +52,8 @@ export const Board = ({
   };
 
   const clickCell = (iRow: number, iCol: number, char: string) => {
+    if(gameStatus !== TGameStatus.PLAYING) return;
+    
     const newIndices = [...highlighted, [iRow, iCol]];
     if(isValidHighlights(newIndices)){
       setInputTxt(inputTxt + char)
@@ -90,7 +92,7 @@ export const Board = ({
     <div className={styles.board}>
       <div className={styles.boardTitle}>{getBoardTitle()}</div>
       {board.map(renderRow)}
-      {inputTxt && (
+      {gameStatus === TGameStatus.PLAYING && (
         <div className={styles.gameControls}>
           <div style={{ display: 'flex', gap: '0.5rem', width: '100%', justifyContent: 'space-between' }}>
             <button 
