@@ -51,6 +51,8 @@ export default function WordFactory() {
         className={styles.wordInput}
         name='myInput'
         value={inputTxt}
+        autoComplete="off"
+        autoCorrect="off"
         placeholder='Enter words here'
         onChange={e => setInputAndHighlight(e.target.value.toUpperCase())}
         onKeyUp={e => {
