@@ -78,7 +78,6 @@ export const AppRouter = () => {
             </Button>
           </Link>
           <Typography variant="h4" gutterBottom>{app.title}</Typography>
-          <Paper elevation={3} sx={{ p: 3 }}>
             <Suspense fallback={
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                 <CircularProgress />
@@ -86,7 +85,6 @@ export const AppRouter = () => {
             }>
               <AppComponent />
             </Suspense>
-          </Paper>
         </Box>
       );
     }

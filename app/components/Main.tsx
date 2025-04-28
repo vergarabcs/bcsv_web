@@ -102,7 +102,7 @@ export const Main = () => {
             </Toolbar>
           </AppBar>
           
-          <Container sx={{ py: 4 }}>
+          <Container sx={{ py: 1 }}>
             <AppRouter />
           </Container>
         </>
