@@ -19,6 +19,7 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.0.2",
     "@mui/material": "^7.0.2",
+    "@mui/x-charts": "^8.2.0",
     "@mui/x-date-pickers": "^8.0.0",
     "@types/uuid": "^10.0.0",
     "aws-amplify": "latest",

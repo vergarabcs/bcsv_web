@@ -23,6 +23,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import withSession from "@/app/components/withSession";
+import { Intersections } from "./Intersections";
 
 const DeleteButton: React.FC<{ selectedPerson: string | null; onClick: () => void }> = ({ selectedPerson, onClick }) => {
   
@@ -246,49 +247,7 @@ const ScheduleFinder = () => {
           </Grid>
         </Grid>
         
-        {/* Intersections Section */}
-        <Paper sx={{ p: 1, mt: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Common Available Times
-          </Typography>
-          {intersections.length === 0 ? (
-            <Typography variant="body1" color="text.secondary">
-              No common time slots found. Add more people and availability.
-            </Typography>
-          ) : (
-            <>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
-                Showing time slots sorted by the number of available people
-              </Typography>
-              <List>
-                {intersections.map((intersection, index) => (
-                  <div key={index}>
-                    {index > 0 && <Divider />}
-                    <ListItem>
-                      <ListItemText
-                        primary={
-                          <Box>
-                            {new Date(intersection.dtRange.start).toLocaleString()} - {new Date(intersection.dtRange.end).toLocaleString()}
-                          </Box>
-                        }
-                        secondary={
-                          <Box sx={{ mt: 1 }}>
-                            <Box>
-                              Available People ({intersection.people.length}):
-                            </Box>
-                            <Box>
-                              {intersection.people.join(", ")}
-                            </Box>
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                  </div>
-                ))}
-              </List>
-            </>
-          )}
-        </Paper>
+        <Intersections intersections={intersections}/>
       </Box>
     </LocalizationProvider>
   );
