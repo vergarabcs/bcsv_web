@@ -247,7 +247,7 @@ const ScheduleFinder = () => {
           </Grid>
         </Grid>
         
-        <Intersections intersections={intersections}/>
+        <Intersections personRangeMap={personRangeMap} intersections={intersections}/>
       </Box>
     </LocalizationProvider>
   );
