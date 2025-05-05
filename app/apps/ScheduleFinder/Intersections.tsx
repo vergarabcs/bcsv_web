@@ -1,7 +1,7 @@
 import { Box, Divider, List, ListItem, ListItemText, Paper, Typography } from "@mui/material"
 import { FC } from "react"
 import { CommonTimeSlot, PersonRangeRecord } from "./constants"
-import { Gant } from "./Gant"
+import { Gantt } from "./Gantt"
 
 export const Intersections: FC<{
   intersections: CommonTimeSlot[],
@@ -25,7 +25,7 @@ export const Intersections: FC<{
             People's Availability Timeline
           </Typography>
           
-          <Gant personRangeMap={personRangeMap} />
+          <Gantt personRangeMap={personRangeMap} />
           
           <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
             Detailed List View
