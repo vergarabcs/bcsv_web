@@ -57,8 +57,6 @@ export const AppRouter = () => {
     router.push('/');
   };
 
-  console.log('billy', pathname)
-
   if (activeApp) {
     const app = appList.find(g => g.id === activeApp);
 

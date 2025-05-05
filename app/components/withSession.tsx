@@ -79,8 +79,7 @@ export function withSession<P extends WithSessionProps>(
         // Check if there's any ScheduleFinder with this session ID
         // This is just a placeholder - adjust based on your actual data model
         const result = await client.models.ScheduleFinder.get({ id });
-        
-        if (result) {
+        if (result.data) {
           // Session exists, store and use it
           localStorage.setItem(SESSION_ID_KEY, id);
           setSessionId(id);
