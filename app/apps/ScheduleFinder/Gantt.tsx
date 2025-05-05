@@ -100,12 +100,23 @@ export const Gantt: FC<{
   }
   
   return (
-    <Paper sx={{ p: 2, mt: 2, overflowX: "auto" }}>
+    <Paper sx={{ p: 2, mt: 2 }}>
       <Typography variant="h6" gutterBottom>Availability Chart</Typography>
       
-      <Box sx={{ display: "flex", position: "relative" }}>
-        {/* Left labels for people names */}
-        <Box sx={{ width: LABEL_WIDTH, flexShrink: 0, mr: 1 }}>
+      <Box sx={{ display: "flex", position: "relative", overflow: "hidden" }}>
+        {/* Left labels for people names - fixed position */}
+        <Box 
+          data-testid='person-names' 
+          sx={{ 
+            width: LABEL_WIDTH, 
+            flexShrink: 0, 
+            mr: 1,
+            position: "sticky",
+            left: 0,
+            zIndex: 2,
+            backgroundColor: theme.palette.background.paper
+          }}
+        >
           {/* Empty space for timeline */}
           <Box sx={{ height: ROW_HEIGHT }}></Box>
           
@@ -125,93 +136,98 @@ export const Gantt: FC<{
           ))}
         </Box>
         
-        {/* Timeline and slots */}
-        <Box sx={{ position: "relative", minWidth: chartWidth + CHART_PADDING * 2 }}>
-          {/* Timeline ticks */}
-          <Box sx={{ 
-            height: ROW_HEIGHT, 
-            display: "flex", 
-            borderBottom: `1px solid ${theme.palette.divider}` 
-          }}>
-            {timelineHours.map((hour, index) => (
+        {/* Timeline and slots - scrollable container */}
+        <Box sx={{ overflow: "auto", width: `calc(100% - ${LABEL_WIDTH}px)` }}>
+          <Box 
+            data-testid='timeline' 
+            sx={{ position: "relative", minWidth: chartWidth + CHART_PADDING * 2 }}
+          >
+            {/* Timeline ticks */}
+            <Box sx={{ 
+              height: ROW_HEIGHT, 
+              display: "flex", 
+              borderBottom: `1px solid ${theme.palette.divider}` 
+            }}>
+              {timelineHours.map((hour, index) => (
+                <Box 
+                  key={index}
+                  sx={{ 
+                    width: HOUR_WIDTH, 
+                    borderRight: index < timelineHours.length - 1 ? `1px solid ${theme.palette.divider}` : "none",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center"
+                  }}
+                >
+                  <Typography variant="caption">{format(hour, 'h a')}</Typography>
+                </Box>
+              ))}
+            </Box>
+            
+            {/* Person rows with available slots */}
+            {people.map((person, personIndex) => (
               <Box 
-                key={index}
+                key={person.name}
                 sx={{ 
-                  width: HOUR_WIDTH, 
-                  borderRight: index < timelineHours.length - 1 ? `1px solid ${theme.palette.divider}` : "none",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center"
+                  height: ROW_HEIGHT, 
+                  position: "relative", 
+                  borderBottom: `1px solid ${theme.palette.divider}`
                 }}
               >
-                <Typography variant="caption">{format(hour, 'h a')}</Typography>
+                {/* Background grid lines */}
+                <Box sx={{ display: "flex", height: "100%" }}>
+                  {timelineHours.map((_, index) => (
+                    <Box 
+                      key={index}
+                      sx={{ 
+                        width: HOUR_WIDTH, 
+                        height: "100%",
+                        borderRight: index < timelineHours.length - 1 ? `1px dashed ${theme.palette.divider}` : "none",
+                      }}
+                    />
+                  ))}
+                </Box>
+                
+                {/* Available time slots */}
+                {person.availableSlots.map((slot, slotIndex) => {
+                  const { left, width } = calculateSlotStyle(slot);
+                  return (
+                    <Box 
+                      key={slot.id || slotIndex}
+                      sx={{
+                        position: "absolute",
+                        top: 4,
+                        bottom: 4,
+                        left: left,
+                        width: width,
+                        backgroundColor: getPersonColor(personIndex),
+                        borderRadius: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        overflow: "hidden"
+                      }}
+                    >
+                      {width > 50 && (
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            fontSize: "0.7rem", 
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            px: 0.5
+                          }}
+                        >
+                          {format(slot.start, 'h:mm a')} - {format(slot.end, 'h:mm a')}
+                        </Typography>
+                      )}
+                    </Box>
+                  );
+                })}
               </Box>
             ))}
           </Box>
-          
-          {/* Person rows with available slots */}
-          {people.map((person, personIndex) => (
-            <Box 
-              key={person.name}
-              sx={{ 
-                height: ROW_HEIGHT, 
-                position: "relative", 
-                borderBottom: `1px solid ${theme.palette.divider}`
-              }}
-            >
-              {/* Background grid lines */}
-              <Box sx={{ display: "flex", height: "100%" }}>
-                {timelineHours.map((_, index) => (
-                  <Box 
-                    key={index}
-                    sx={{ 
-                      width: HOUR_WIDTH, 
-                      height: "100%",
-                      borderRight: index < timelineHours.length - 1 ? `1px dashed ${theme.palette.divider}` : "none",
-                    }}
-                  />
-                ))}
-              </Box>
-              
-              {/* Available time slots */}
-              {person.availableSlots.map((slot, slotIndex) => {
-                const { left, width } = calculateSlotStyle(slot);
-                return (
-                  <Box 
-                    key={slot.id || slotIndex}
-                    sx={{
-                      position: "absolute",
-                      top: 4,
-                      bottom: 4,
-                      left: left,
-                      width: width,
-                      backgroundColor: getPersonColor(personIndex),
-                      borderRadius: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      overflow: "hidden"
-                    }}
-                  >
-                    {width > 50 && (
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
-                          fontSize: "0.7rem", 
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          px: 0.5
-                        }}
-                      >
-                        {format(slot.start, 'h:mm a')} - {format(slot.end, 'h:mm a')}
-                      </Typography>
-                    )}
-                  </Box>
-                );
-              })}
-            </Box>
-          ))}
         </Box>
       </Box>
     </Paper>
