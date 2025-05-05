@@ -49,7 +49,10 @@ export function withSession<P extends WithSessionProps>(
 
     // Check for existing session ID in localStorage on component mount
     useAsyncEffectOnce(async () => {
-      const storedSessionId = localStorage.getItem(SESSION_ID_KEY);
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlSessionId = urlParams.get('sessionId');
+      const storedSessionId = urlSessionId ?? localStorage.getItem(SESSION_ID_KEY);
+
       
       if (storedSessionId) {
         // Validate the stored session ID
