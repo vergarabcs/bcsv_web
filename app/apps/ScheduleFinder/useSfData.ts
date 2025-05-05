@@ -1,5 +1,5 @@
 import { SessionContext } from "@/app/constants"
-import { useContext, useState, useEffect } from "react"
+import { useContext, useState, useEffect, useMemo } from "react"
 import { generateClient } from 'aws-amplify/api'
 import { type Schema } from '@/amplify/data/resource'
 import { PersonRangeRecord } from "./constants"
@@ -8,6 +8,7 @@ import { guardType } from "./guardType"
 export const useSfData = () => {
   const { sessionId } = useContext(SessionContext)
   const [sfState, setSfState] = useState<Schema['ScheduleFinder']['type'] | null>(null)
+  const _sfState = useMemo(() => guardType(sfState?.personRangeMap), [sfState?.personRangeMap])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   
@@ -62,7 +63,7 @@ export const useSfData = () => {
 
   return {
     sessionId,
-    sfState: guardType(sfState?.personRangeMap),
+    sfState: _sfState,
     setSfState: updateSfState,
     isLoading,
     error

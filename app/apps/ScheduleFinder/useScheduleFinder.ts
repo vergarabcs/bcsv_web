@@ -1,20 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { v4 } from 'uuid';
 import { CommonTimeSlot, DateTimeRange, Person, PersonName, PersonRangeRecord } from './constants';
 import { findIntersections, getDateAtHourToday } from './utils';
 import { useSfData } from './useSfData';
+import { useDebounce } from "@uidotdev/usehooks";
 
 export const useScheduleFinder = () => {
   const data = useSfData()
-  // const [personRangeMap, _setPersonRangeMap] = useState<PersonRangeRecord>(data.sfState ?? {});
+  const [personRangeMap, _setPersonRangeMap] = useState<PersonRangeRecord>(data.sfState ?? {});
+  const debouncedPersonRangeMap = useDebounce(personRangeMap, 500)
+
+  useEffect(() => {
+    data.sfState && _setPersonRangeMap(data.sfState)
+  }, [data.sfState])
   
   const setPersonRangeMap = (val: PersonRangeRecord) => {
-    // _setPersonRangeMap(val)
+    _setPersonRangeMap(val)
     data.setSfState(val)
   }
   
-  const personRangeMap = data.sfState ?? {}
-  const intersections: CommonTimeSlot[] = findIntersections(personRangeMap)
+  const intersections: CommonTimeSlot[] = useMemo(() => findIntersections(debouncedPersonRangeMap), [debouncedPersonRangeMap])
   const addPerson = (name: PersonName) => {
     if(personRangeMap[name]) return false;
     setPersonRangeMap({
