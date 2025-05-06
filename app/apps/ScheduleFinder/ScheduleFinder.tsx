@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useContext, useState } from "react";
 import { useScheduleFinder } from "./useScheduleFinder";
 import { 
   Box, 
@@ -24,6 +24,7 @@ import AddIcon from "@mui/icons-material/Add";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import withSession from "@/app/components/withSession";
 import { Intersections } from "./Intersections";
+import { SessionContext } from "@/app/constants";
 
 const DeleteButton: React.FC<{ selectedPerson: string | null; onClick: () => void }> = ({ selectedPerson, onClick }) => {
   
@@ -45,6 +46,7 @@ const ScheduleFinder = () => {
     setDate,
     sessionId
   } = useScheduleFinder();
+  const session = useContext(SessionContext);
 
   const [newPersonName, setNewPersonName] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
@@ -104,9 +106,14 @@ const ScheduleFinder = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box maxWidth="lg" sx={{ mt: 4, mb: 4, p: 1 }}>
-        <Typography>
-          Session Id: {sessionId ?? ''}
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '2rem', my: '1rem'}}>
+          <Typography variant="body1">
+            Session Id: {sessionId ?? ''}
+          </Typography>
+          <Button variant="outlined" size="small" onClick={session.leaveSession} color="error">
+            Leave Session 
+          </Button>
+        </Box>
         {/* Add Person Section */}
         <Paper sx={{ p: 1, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>

@@ -15,4 +15,7 @@ export const STORE_KEYS = {
   DICTIONARY: 'wf_dictionary'
 }
 
-export const SessionContext = createContext<{sessionId?: string}>({});
+export const SessionContext = createContext<{
+  sessionId?: string,
+  leaveSession?: () => void
+}>({});
