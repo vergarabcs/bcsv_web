@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
 import { v4 } from 'uuid';
-import { CommonTimeSlot, DateTimeRange, Person, PersonName, PersonRangeRecord } from './constants';
+import { CommonTimeSlot, DateTimeRange, PersonName, PersonRangeRecord } from './constants';
 import { findIntersections, getDateAtHourToday } from './utils';
 import { useSfData } from './useSfData';
 

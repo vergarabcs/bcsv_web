@@ -1,12 +1,10 @@
-import { FC, useContext, useState } from "react";
+import { useContext, useState } from "react";
 import { useScheduleFinder } from "./useScheduleFinder";
 import { 
   Box, 
   Button, 
   Card, 
   CardContent, 
-  Container, 
-  Divider, 
   Grid, 
   IconButton, 
   List, 
