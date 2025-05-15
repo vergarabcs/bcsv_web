@@ -20,7 +20,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import withSession from "@/app/components/withSession";
+import withSession from "@/app/lib/components/withSession";
 import { Intersections } from "./Intersections";
 import { SessionContext } from "@/app/constants";
 

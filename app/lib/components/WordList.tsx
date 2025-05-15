@@ -1,5 +1,5 @@
 import styles from '@/app/page.module.css'
-import { TGameStatus } from '../types'
+import { TGameStatus } from '../../types'
 
 export type WordListProps = {
   words: string[],

@@ -1,14 +1,14 @@
 import { lazy, Suspense, useState, useEffect } from "react";
-import { AppMeta } from "../types";
+import { AppMeta } from "../../types";
 import { Box, Button, Card, CardActionArea, CardContent, CircularProgress, Grid, Paper, Typography } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 
 // Lazy load the games components
-const WordFactory = lazy(() => import("../word-factory/WordFactory"));
-const ScheduleFinder = lazy(() => import("../scheduleFinder/ScheduleFinder"));
-const ServerSideValidationApp = lazy(() => import("../serverSideValidationApp/ServerSideValidationApp"));
+const WordFactory = lazy(() => import("@/app/word-factory/WordFactory"));
+const ScheduleFinder = lazy(() => import("@/app/scheduleFinder/ScheduleFinder"));
+const ServerSideValidationApp = lazy(() => import("@/app/serverSideValidationApp/ServerSideValidationApp"));
 
 const appList: AppMeta[] = [
   {

@@ -3,7 +3,7 @@ import styles from './page.module.css'
 import { Amplify } from 'aws-amplify';
 import config from '../amplify_outputs.json';
 import { Authenticator } from '@aws-amplify/ui-react';
-import { Main } from './components/Main';
+import { Main } from './lib/components/Main';
 
 Amplify.configure(config);
 export default function Home() {

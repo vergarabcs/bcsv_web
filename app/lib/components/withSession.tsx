@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { generateClient } from 'aws-amplify/api';
-import { Schema } from '../../amplify/data/resource';
+import { Schema } from '@/amplify/data/resource';
 import {
   Box,
   Button,
@@ -14,8 +14,8 @@ import {
   Paper,
   CircularProgress
 } from '@mui/material';
-import { SessionContext } from '../constants';
-import { useAsyncEffectOnce } from '../hooks/useAsyncEffectOnce';
+import { SessionContext } from '../../constants';
+import { useAsyncEffectOnce } from '../../hooks/useAsyncEffectOnce';
 
 // Local storage key for the session ID
 const SESSION_ID_KEY = 'app_session_id';

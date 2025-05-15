@@ -2,9 +2,9 @@
 import { useWordFactory } from "./useWordFactory";
 import { getHighlighted } from "./utils";
 import { TGameStatus } from "../types";
-import { WordList } from "../components/WordList";
+import { WordList } from "../lib/components/WordList";
 import styles from '../page.module.css';
-import { Board } from "../components/Board";
+import { Board } from "./Board";
 
 export default function WordFactory() {
   const {

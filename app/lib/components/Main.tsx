@@ -1,7 +1,7 @@
 'use client'
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
 import { useState } from "react"
-import { useAsyncEffectOnce } from "../hooks/useAsyncEffectOnce";
+import { useAsyncEffectOnce } from "../../hooks/useAsyncEffectOnce";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 
 // Material UI imports
@@ -14,8 +14,8 @@ import {
   Toolbar
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { AppRouter } from "./AppRouter";
 import { AuthView } from "./AuthView";
+import { AppRouter } from "./AppRouter";
 
 export const Main = () => {
   const [id, setId] = useState<string | undefined>('');
