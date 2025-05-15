@@ -93,15 +93,15 @@ export const Gantt: FC<{
   
   if (people.length === 0) {
     return (
-      <Paper sx={{ p: 2, mt: 2 }}>
+      <Paper sx={{ p: 2, mt: 2 }} role="region" aria-label="Availability Chart - No people added">
         <Typography variant="body1">No people added yet. Add people to see their availability.</Typography>
       </Paper>
     );
   }
   
   return (
-    <Paper sx={{ p: 2, mt: 2 }}>
-      <Typography variant="h6" gutterBottom>Availability Chart</Typography>
+    <Paper sx={{ p: 2, mt: 2 }} role="region" aria-label="Availability Chart">
+      <Typography variant="h6" gutterBottom id="availability-chart-heading">Availability Chart</Typography>
       
       <Box sx={{ display: "flex", position: "relative", overflow: "hidden" }}>
         {/* Left labels for people names - fixed position */}
@@ -116,9 +116,11 @@ export const Gantt: FC<{
             zIndex: 2,
             backgroundColor: theme.palette.background.paper
           }}
+          role="rowheader"
+          aria-label="People names"
         >
           {/* Empty space for timeline */}
-          <Box sx={{ height: ROW_HEIGHT }}></Box>
+          <Box sx={{ height: ROW_HEIGHT }} aria-hidden="true"></Box>
           
           {/* People names */}
           {people.map((person) => (
@@ -130,6 +132,9 @@ export const Gantt: FC<{
                 alignItems: "center",
                 fontWeight: "bold"
               }}
+              role="rowheader"
+              aria-label={`${person.name}'s availability`}
+              tabIndex={0}
             >
               <Typography noWrap variant="body2">{person.name}</Typography>
             </Box>
@@ -137,17 +142,21 @@ export const Gantt: FC<{
         </Box>
         
         {/* Timeline and slots - scrollable container */}
-        <Box sx={{ overflow: "auto", width: `calc(100% - ${LABEL_WIDTH}px)` }}>
+        <Box sx={{ overflow: "auto", width: `calc(100% - ${LABEL_WIDTH}px)` }} role="grid">
           <Box 
             data-testid='timeline' 
             sx={{ position: "relative", minWidth: chartWidth + CHART_PADDING * 2 }}
+            role="row"
           >
             {/* Timeline ticks */}
             <Box sx={{ 
               height: ROW_HEIGHT, 
               display: "flex", 
               borderBottom: `1px solid ${theme.palette.divider}` 
-            }}>
+            }}
+            role="row"
+            aria-label="Timeline hours"
+            >
               {timelineHours.map((hour, index) => (
                 <Box 
                   key={index}
@@ -158,6 +167,8 @@ export const Gantt: FC<{
                     justifyContent: "center",
                     alignItems: "center"
                   }}
+                  role="columnheader"
+                  aria-label={`Hour: ${format(hour, 'h a')}`}
                 >
                   <Typography variant="caption">{format(hour, 'h a')}</Typography>
                 </Box>
@@ -173,9 +184,11 @@ export const Gantt: FC<{
                   position: "relative", 
                   borderBottom: `1px solid ${theme.palette.divider}`
                 }}
+                role="row"
+                aria-label={`${person.name}'s time slots`}
               >
                 {/* Background grid lines */}
-                <Box sx={{ display: "flex", height: "100%" }}>
+                <Box sx={{ display: "flex", height: "100%" }} aria-hidden="true">
                   {timelineHours.map((_, index) => (
                     <Box 
                       key={index}
@@ -191,6 +204,8 @@ export const Gantt: FC<{
                 {/* Available time slots */}
                 {person.availableSlots.map((slot, slotIndex) => {
                   const { left, width } = calculateSlotStyle(slot);
+                  const timeRange = `${format(slot.start, 'h:mm a')} - ${format(slot.end, 'h:mm a')}`;
+                  
                   return (
                     <Box 
                       key={slot.id || slotIndex}
@@ -207,6 +222,9 @@ export const Gantt: FC<{
                         justifyContent: "center",
                         overflow: "hidden"
                       }}
+                      role="gridcell"
+                      aria-label={`${person.name} available from ${timeRange}`}
+                      tabIndex={0}
                     >
                       {width > 50 && (
                         <Typography 
@@ -219,7 +237,7 @@ export const Gantt: FC<{
                             px: 0.5
                           }}
                         >
-                          {format(slot.start, 'h:mm a')} - {format(slot.end, 'h:mm a')}
+                          {timeRange}
                         </Typography>
                       )}
                     </Box>

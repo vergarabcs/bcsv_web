@@ -15,8 +15,8 @@ export const Intersections: FC<{
   )
 
   return (
-    <Paper sx={{ p: 1, mt: 3 }}>
-      <Typography variant="h6" gutterBottom>
+    <Paper sx={{ p: 1, mt: 3 }} role="region" aria-labelledby="intersections-heading">
+      <Typography variant="h6" gutterBottom id="intersections-heading">
         Common Available Times
       </Typography>
       {intersections.length === 0 ? noIntersections : (
@@ -27,32 +27,42 @@ export const Intersections: FC<{
           
           <Gantt personRangeMap={personRangeMap} />
           
-          <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+          <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }} id="detailed-list-heading">
             Detailed List View
           </Typography>
-          <List>
-            {intersections.map((intersection, index) => (
-              <Box component="div" key={index}>
-                {index > 0 && <Divider />}
-                <ListItem>
-                  <ListItemText
-                    primary={
-                      new Date(intersection.dtRange.start).toLocaleString() + " - " + new Date(intersection.dtRange.end).toLocaleString()
-                    }
-                    secondary={
-                      <>
-                        <Typography component="span" variant="body2">
-                          Available People ({intersection.people.length}):
-                        </Typography>
-                        <Typography component="span" variant="body2" display="block">
-                          {intersection.people.join(", ")}
-                        </Typography>
-                      </>
-                    }
-                  />
-                </ListItem>
-              </Box>
-            ))}
+          <List aria-labelledby="detailed-list-heading">
+            {intersections.map((intersection, index) => {
+              const startDate = new Date(intersection.dtRange.start);
+              const endDate = new Date(intersection.dtRange.end);
+              const timeSlotId = `timeslot-${index}`;
+              const availablePeopleId = `available-people-${index}`;
+              
+              return (
+                <Box component="div" key={index}>
+                  {index > 0 && <Divider />}
+                  <ListItem role="listitem">
+                    <ListItemText
+                      primary={
+                        <span id={timeSlotId}>
+                          {startDate.toLocaleString()} - {endDate.toLocaleString()}
+                        </span>
+                      }
+                      secondary={
+                        <>
+                          <Typography component="span" variant="body2" id={availablePeopleId}>
+                            Available People ({intersection.people.length}):
+                          </Typography>
+                          <Typography component="span" variant="body2" display="block" aria-labelledby={availablePeopleId}>
+                            {intersection.people.join(", ")}
+                          </Typography>
+                        </>
+                      }
+                      aria-describedby={`${timeSlotId} ${availablePeopleId}`}
+                    />
+                  </ListItem>
+                </Box>
+              );
+            })}
           </List>
         </>
       )}
