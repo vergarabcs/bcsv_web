@@ -1,8 +1,8 @@
 import { describe, expect, jest, test } from "@jest/globals";
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook } from '@testing-library/react'
 import { useTimer } from "../useTimer";
-import { sleep } from "../../word-factory/utils";
 import { act } from "react-dom/test-utils";
+import { sleep } from "../../utils";
 
 describe("useTimer", () => {
   test('remaining time does not go negative', async () => {

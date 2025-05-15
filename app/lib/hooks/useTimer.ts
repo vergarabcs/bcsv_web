@@ -1,5 +1,5 @@
+import { DEFAULT_TIME } from "@/app/constants";
 import { useEffect, useRef, useState } from "react";
-import { DEFAULT_TIME } from "../constants";
 
 export const useTimer = (
   onFinish: () => void,

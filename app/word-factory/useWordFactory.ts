@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { findValidWords, generateBoard, generateRotations, getHighlighted, getListScore, getTrie, squarify } from "./utils";
 import { BOARD_SIZE, DEFAULT_TIME, STORE_KEYS } from "../constants";
 import { TCardinalRotations, TGameStatus } from "../types";
-import { useTimer } from "../hooks/useTimer";
+import { useTimer } from "../lib/hooks/useTimer";
 
 export const useWordFactory = () => {
   const [board, setBoard] = useState<string[][]>([]);
