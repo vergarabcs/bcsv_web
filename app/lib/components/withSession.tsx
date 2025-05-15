@@ -157,7 +157,7 @@ export function withSession<P extends WithSessionProps>(
           alignItems="center"
           minHeight="100vh"
         >
-          <CircularProgress />
+          <CircularProgress aria-label="Loading session" />
         </Box>
       );
     }
@@ -179,16 +179,18 @@ export function withSession<P extends WithSessionProps>(
           onClose={handleCloseDialog}
           maxWidth="sm"
           fullWidth
+          aria-labelledby="session-dialog-title"
+          aria-describedby="session-dialog-description"
         >
-          <DialogTitle>Session Required</DialogTitle>
+          <DialogTitle id="session-dialog-title">Session Required</DialogTitle>
           <DialogContent>
-            <Box my={2}>
+            <Box my={2} id="session-dialog-description">
               <Typography variant="body1" gutterBottom>
                 Please enter an existing 6-digit session ID or create a new session.
               </Typography>
               
               {error && (
-                <Typography variant="body2" color="error" gutterBottom>
+                <Typography variant="body2" color="error" gutterBottom role="alert">
                   {error}
                 </Typography>
               )}
@@ -205,9 +207,11 @@ export function withSession<P extends WithSessionProps>(
                   onChange={(e) => setInputSessionId(e.target.value)}
                   margin="normal"
                   placeholder="Enter 6-digit session ID"
-                  inputProps={{ maxLength: 6 }}
+                  inputProps={{ maxLength: 6, "aria-label": "Session ID" }}
                   helperText="Please enter a 6-digit session ID"
                   error={!!error && error.includes('valid')}
+                  aria-invalid={!!error && error.includes('valid')}
+                  aria-describedby="session-id-helper-text"
                 />
                 <Button 
                   variant="contained" 
@@ -216,8 +220,9 @@ export function withSession<P extends WithSessionProps>(
                   fullWidth
                   sx={{ mt: 1 }}
                   disabled={loading}
+                  aria-label="Join existing session"
                 >
-                  {loading ? <CircularProgress size={24} /> : 'Join Session'}
+                  {loading ? <CircularProgress size={24} aria-hidden="true" /> : 'Join Session'}
                 </Button>
               </Paper>
             </Box>
@@ -228,8 +233,9 @@ export function withSession<P extends WithSessionProps>(
               variant="contained" 
               color="secondary"
               disabled={loading}
+              aria-label="Create new session"
             >
-              {loading ? <CircularProgress size={24} /> : 'Create New Session'}
+              {loading ? <CircularProgress size={24} aria-hidden="true" /> : 'Create New Session'}
             </Button>
           </DialogActions>
         </Dialog>
