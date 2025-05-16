@@ -1,9 +1,9 @@
 import { SessionContext } from "@/app/constants"
 import { useContext, useState, useEffect, useMemo } from "react"
-import { generateClient } from 'aws-amplify/api'
 import { type Schema } from '@/amplify/data/resource'
 import { PersonRangeRecord } from "./constants"
 import { guardType } from "./guardType"
+import { ampClient } from "../lib/amplifyClient"
 
 // Storage keys for localStorage
 const LOCAL_STORAGE_KEY_PREFIX = 'sf_offline_data_'
@@ -17,7 +17,7 @@ export const useSfData = () => {
   const [error, setError] = useState<Error | null>(null)
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
   
-  const client = generateClient<Schema>()
+  
   
   // Handle online/offline status changes
   useEffect(() => {
@@ -98,7 +98,7 @@ export const useSfData = () => {
       const pendingUpdates = getPendingUpdates()
       
       if (pendingUpdates[sessionId]) {
-        await client.models.ScheduleFinder.update({
+        await ampClient.models.ScheduleFinder.update({
           id: sessionId,
           personRangeMap: JSON.stringify(pendingUpdates[sessionId])
         })
@@ -130,7 +130,7 @@ export const useSfData = () => {
 
     // If online, set up the observeQuery subscription
     if (!isOffline) {
-      const subscription = client.models.ScheduleFinder.observeQuery({
+      const subscription = ampClient.models.ScheduleFinder.observeQuery({
         filter: { id: { eq: sessionId } }
       }).subscribe({
         next: ({ items, isSynced }) => {
@@ -184,7 +184,7 @@ export const useSfData = () => {
         }
         
         // If online, update the remote state
-        const updatedItem = await client.models.ScheduleFinder.update({
+        const updatedItem = await ampClient.models.ScheduleFinder.update({
           id: sessionId,
           personRangeMap: JSON.stringify(personRangeMap)
         })
@@ -214,7 +214,7 @@ export const useSfData = () => {
         }
         
         // If online, create the item
-        const createdItem = await client.models.ScheduleFinder.create({
+        const createdItem = await ampClient.models.ScheduleFinder.create({
           id: sessionId,
           personRangeMap: JSON.stringify(personRangeMap)
         })

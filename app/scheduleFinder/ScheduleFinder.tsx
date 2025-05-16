@@ -23,6 +23,8 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import withSession from "@/app/lib/components/withSession";
 import { Intersections } from "./Intersections";
 import { SessionContext } from "@/app/constants";
+import { ampClient } from "../lib/amplifyClient";
+
 
 const DeleteButton: React.FC<{ selectedPerson: string | null; onClick: () => void }> = ({ selectedPerson, onClick }) => {
   
@@ -335,4 +337,4 @@ const ScheduleFinder = () => {
   );
 };
 
-export default withSession(ScheduleFinder);
+export default withSession(ScheduleFinder, ampClient.models.ScheduleFinder);

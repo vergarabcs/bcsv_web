@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { generateClient } from 'aws-amplify/api';
-import { Schema } from '@/amplify/data/resource';
+import React, { useState } from 'react';
+
+
 import {
   Box,
   Button,
@@ -20,9 +20,6 @@ import { useAsyncEffectOnce } from '../hooks/useAsyncEffectOnce';
 // Local storage key for the session ID
 const SESSION_ID_KEY = 'app_session_id';
 
-// Generate the Amplify API client
-const client = generateClient<Schema>();
-
 // Function to generate a random 6-digit number
 const generateSessionId = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -37,8 +34,16 @@ export interface WithSessionProps {
   sessionId: string;
 }
 
+// Interface for models that can be used with sessions
+interface SessionableModel {
+  get: (args: { id: string }) => Promise<{ data: any | null }>;
+  create: (args: { id: string }) => Promise<any>;
+  delete: (args: { id: string }) => Promise<any>;
+}
+
 export function withSession<P extends WithSessionProps>(
-  WrappedComponent: React.ComponentType<P>
+  WrappedComponent: React.ComponentType<P>,
+  model: SessionableModel
 ) {
   return function WithSession(props: Omit<P, keyof WithSessionProps>) {
     const [sessionId, setSessionId] = useState<string | null>(null);
@@ -78,7 +83,7 @@ export function withSession<P extends WithSessionProps>(
       try {
         // Check if there's any ScheduleFinder with this session ID
         // This is just a placeholder - adjust based on your actual data model
-        const result = await client.models.ScheduleFinder.get({ id });
+        const result = await model.get({ id });
         if (result.data) {
           // Session exists, store and use it
           localStorage.setItem(SESSION_ID_KEY, id);
@@ -106,9 +111,8 @@ export function withSession<P extends WithSessionProps>(
         const newSessionId = generateSessionId();
         
         // Create a new game state with the generated session ID
-        await client.models.ScheduleFinder.create({
+        await model.create({
           id: newSessionId,
-          personRangeMap: "{}"
         });
         
         // Store the new session ID
