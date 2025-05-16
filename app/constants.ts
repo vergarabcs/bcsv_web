@@ -17,5 +17,6 @@ export const STORE_KEYS = {
 
 export const SessionContext = createContext<{
   sessionId?: string,
-  leaveSession?: () => void
+  leaveSession?: () => void,
+  deleteSession?: () => void
 }>({});

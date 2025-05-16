@@ -152,6 +152,11 @@ export function withSession<P extends WithSessionProps>(
       setIsDialogOpen(true)
     }
 
+    const handleDeleteSession = () => {
+      model.delete({id: sessionId ?? ''})
+      handleLeaveSession()
+    }
+
     // If we're still loading or don't have a session ID and the dialog isn't open, show a loading spinner
     if (loading) {
       return (
@@ -169,7 +174,7 @@ export function withSession<P extends WithSessionProps>(
     // If we have a valid session ID, render the wrapped component with the session ID prop
     if (sessionId) {
       return (
-        <SessionContext.Provider value={{ sessionId, leaveSession: handleLeaveSession }}>
+        <SessionContext.Provider value={{ sessionId, leaveSession: handleLeaveSession, deleteSession: handleDeleteSession }}>
           <WrappedComponent {...(props as P)}/>
         </SessionContext.Provider>
       );

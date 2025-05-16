@@ -144,6 +144,15 @@ const ScheduleFinder = () => {
           >
             Leave Session 
           </Button>
+          <Button 
+            variant="outlined" 
+            size="small" 
+            onClick={session.deleteSession} 
+            color="error"
+            aria-label="Delete current session"
+          >
+            Delete Session 
+          </Button>
         </Box>
         {/* Add Person Section */}
         <Paper sx={{ p: 1, mb: 3 }} component="section" aria-labelledby="add-person-heading">
