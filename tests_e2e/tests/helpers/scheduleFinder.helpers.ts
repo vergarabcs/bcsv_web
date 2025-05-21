@@ -4,6 +4,11 @@
 
 import { Page, Locator } from '@playwright/test';
 
+
+// Re-export the test methods to maintain compatibility
+export { expect } from '@playwright/test';
+
+// Keep the existing helper classes and functions
 /**
  * Helper class for manipulating the MUI date-time picker in tests
  */
