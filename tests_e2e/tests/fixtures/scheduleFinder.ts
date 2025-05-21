@@ -35,7 +35,7 @@ export const test = base.extend<{ scheduleFinder: ScheduleFinderFixture }>({
       async addPerson(name: string) {
         await page.getByLabel('Person name').fill(name);
         await page.getByRole('button', { name: 'Add person to schedule' }).click();
-        await page.getByText(`${name} with 0 time slots`).waitFor();
+        await page.getByLabel(`${name} with 0 time slots`).waitFor();
         return name;
       },
       
