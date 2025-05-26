@@ -9,6 +9,7 @@ import { useRouter, usePathname } from 'next/navigation';
 const WordFactory = lazy(() => import("@/app/word-factory/WordFactory"));
 const ScheduleFinder = lazy(() => import("@/app/scheduleFinder/ScheduleFinder"));
 const ServerSideValidationApp = lazy(() => import("@/app/serverSideValidationApp/ServerSideValidationApp"));
+const BadmintonScore = lazy(() => import("@/app/badmintonScore/BadmintonScore"));
 
 const appList: AppMeta[] = [
   {
@@ -28,6 +29,12 @@ const appList: AppMeta[] = [
     title: 'Form Validation',
     description: 'Demo of server-side validation with Next.js API routes',
     component: ServerSideValidationApp
+  },
+  {
+    id: 'badmintonScore',
+    title: 'Badminton Score',
+    description: 'Track badminton scores with customizable game settings',
+    component: BadmintonScore
   }
 ];
 
