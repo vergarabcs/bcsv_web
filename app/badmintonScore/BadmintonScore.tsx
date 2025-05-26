@@ -19,6 +19,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { BadmintonScoreSettings } from './types';
 import styles from './BadmintonScore.module.css';
 import { CourtLayout } from './CourtLayout';
+import { T_TEAMS, TEAM_NAME } from './constants';
 
 const TEXT_SHADOW = `0px 0px 10px white`
                 
@@ -33,8 +34,8 @@ export default function BadmintonScore() {
   const [isLandscape, setIsLandscape] = useState(true);
   
   // Court layout state
-  const [servingTeam, setServingTeam] = useState<'Q1Q4' | 'Q2Q3'>('Q1Q4');
-  const [lastScorer, setLastScorer] = useState<'Q1Q4' | 'Q2Q3' | null>(null);
+  const [servingTeam, setServingTeam] = useState<T_TEAMS>(TEAM_NAME.TEAM2);
+  const [lastScorer, setLastScorer] = useState<T_TEAMS | null>(null);
 
   // Settings state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -74,7 +75,7 @@ export default function BadmintonScore() {
 
     // For doubles match, track which team scored
     if (settings.doubleMatch) {
-      const scoringTeam = player === 1 ? 'Q1Q4' : 'Q2Q3';
+      const scoringTeam = player === 1 ? TEAM_NAME.TEAM2 : TEAM_NAME.TEAM1;
       setLastScorer(scoringTeam);
       
       // If the scoring team is the serving team, they keep serving

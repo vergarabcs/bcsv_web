@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Box } from '@mui/material';
+import { T_TEAMS, TEAM_NAME } from './constants';
 
 // Define the court position types
 export type CourtPosition = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 export type PlayerColor = 'blue' | 'red' | 'yellow' | 'white';
 
 export interface CourtLayoutProps {
-  servingTeam: 'Q1Q4' | 'Q2Q3';
-  lastScorer: 'Q1Q4' | 'Q2Q3' | null;
+  servingTeam: T_TEAMS;
+  lastScorer: T_TEAMS | null;
 }
 
 // The initial position of each player color
@@ -36,12 +37,12 @@ export const CourtLayout: React.FC<CourtLayoutProps> = ({ servingTeam, lastScore
     // Create a new positions object to avoid mutation
     const newPositions = {...positions};
     
-    if (lastScorer === 'Q1Q4') {
+    if (lastScorer === TEAM_NAME.TEAM1) {
       // Swap positions for team Q1Q4
       const tempQ1 = newPositions.Q1;
       newPositions.Q1 = newPositions.Q4;
       newPositions.Q4 = tempQ1;
-    } else if (lastScorer === 'Q2Q3') {
+    } else if (lastScorer === TEAM_NAME.TEAM2) {
       // Swap positions for team Q2Q3
       const tempQ2 = newPositions.Q2;
       newPositions.Q2 = newPositions.Q3;
@@ -99,8 +100,7 @@ export const CourtLayout: React.FC<CourtLayoutProps> = ({ servingTeam, lastScore
             flex: 1, 
             backgroundColor: colorValues[positions.Q1],
             position: 'relative',
-            opacity: 0.8,
-            border: servingTeam === 'Q1Q4' && positions.Q1 === initialPositions.Q1 ? '3px solid #000' : 'none'
+            border: servingTeam === TEAM_NAME.TEAM1 && positions.Q1 === initialPositions.Q1 ? '3px solid #000' : 'none'
           }} />
           
           {/* Q2 */}
@@ -108,8 +108,7 @@ export const CourtLayout: React.FC<CourtLayoutProps> = ({ servingTeam, lastScore
             flex: 1, 
             backgroundColor: colorValues[positions.Q2],
             position: 'relative',
-            opacity: 0.8,
-            border: servingTeam === 'Q2Q3' && positions.Q2 === initialPositions.Q2 ? '3px solid #000' : 'none'
+            border: servingTeam === TEAM_NAME.TEAM2 && positions.Q2 === initialPositions.Q2 ? '3px solid #000' : 'none'
           }} />
         </Box>
         
@@ -127,8 +126,7 @@ export const CourtLayout: React.FC<CourtLayoutProps> = ({ servingTeam, lastScore
             flex: 1, 
             backgroundColor: colorValues[positions.Q4],
             position: 'relative',
-            opacity: 0.8,
-            border: servingTeam === 'Q1Q4' && positions.Q4 === initialPositions.Q4 ? '3px solid #000' : 'none'
+            border: servingTeam === TEAM_NAME.TEAM1 && positions.Q4 === initialPositions.Q4 ? '3px solid #000' : 'none'
           }} />
           
           {/* Q3 */}
@@ -136,8 +134,7 @@ export const CourtLayout: React.FC<CourtLayoutProps> = ({ servingTeam, lastScore
             flex: 1, 
             backgroundColor: colorValues[positions.Q3],
             position: 'relative',
-            opacity: 0.8,
-            border: servingTeam === 'Q2Q3' && positions.Q3 === initialPositions.Q3 ? '3px solid #000' : 'none'
+            border: servingTeam === TEAM_NAME.TEAM2 && positions.Q3 === initialPositions.Q3 ? '3px solid #000' : 'none'
           }} />
         </Box>
       </Box>
