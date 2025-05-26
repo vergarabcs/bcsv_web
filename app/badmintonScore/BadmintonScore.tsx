@@ -18,6 +18,7 @@ import {
 import SettingsIcon from '@mui/icons-material/Settings';
 import { BadmintonScoreSettings } from './types';
 import styles from './BadmintonScore.module.css';
+import { CourtLayout } from './CourtLayout';
 
 export default function BadmintonScore() {
   // Score state
@@ -28,6 +29,10 @@ export default function BadmintonScore() {
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState('');
   const [isLandscape, setIsLandscape] = useState(true);
+  
+  // Court layout state
+  const [servingTeam, setServingTeam] = useState<'Q1Q4' | 'Q2Q3'>('Q1Q4');
+  const [lastScorer, setLastScorer] = useState<'Q1Q4' | 'Q2Q3' | null>(null);
 
   // Settings state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -37,7 +42,9 @@ export default function BadmintonScore() {
     bestOf: 3,
     player1Name: 'Player 1',
     player2Name: 'Player 2',
-    swapSides: true
+    swapSides: true,
+    showCourtLayout: true,
+    doubleMatch: true
   });
   const [tempSettings, setTempSettings] = useState<BadmintonScoreSettings>({...settings});
 
@@ -62,6 +69,18 @@ export default function BadmintonScore() {
   // Handle scoring
   const handleScore = (player: 1 | 2) => {
     if (gameOver) return;
+
+    // For doubles match, track which team scored
+    if (settings.doubleMatch) {
+      const scoringTeam = player === 1 ? 'Q1Q4' : 'Q2Q3';
+      setLastScorer(scoringTeam);
+      
+      // If the scoring team is the serving team, they keep serving
+      // Otherwise, the service changes to the scoring team
+      if (scoringTeam !== servingTeam) {
+        setServingTeam(scoringTeam);
+      }
+    }
 
     if (player === 1) {
       setPlayer1Score(prev => {
@@ -148,36 +167,106 @@ export default function BadmintonScore() {
             </Button>
           </div>
 
-          {/* Score display */}
-          <div className={styles.scoreDisplay}>
+          {/* Court layout as background */}
+          {settings.doubleMatch && (
+            <CourtLayout 
+              servingTeam={servingTeam}
+              lastScorer={lastScorer}
+            />
+          )}
+
+          {/* Score display overlaid on court layout */}
+          <div className={styles.scoreDisplay} style={{ position: 'relative', zIndex: 1 }}>
             {/* Player 1 side */}
             <div 
               onClick={() => handleScore(1)}
               className={styles.playerArea1}
-              style={{ cursor: gameOver ? 'default' : 'pointer' }}
+              style={{ 
+                cursor: gameOver ? 'default' : 'pointer',
+                backgroundColor: 'transparent' 
+              }}
             >
-              <Typography variant="h4" className={styles.playerName}>{player1Name}</Typography>
+              <Typography 
+                variant="h4" 
+                className={styles.playerName} 
+                sx={{ 
+                  color: '#000', 
+                  textShadow: '0px 0px 8px rgba(255,255,255,0.8)',
+                  fontWeight: 'bold'
+                }}
+              >
+                {player1Name}
+              </Typography>
               <Typography 
                 variant="h1" 
                 className={styles.scoreNumber}
+                sx={{ 
+                  color: '#000', 
+                  textShadow: '0px 0px 10px rgba(255,255,255,0.9)',
+                  fontWeight: 'bold'
+                }}
               >
                 {player1Score}
               </Typography>
+              {settings.doubleMatch && (
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    mt: 2, 
+                    color: '#000', 
+                    textShadow: '0px 0px 5px rgba(255,255,255,0.7)',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Team: Q1/Q4
+                </Typography>
+              )}
             </div>
 
             {/* Player 2 side */}
             <div 
               onClick={() => handleScore(2)}
               className={styles.playerArea2}
-              style={{ cursor: gameOver ? 'default' : 'pointer' }}
+              style={{ 
+                cursor: gameOver ? 'default' : 'pointer',
+                backgroundColor: 'transparent' 
+              }}
             >
-              <Typography variant="h4" className={styles.playerName}>{player2Name}</Typography>
+              <Typography 
+                variant="h4" 
+                className={styles.playerName} 
+                sx={{ 
+                  color: '#000', 
+                  textShadow: '0px 0px 8px rgba(255,255,255,0.8)',
+                  fontWeight: 'bold'
+                }}
+              >
+                {player2Name}
+              </Typography>
               <Typography 
                 variant="h1" 
                 className={styles.scoreNumber}
+                sx={{ 
+                  color: '#000', 
+                  textShadow: '0px 0px 10px rgba(255,255,255,0.9)',
+                  fontWeight: 'bold'
+                }}
               >
                 {player2Score}
               </Typography>
+              {settings.doubleMatch && (
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    mt: 2, 
+                    color: '#000', 
+                    textShadow: '0px 0px 5px rgba(255,255,255,0.7)',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Team: Q2/Q3
+                </Typography>
+              )}
             </div>
           </div>
 
@@ -276,6 +365,32 @@ export default function BadmintonScore() {
                   <MenuItem value={5}>5 games</MenuItem>
                 </Select>
               </FormControl>
+            </Box>
+            
+            <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={tempSettings.doubleMatch}
+                    onChange={(e) => handleSettingsChange('doubleMatch', e.target.checked)}
+                  />
+                }
+                label="Doubles Match"
+                sx={{ mt: 2 }}
+              />
+            </Box>
+
+            <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={tempSettings.showCourtLayout}
+                    onChange={(e) => handleSettingsChange('showCourtLayout', e.target.checked)}
+                  />
+                }
+                label="Show Court Layout"
+                sx={{ mt: 2 }}
+              />
             </Box>
             
             <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>

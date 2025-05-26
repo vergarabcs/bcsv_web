@@ -5,4 +5,6 @@ export interface BadmintonScoreSettings {
   player1Name: string;
   player2Name: string;
   swapSides: boolean;
+  showCourtLayout: boolean;
+  doubleMatch: boolean;
 }
