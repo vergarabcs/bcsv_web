@@ -20,6 +20,8 @@ import { BadmintonScoreSettings } from './types';
 import styles from './BadmintonScore.module.css';
 import { CourtLayout } from './CourtLayout';
 
+const TEXT_SHADOW = `0px 0px 10px white`
+                
 export default function BadmintonScore() {
   // Score state
   const [player1Score, setPlayer1Score] = useState(0);
@@ -190,8 +192,8 @@ export default function BadmintonScore() {
                 variant="h4" 
                 className={styles.playerName} 
                 sx={{ 
-                  color: '#000', 
-                  textShadow: '0px 0px 8px rgba(255,255,255,0.8)',
+                  color: 'black', 
+                  textShadow: TEXT_SHADOW,
                   fontWeight: 'bold'
                 }}
               >
@@ -201,8 +203,10 @@ export default function BadmintonScore() {
                 variant="h1" 
                 className={styles.scoreNumber}
                 sx={{ 
-                  color: '#000', 
-                  textShadow: '0px 0px 10px rgba(255,255,255,0.9)',
+                  color: 'black',
+                  fontSize: "17rem",
+                  WebkitTextStroke: "4px white", 
+                  textShadow: TEXT_SHADOW,
                   fontWeight: 'bold'
                 }}
               >
@@ -213,8 +217,8 @@ export default function BadmintonScore() {
                   variant="body1" 
                   sx={{ 
                     mt: 2, 
-                    color: '#000', 
-                    textShadow: '0px 0px 5px rgba(255,255,255,0.7)',
+                    color: 'black', 
+                    textShadow: TEXT_SHADOW,
                     fontWeight: 'bold'
                   }}
                 >
@@ -236,8 +240,8 @@ export default function BadmintonScore() {
                 variant="h4" 
                 className={styles.playerName} 
                 sx={{ 
-                  color: '#000', 
-                  textShadow: '0px 0px 8px rgba(255,255,255,0.8)',
+                  color: 'black', 
+                  textShadow: TEXT_SHADOW,
                   fontWeight: 'bold'
                 }}
               >
@@ -247,8 +251,10 @@ export default function BadmintonScore() {
                 variant="h1" 
                 className={styles.scoreNumber}
                 sx={{ 
-                  color: '#000', 
-                  textShadow: '0px 0px 10px rgba(255,255,255,0.9)',
+                  color: 'black',
+                  WebkitTextStroke: "4px white", 
+                  textShadow: TEXT_SHADOW,
+                  fontSize: "17rem",
                   fontWeight: 'bold'
                 }}
               >
@@ -259,8 +265,8 @@ export default function BadmintonScore() {
                   variant="body1" 
                   sx={{ 
                     mt: 2, 
-                    color: '#000', 
-                    textShadow: '0px 0px 5px rgba(255,255,255,0.7)',
+                    color: 'black', 
+                    textShadow: TEXT_SHADOW,
                     fontWeight: 'bold'
                   }}
                 >
