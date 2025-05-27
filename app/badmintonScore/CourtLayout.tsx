@@ -4,8 +4,6 @@ import { T_TEAMS, TEAM_NAME } from './constants';
 import { CourtPosition, PlayerColor } from './types';
 
 export interface CourtLayoutProps {
-  servingTeam: T_TEAMS;
-  lastScorer: T_TEAMS | null;
   positions: Record<CourtPosition, PlayerColor>;
 }
 
@@ -17,7 +15,7 @@ const colorValues: Record<PlayerColor, string> = {
   white: '#FFFFFF'
 };
 
-export const CourtLayout: React.FC<CourtLayoutProps> = ({ servingTeam, lastScorer, positions }) => {
+export const CourtLayout: React.FC<CourtLayoutProps> = ({ positions }) => {
 
 
   return (

@@ -36,7 +36,6 @@ export default function BadmintonScore() {
   
   // Court layout state
   const [servingTeam, setServingTeam] = useState<T_TEAMS>(TEAM_NAME.TEAM2);
-  const [lastScorer, setLastScorer] = useState<T_TEAMS | null>(null);
 
   // Settings state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -70,11 +69,11 @@ export default function BadmintonScore() {
     };
   }, []);
 
-  const swapPosition = (player: 1 | 2) => {
+  const swapPosition = (scoringTeam: T_TEAMS) => {
     // Create a new positions object to avoid mutation
     const newPositions = {...positions};
 
-    if (player === 1) {
+    if (scoringTeam === TEAM_NAME.TEAM1) {
       // Swap positions for team Q1Q4
       const tempQ1 = newPositions.Q1;
       newPositions.Q1 = newPositions.Q4;
@@ -90,40 +89,38 @@ export default function BadmintonScore() {
   }
 
   // Handle scoring
-  const handleScore = (player: 1 | 2) => {
+  const handleScore = (scoringTeam: T_TEAMS) => {
     if (gameOver) return;
 
     // For doubles match, track which team scored
     if (settings.doubleMatch) {
-      const scoringTeam = player === 1 ? TEAM_NAME.TEAM2 : TEAM_NAME.TEAM1;
-      setLastScorer(scoringTeam);
       
       // If the scoring team is the serving team, they keep serving
       // Otherwise, the service changes to the scoring team
       if (scoringTeam !== servingTeam) {
         setServingTeam(scoringTeam);
       } else {
-        swapPosition(player)
+        swapPosition(scoringTeam)
       }
     }
 
-    if (player === 1) {
+    if (scoringTeam === TEAM_NAME.TEAM1) {
       setPlayer1Score(prev => {
         const newScore = prev + 1;
-        checkWinCondition(newScore, player2Score, player);
+        checkWinCondition(newScore, player2Score);
         return newScore;
       });
     } else {
       setPlayer2Score(prev => {
         const newScore = prev + 1;
-        checkWinCondition(player1Score, newScore, player);
+        checkWinCondition(player1Score, newScore);
         return newScore;
       });
     }
   };
 
   // Check if a player has won
-  const checkWinCondition = (score1: number, score2: number, playerScored: 1 | 2) => {
+  const checkWinCondition = (score1: number, score2: number) => {
     const { maxScore, pointsToWin } = settings;
     const leading = score1 > score2 ? 1 : 2;
     const leadingScore = leading === 1 ? score1 : score2;
@@ -194,9 +191,7 @@ export default function BadmintonScore() {
 
           {/* Court layout as background */}
           {settings.doubleMatch && (
-            <CourtLayout 
-              servingTeam={servingTeam}
-              lastScorer={lastScorer}
+            <CourtLayout
               positions={positions}
             />
           )}
@@ -205,7 +200,7 @@ export default function BadmintonScore() {
           <div className={styles.scoreDisplay} style={{ position: 'relative', zIndex: 1 }}>
             {/* Player 1 side */}
             <div 
-              onClick={() => handleScore(1)}
+              onClick={() => handleScore(TEAM_NAME.TEAM1)}
               className={styles.playerArea1}
               style={{ 
                 cursor: gameOver ? 'default' : 'pointer',
@@ -240,7 +235,7 @@ export default function BadmintonScore() {
 
             {/* Player 2 side */}
             <div 
-              onClick={() => handleScore(2)}
+              onClick={() => handleScore(TEAM_NAME.TEAM2)}
               className={styles.playerArea2}
               style={{ 
                 cursor: gameOver ? 'default' : 'pointer',
