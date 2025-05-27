@@ -1,23 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Box } from '@mui/material';
 import { T_TEAMS, TEAM_NAME } from './constants';
-
-// Define the court position types
-export type CourtPosition = 'Q1' | 'Q2' | 'Q3' | 'Q4';
-export type PlayerColor = 'blue' | 'red' | 'yellow' | 'white';
+import { CourtPosition, PlayerColor } from './types';
 
 export interface CourtLayoutProps {
   servingTeam: T_TEAMS;
   lastScorer: T_TEAMS | null;
+  positions: Record<CourtPosition, PlayerColor>;
 }
-
-// The initial position of each player color
-const initialPositions: Record<CourtPosition, PlayerColor> = {
-  Q1: 'white',
-  Q2: 'blue',
-  Q3: 'red',
-  Q4: 'yellow'
-};
 
 // Map colors to their CSS color values
 const colorValues: Record<PlayerColor, string> = {
@@ -27,30 +17,8 @@ const colorValues: Record<PlayerColor, string> = {
   white: '#FFFFFF'
 };
 
-export const CourtLayout: React.FC<CourtLayoutProps> = ({ servingTeam, lastScorer }) => {
-  const [positions, setPositions] = useState<Record<CourtPosition, PlayerColor>>(initialPositions);
+export const CourtLayout: React.FC<CourtLayoutProps> = ({ servingTeam, lastScorer, positions }) => {
 
-  // Handle position swaps when a team scores
-  useEffect(() => {
-    if (!lastScorer) return;
-    
-    // Create a new positions object to avoid mutation
-    const newPositions = {...positions};
-    
-    if (lastScorer === TEAM_NAME.TEAM1) {
-      // Swap positions for team Q1Q4
-      const tempQ1 = newPositions.Q1;
-      newPositions.Q1 = newPositions.Q4;
-      newPositions.Q4 = tempQ1;
-    } else if (lastScorer === TEAM_NAME.TEAM2) {
-      // Swap positions for team Q2Q3
-      const tempQ2 = newPositions.Q2;
-      newPositions.Q2 = newPositions.Q3;
-      newPositions.Q3 = tempQ2;
-    }
-    
-    setPositions(newPositions);
-  }, [lastScorer]);
 
   return (
     <Box sx={{ 
@@ -99,16 +67,14 @@ export const CourtLayout: React.FC<CourtLayoutProps> = ({ servingTeam, lastScore
           <Box sx={{ 
             flex: 1, 
             backgroundColor: colorValues[positions.Q1],
-            position: 'relative',
-            border: servingTeam === TEAM_NAME.TEAM1 && positions.Q1 === initialPositions.Q1 ? '3px solid #000' : 'none'
+            position: 'relative'
           }} />
           
           {/* Q2 */}
           <Box sx={{ 
             flex: 1, 
             backgroundColor: colorValues[positions.Q2],
-            position: 'relative',
-            border: servingTeam === TEAM_NAME.TEAM2 && positions.Q2 === initialPositions.Q2 ? '3px solid #000' : 'none'
+            position: 'relative'
           }} />
         </Box>
         
@@ -125,16 +91,14 @@ export const CourtLayout: React.FC<CourtLayoutProps> = ({ servingTeam, lastScore
           <Box sx={{ 
             flex: 1, 
             backgroundColor: colorValues[positions.Q4],
-            position: 'relative',
-            border: servingTeam === TEAM_NAME.TEAM1 && positions.Q4 === initialPositions.Q4 ? '3px solid #000' : 'none'
+            position: 'relative'
           }} />
           
           {/* Q3 */}
           <Box sx={{ 
             flex: 1, 
             backgroundColor: colorValues[positions.Q3],
-            position: 'relative',
-            border: servingTeam === TEAM_NAME.TEAM2 && positions.Q3 === initialPositions.Q3 ? '3px solid #000' : 'none'
+            position: 'relative'
           }} />
         </Box>
       </Box>

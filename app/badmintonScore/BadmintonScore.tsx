@@ -16,10 +16,10 @@ import {
   Box
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { BadmintonScoreSettings } from './types';
+import { BadmintonScoreSettings, CourtPosition, PlayerColor } from './types';
 import styles from './BadmintonScore.module.css';
 import { CourtLayout } from './CourtLayout';
-import { T_TEAMS, TEAM_NAME } from './constants';
+import { initialPositions, T_TEAMS, TEAM_NAME } from './constants';
 
 const TEXT_SHADOW = `0px 0px 10px white`
                 
@@ -32,6 +32,7 @@ export default function BadmintonScore() {
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState('');
   const [isLandscape, setIsLandscape] = useState(true);
+  const [positions, setPositions] = useState<Record<CourtPosition, PlayerColor>>(initialPositions);
   
   // Court layout state
   const [servingTeam, setServingTeam] = useState<T_TEAMS>(TEAM_NAME.TEAM2);
@@ -69,6 +70,25 @@ export default function BadmintonScore() {
     };
   }, []);
 
+  const swapPosition = (player: 1 | 2) => {
+    // Create a new positions object to avoid mutation
+    const newPositions = {...positions};
+
+    if (player === 1) {
+      // Swap positions for team Q1Q4
+      const tempQ1 = newPositions.Q1;
+      newPositions.Q1 = newPositions.Q4;
+      newPositions.Q4 = tempQ1;
+    } else {
+      // Swap positions for team Q2Q3
+      const tempQ2 = newPositions.Q2;
+      newPositions.Q2 = newPositions.Q3;
+      newPositions.Q3 = tempQ2;
+    }
+
+    setPositions(newPositions)
+  }
+
   // Handle scoring
   const handleScore = (player: 1 | 2) => {
     if (gameOver) return;
@@ -82,6 +102,8 @@ export default function BadmintonScore() {
       // Otherwise, the service changes to the scoring team
       if (scoringTeam !== servingTeam) {
         setServingTeam(scoringTeam);
+      } else {
+        swapPosition(player)
       }
     }
 
@@ -175,6 +197,7 @@ export default function BadmintonScore() {
             <CourtLayout 
               servingTeam={servingTeam}
               lastScorer={lastScorer}
+              positions={positions}
             />
           )}
 

@@ -8,3 +8,7 @@ export interface BadmintonScoreSettings {
   showCourtLayout: boolean;
   doubleMatch: boolean;
 }
+
+// Define the court position types
+export type CourtPosition = 'Q1' | 'Q2' | 'Q3' | 'Q4';
+export type PlayerColor = 'blue' | 'red' | 'yellow' | 'white';
