@@ -8,7 +8,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import styles from './BadmintonScore.module.css';
 import { CourtLayout } from './CourtLayout';
 import { TEAM_NAME } from './constants';
-import { useBadmintonScore } from './useBadmintonScore';
+import { useBadmintonStore } from './useBadmintonStore';
 import { SettingsDialog } from './SettingsDialog';
 
 const TEXT_SHADOW = `0px 0px 10px white`
@@ -35,7 +35,7 @@ export default function BadmintonScore() {
     handleCloseSettings,
     handleSaveSettings,
     handleSettingsChange
-  } = useBadmintonScore();
+  } = useBadmintonStore();
 
   // Check orientation on load and on resize
   useEffect(() => {
