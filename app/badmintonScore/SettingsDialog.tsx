@@ -13,27 +13,21 @@ import {
   Button,
   Box
 } from '@mui/material';
-import { BadmintonScoreSettings } from './types';
+import { useBadmintonStore } from './useBadmintonStore';
 
-interface SettingsDialogProps {
-  open: boolean;
-  settings: BadmintonScoreSettings;
-  onClose: () => void;
-  onSave: () => void;
-  onChange: (field: keyof BadmintonScoreSettings, value: any) => void;
-}
+export const SettingsDialog = () => {
+  const {
+    settingsOpen,
+    tempSettings,
+    handleSettingsChange,
+    handleCloseSettings,
+    handleSaveSettings
+  } = useBadmintonStore();
 
-export const SettingsDialog = ({
-  open,
-  settings,
-  onClose,
-  onSave,
-  onChange
-}: SettingsDialogProps) => {
   return (
     <Dialog 
-      open={open} 
-      onClose={onClose}
+      open={settingsOpen} 
+      onClose={handleCloseSettings}
       fullWidth
       maxWidth="sm"
     >
@@ -44,8 +38,8 @@ export const SettingsDialog = ({
             <TextField
               fullWidth
               label="Player 1 Name"
-              value={settings.player1Name}
-              onChange={(e) => onChange('player1Name', e.target.value)}
+              value={tempSettings.player1Name}
+              onChange={(e) => handleSettingsChange('player1Name', e.target.value)}
               margin="normal"
             />
           </Box>
@@ -53,8 +47,8 @@ export const SettingsDialog = ({
             <TextField
               fullWidth
               label="Player 2 Name"
-              value={settings.player2Name}
-              onChange={(e) => onChange('player2Name', e.target.value)}
+              value={tempSettings.player2Name}
+              onChange={(e) => handleSettingsChange('player2Name', e.target.value)}
               margin="normal"
             />
           </Box>
@@ -63,8 +57,8 @@ export const SettingsDialog = ({
             <FormControl fullWidth margin="normal">
               <InputLabel>Max Score</InputLabel>
               <Select
-                value={settings.maxScore}
-                onChange={(e) => onChange('maxScore', e.target.value)}
+                value={tempSettings.maxScore}
+                onChange={(e) => handleSettingsChange('maxScore', e.target.value)}
                 label="Max Score"
               >
                 <MenuItem value={11}>11 points</MenuItem>
@@ -79,8 +73,8 @@ export const SettingsDialog = ({
             <FormControl fullWidth margin="normal">
               <InputLabel>Points to Win</InputLabel>
               <Select
-                value={settings.pointsToWin}
-                onChange={(e) => onChange('pointsToWin', e.target.value)}
+                value={tempSettings.pointsToWin}
+                onChange={(e) => handleSettingsChange('pointsToWin', e.target.value)}
                 label="Points to Win"
               >
                 <MenuItem value={1}>1 point lead</MenuItem>
@@ -94,8 +88,8 @@ export const SettingsDialog = ({
             <FormControl fullWidth margin="normal">
               <InputLabel>Best of</InputLabel>
               <Select
-                value={settings.bestOf}
-                onChange={(e) => onChange('bestOf', e.target.value)}
+                value={tempSettings.bestOf}
+                onChange={(e) => handleSettingsChange('bestOf', e.target.value)}
                 label="Best of"
               >
                 <MenuItem value={1}>1 game</MenuItem>
@@ -109,8 +103,8 @@ export const SettingsDialog = ({
             <FormControlLabel
               control={
                 <Switch
-                  checked={settings.doubleMatch}
-                  onChange={(e) => onChange('doubleMatch', e.target.checked)}
+                  checked={tempSettings.doubleMatch}
+                  onChange={(e) => handleSettingsChange('doubleMatch', e.target.checked)}
                 />
               }
               label="Doubles Match"
@@ -122,8 +116,8 @@ export const SettingsDialog = ({
             <FormControlLabel
               control={
                 <Switch
-                  checked={settings.showCourtLayout}
-                  onChange={(e) => onChange('showCourtLayout', e.target.checked)}
+                  checked={tempSettings.showCourtLayout}
+                  onChange={(e) => handleSettingsChange('showCourtLayout', e.target.checked)}
                 />
               }
               label="Show Court Layout"
@@ -135,8 +129,8 @@ export const SettingsDialog = ({
             <FormControlLabel
               control={
                 <Switch
-                  checked={settings.swapSides}
-                  onChange={(e) => onChange('swapSides', e.target.checked)}
+                  checked={tempSettings.swapSides}
+                  onChange={(e) => handleSettingsChange('swapSides', e.target.checked)}
                 />
               }
               label="Swap sides after games"
@@ -146,8 +140,8 @@ export const SettingsDialog = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={onSave} variant="contained">Save</Button>
+        <Button onClick={handleCloseSettings}>Cancel</Button>
+        <Button onClick={handleSaveSettings} variant="contained">Save</Button>
       </DialogActions>
     </Dialog>
   );

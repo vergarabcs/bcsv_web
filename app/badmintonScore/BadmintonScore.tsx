@@ -17,7 +17,7 @@ export default function BadmintonScore() {
   // Keep isLandscape state in the component
   const [isLandscape, setIsLandscape] = useState(true);
 
-  // Get everything else from the custom hook
+  // Get everything else from the store
   const {
     player1Score,
     player2Score,
@@ -26,15 +26,10 @@ export default function BadmintonScore() {
     gameOver,
     winner,
     positions,
-    settingsOpen,
     settings,
-    tempSettings,
     handleScore,
     resetGame,
-    handleOpenSettings,
-    handleCloseSettings,
-    handleSaveSettings,
-    handleSettingsChange
+    handleOpenSettings
   } = useBadmintonStore();
 
   // Check orientation on load and on resize
@@ -181,14 +176,8 @@ export default function BadmintonScore() {
         </div>
       </div>
 
-      {/* Settings Dialog - Replaced with the new component */}
-      <SettingsDialog
-        open={settingsOpen}
-        settings={tempSettings}
-        onClose={handleCloseSettings}
-        onSave={handleSaveSettings}
-        onChange={handleSettingsChange}
-      />
+      {/* Settings Dialog - Now doesn't need props */}
+      <SettingsDialog />
     </>
   );
 }
