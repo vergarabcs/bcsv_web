@@ -213,19 +213,6 @@ export default function BadmintonScore() {
               >
                 {player1Score}
               </Typography>
-              {settings.doubleMatch && (
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    mt: 2, 
-                    color: 'black', 
-                    textShadow: TEXT_SHADOW,
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Team: Q1/Q4
-                </Typography>
-              )}
             </div>
 
             {/* Player 2 side */}
@@ -261,19 +248,6 @@ export default function BadmintonScore() {
               >
                 {player2Score}
               </Typography>
-              {settings.doubleMatch && (
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    mt: 2, 
-                    color: 'black', 
-                    textShadow: TEXT_SHADOW,
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Team: Q2/Q3
-                </Typography>
-              )}
             </div>
           </div>
 
