@@ -35,7 +35,7 @@ interface BadmintonScoreState {
   setSettingsOpen: (open: boolean) => void;
   setSettings: (settings: BadmintonScoreSettings) => void;
   setTempSettings: (settings: BadmintonScoreSettings) => void;
-  handleSettingsChange: (field: keyof BadmintonScoreSettings, value: any) => void;
+  handleSettingsChange: <K extends keyof BadmintonScoreSettings>(field: K, value: BadmintonScoreSettings[K]) => void;
   swapPosition: (scoringTeam: T_TEAMS) => void;
   handleScore: (scoringTeam: T_TEAMS) => void;
   checkWinCondition: (score1: number, score2: number) => void;
@@ -95,7 +95,7 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
         setTempSettings: (settings) => set((state) => { state.tempSettings = settings; }),
 
         // Complex actions
-        handleSettingsChange: (field, value) => set((state) => {
+        handleSettingsChange: <K extends keyof BadmintonScoreSettings>(field: K, value: BadmintonScoreSettings[K]) => set((state) => {
           state.tempSettings[field] = value;
         }),
 

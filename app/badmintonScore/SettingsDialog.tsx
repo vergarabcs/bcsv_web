@@ -58,7 +58,7 @@ export const SettingsDialog = () => {
               <InputLabel>Max Score</InputLabel>
               <Select
                 value={tempSettings.maxScore}
-                onChange={(e) => handleSettingsChange('maxScore', e.target.value)}
+                onChange={(e) => handleSettingsChange('maxScore', Number(e.target.value))}
                 label="Max Score"
               >
                 <MenuItem value={11}>11 points</MenuItem>
@@ -74,7 +74,7 @@ export const SettingsDialog = () => {
               <InputLabel>Points to Win</InputLabel>
               <Select
                 value={tempSettings.pointsToWin}
-                onChange={(e) => handleSettingsChange('pointsToWin', e.target.value)}
+                onChange={(e) => handleSettingsChange('pointsToWin', Number(e.target.value))}
                 label="Points to Win"
               >
                 <MenuItem value={1}>1 point lead</MenuItem>
@@ -89,7 +89,7 @@ export const SettingsDialog = () => {
               <InputLabel>Best of</InputLabel>
               <Select
                 value={tempSettings.bestOf}
-                onChange={(e) => handleSettingsChange('bestOf', e.target.value)}
+                onChange={(e) => handleSettingsChange('bestOf', Number(e.target.value))}
                 label="Best of"
               >
                 <MenuItem value={1}>1 game</MenuItem>
