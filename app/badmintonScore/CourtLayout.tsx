@@ -16,7 +16,8 @@ const colorValues: Record<PlayerColor, string> = {
 };
 
 export const CourtLayout: React.FC<CourtLayoutProps> = ({ positions }) => {
-
+  // Define a transition for the background color changes
+  const transition = 'background-color 1s ease-in-out';
 
   return (
     <Box sx={{ 
@@ -65,14 +66,16 @@ export const CourtLayout: React.FC<CourtLayoutProps> = ({ positions }) => {
           <Box sx={{ 
             flex: 1, 
             backgroundColor: colorValues[positions.Q1],
-            position: 'relative'
+            position: 'relative',
+            transition: transition
           }} />
           
           {/* Q2 */}
           <Box sx={{ 
             flex: 1, 
             backgroundColor: colorValues[positions.Q2],
-            position: 'relative'
+            position: 'relative',
+            transition: transition
           }} />
         </Box>
         
@@ -89,14 +92,16 @@ export const CourtLayout: React.FC<CourtLayoutProps> = ({ positions }) => {
           <Box sx={{ 
             flex: 1, 
             backgroundColor: colorValues[positions.Q4],
-            position: 'relative'
+            position: 'relative',
+            transition: transition
           }} />
           
           {/* Q3 */}
           <Box sx={{ 
             flex: 1, 
             backgroundColor: colorValues[positions.Q3],
-            position: 'relative'
+            position: 'relative',
+            transition: transition
           }} />
         </Box>
       </Box>
