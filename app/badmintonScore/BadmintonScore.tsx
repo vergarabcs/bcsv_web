@@ -10,6 +10,7 @@ import { CourtLayout } from './CourtLayout';
 import { TEAM_NAME } from './constants';
 import { useBadmintonStore } from './useBadmintonStore';
 import { SettingsDialog } from './SettingsDialog';
+import { PlayerScore } from './PlayerScore';
 
 const TEXT_SHADOW = `0px 0px 10px white`
                 
@@ -19,15 +20,10 @@ export default function BadmintonScore() {
 
   // Get everything else from the store
   const {
-    player1Score,
-    player2Score,
-    player1Name,
-    player2Name,
     gameOver,
     winner,
     positions,
     settings,
-    handleScore,
     resetGame,
     handleOpenSettings
   } = useBadmintonStore();
@@ -84,74 +80,16 @@ export default function BadmintonScore() {
           {/* Score display overlaid on court layout */}
           <div className={styles.scoreDisplay} style={{ position: 'relative', zIndex: 1 }}>
             {/* Player 1 side */}
-            <div 
-              onClick={() => handleScore(TEAM_NAME.TEAM1)}
+            <PlayerScore 
+              team={TEAM_NAME.TEAM1}
               className={styles.playerArea1}
-              style={{ 
-                cursor: gameOver ? 'default' : 'pointer',
-                backgroundColor: 'transparent' 
-              }}
-            >
-              <Typography 
-                variant="h4" 
-                className={styles.playerName} 
-                sx={{ 
-                  color: 'black', 
-                  textShadow: TEXT_SHADOW,
-                  fontWeight: 'bold'
-                }}
-              >
-                {player1Name}
-              </Typography>
-              <Typography 
-                variant="h1" 
-                className={styles.scoreNumber}
-                sx={{ 
-                  color: 'black',
-                  fontSize: "17rem",
-                  WebkitTextStroke: "4px white", 
-                  textShadow: TEXT_SHADOW,
-                  fontWeight: 'bold'
-                }}
-              >
-                {player1Score}
-              </Typography>
-            </div>
+            />
 
             {/* Player 2 side */}
-            <div 
-              onClick={() => handleScore(TEAM_NAME.TEAM2)}
+            <PlayerScore 
+              team={TEAM_NAME.TEAM2}
               className={styles.playerArea2}
-              style={{ 
-                cursor: gameOver ? 'default' : 'pointer',
-                backgroundColor: 'transparent' 
-              }}
-            >
-              <Typography 
-                variant="h4" 
-                className={styles.playerName} 
-                sx={{ 
-                  color: 'black', 
-                  textShadow: TEXT_SHADOW,
-                  fontWeight: 'bold'
-                }}
-              >
-                {player2Name}
-              </Typography>
-              <Typography 
-                variant="h1" 
-                className={styles.scoreNumber}
-                sx={{ 
-                  color: 'black',
-                  WebkitTextStroke: "4px white", 
-                  textShadow: TEXT_SHADOW,
-                  fontSize: "17rem",
-                  fontWeight: 'bold'
-                }}
-              >
-                {player2Score}
-              </Typography>
-            </div>
+            />
           </div>
 
           {/* Game over overlay */}

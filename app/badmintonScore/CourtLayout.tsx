@@ -59,7 +59,7 @@ export const CourtLayout: React.FC<CourtLayoutProps> = ({ positions }) => {
           zIndex: 1
         }} />
         
-        {/* Top row - Q1 and Q2 */}
+        {/* Left column - Q1 and Q2 */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'row' }}>
           {/* Q1 */}
           <Box sx={{ 
@@ -76,7 +76,7 @@ export const CourtLayout: React.FC<CourtLayoutProps> = ({ positions }) => {
           }} />
         </Box>
         
-        {/* Bottom row - Q3 and Q4 */}
+        {/* Right Column - Q3 and Q4 */}
         <Box sx={{ 
           position: 'absolute',
           bottom: 0,
