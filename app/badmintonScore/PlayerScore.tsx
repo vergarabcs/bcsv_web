@@ -34,16 +34,6 @@ export const PlayerScore = ({
       }}
     >
       <Typography 
-        variant="h4" 
-        className={styles.playerName} 
-        sx={{ 
-          color: fontColor, 
-          fontWeight: 'bold'
-        }}
-      >
-        {name}
-      </Typography>
-      <Typography 
         variant="h1" 
         className={styles.scoreNumber}
         sx={{ 
@@ -55,6 +45,16 @@ export const PlayerScore = ({
         }}
       >
         {score}
+      </Typography>
+      <Typography 
+        variant="h4" 
+        className={styles.playerName} 
+        sx={{ 
+          color: fontColor, 
+          fontWeight: 'bold'
+        }}
+      >
+        {name}
       </Typography>
     </div>
   );
