@@ -2,6 +2,7 @@ import { Typography } from '@mui/material';
 import styles from './BadmintonScore.module.css';
 import { T_TEAMS, TEAM_NAME } from './constants';
 import { useBadmintonStore } from './useBadmintonStore';
+import { useCallback } from 'react';
 
 interface PlayerScoreProps {
   team: T_TEAMS;
@@ -12,18 +13,12 @@ export const PlayerScore = ({
   team,
   className
 }: PlayerScoreProps) => {
-  const { 
-    player1Score, 
-    player2Score, 
-    player1Name, 
-    player2Name, 
-    gameOver, 
-    handleScore 
-  } = useBadmintonStore();
-
-  // Determine the current player's name and score based on the team
-  const name = team === TEAM_NAME.TEAM1 ? player1Name : player2Name;
-  const score = team === TEAM_NAME.TEAM1 ? player1Score : player2Score;
+  // Selectively subscribe only to the data needed for this specific team
+  const score = useBadmintonStore(state => team === TEAM_NAME.TEAM1 ? state.player1Score : state.player2Score);
+  const name = useBadmintonStore(state => team === TEAM_NAME.TEAM1 ? state.player1Name : state.player2Name);
+  const gameOver = useBadmintonStore(state => state.gameOver);
+  const handleScore = useBadmintonStore(state => state.handleScore);
+  
   const textStroke = `0px ${team === TEAM_NAME.TEAM1 ? 'white' : 'black'}`
   const fontColor = team === TEAM_NAME.TEAM1 ? 'black' : 'white'
   const textShadow = `0px 0px 5px ${team === TEAM_NAME.TEAM1 ? 'black' : 'white'}`
