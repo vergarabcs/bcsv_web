@@ -1,10 +1,13 @@
 import { 
   Button, 
   Typography, 
-  Box
+  Box,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import { useState, useEffect } from 'react';
 import SettingsIcon from '@mui/icons-material/Settings';
+import UndoIcon from '@mui/icons-material/Undo';
 import styles from './BadmintonScore.module.css';
 import { CourtLayout } from './CourtLayout';
 import { TEAM_NAME } from './constants';
@@ -25,8 +28,13 @@ export default function BadmintonScore() {
     positions,
     settings,
     resetGame,
-    handleOpenSettings
+    history,
+    handleOpenSettings,
+    undo,
+    canUndo
   } = useBadmintonStore();
+
+  console.log('history', history)
 
   // Check orientation on load and on resize
   useEffect(() => {
@@ -58,8 +66,8 @@ export default function BadmintonScore() {
       
       <div className={styles.forceLandscape}>
         <div className={styles.landscapeContainer}>
-          {/* Settings button */}
-          <div className={styles.settingsButton}>
+          <div className={styles.topControls}>
+            {/* Settings button */}
             <Button
               variant="contained"
               color="primary"
@@ -68,6 +76,21 @@ export default function BadmintonScore() {
             >
               Settings
             </Button>
+            
+            {/* Undo button */}
+            <Tooltip title="Undo last action">
+              <span>
+                <IconButton 
+                  color="primary" 
+                  onClick={undo} 
+                  disabled={!canUndo()}
+                  className={styles.undoButton}
+                  size="large"
+                >
+                  <UndoIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
           </div>
 
           {/* Court layout as background */}

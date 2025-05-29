@@ -4,6 +4,19 @@ import { devtools, persist } from 'zustand/middleware';
 import { BadmintonScoreSettings, CourtPosition, PlayerColor } from './types';
 import { initialPositions, T_TEAMS, TEAM_NAME } from './constants';
 
+// Type for the state that can be undone
+interface UndoableState {
+  player1Score: number;
+  player2Score: number;
+  player1Name: string;
+  player2Name: string;
+  gameOver: boolean;
+  winner: string;
+  positions: Record<CourtPosition, PlayerColor>;
+  servingTeam: T_TEAMS;
+  settings: BadmintonScoreSettings;
+}
+
 // Define the state interface
 interface BadmintonScoreState {
   // Score state
@@ -22,6 +35,10 @@ interface BadmintonScoreState {
   settingsOpen: boolean;
   settings: BadmintonScoreSettings;
   tempSettings: BadmintonScoreSettings;
+  
+  // Undo history
+  history: UndoableState[];
+  currentHistoryIndex: number;
   
   // Actions
   setPlayer1Score: (score: number) => void;
@@ -43,147 +60,272 @@ interface BadmintonScoreState {
   handleOpenSettings: () => void;
   handleCloseSettings: () => void;
   handleSaveSettings: () => void;
+  
+  // Undo functionality
+  saveHistory: () => void;
+  canUndo: () => boolean;
+  undo: () => void;
 }
 
 // Create the Zustand store
 export const useBadmintonStore = create<BadmintonScoreState>()(
   devtools(
     persist(
-      immer((set, get) => ({
-        // Initial state
-        player1Score: 0,
-        player2Score: 0,
-        player1Name: 'Player 1',
-        player2Name: 'Player 2',
-        gameOver: false,
-        winner: '',
-        positions: initialPositions,
-        servingTeam: TEAM_NAME.TEAM2,
-        settingsOpen: false,
-        settings: {
-          maxScore: 21,
-          pointsToWin: 2,
-          bestOf: 3,
-          player1Name: 'Player 1',
-          player2Name: 'Player 2',
-          swapSides: true,
-          showCourtLayout: true,
-          doubleMatch: true
-        },
-        tempSettings: {
-          maxScore: 21,
-          pointsToWin: 2,
-          bestOf: 3,
-          player1Name: 'Player 1',
-          player2Name: 'Player 2',
-          swapSides: true,
-          showCourtLayout: true,
-          doubleMatch: true
-        },
-
-        // Basic setters
-        setPlayer1Score: (score) => set((state) => { state.player1Score = score; }),
-        setPlayer2Score: (score) => set((state) => { state.player2Score = score; }),
-        setPlayer1Name: (name) => set((state) => { state.player1Name = name; }),
-        setPlayer2Name: (name) => set((state) => { state.player2Name = name; }),
-        setGameOver: (gameOver) => set((state) => { state.gameOver = gameOver; }),
-        setWinner: (winner) => set((state) => { state.winner = winner; }),
-        setPositions: (positions) => set((state) => { state.positions = positions; }),
-        setServingTeam: (team) => set((state) => { state.servingTeam = team; }),
-        setSettingsOpen: (open) => set((state) => { state.settingsOpen = open; }),
-        setSettings: (settings) => set((state) => { state.settings = settings; }),
-        setTempSettings: (settings) => set((state) => { state.tempSettings = settings; }),
-
-        // Complex actions
-        handleSettingsChange: <K extends keyof BadmintonScoreSettings>(field: K, value: BadmintonScoreSettings[K]) => set((state) => {
-          state.tempSettings[field] = value;
-        }),
-
-        swapPosition: (scoringTeam) => set((state) => {
-          if (scoringTeam === TEAM_NAME.TEAM1) {
-            // Swap positions for team Q1Q4
-            const tempQ1 = state.positions.Q1;
-            state.positions.Q1 = state.positions.Q4;
-            state.positions.Q4 = tempQ1;
-          } else {
-            // Swap positions for team Q2Q3
-            const tempQ2 = state.positions.Q2;
-            state.positions.Q2 = state.positions.Q3;
-            state.positions.Q3 = tempQ2;
-          }
-        }),
-
-        checkWinCondition: (score1, score2) => {
+      immer((set, get) => {
+        // Helper function to capture current undoable state
+        const captureUndoableState = (): UndoableState => {
           const state = get();
-          const { maxScore, pointsToWin } = state.settings;
-          const leading = score1 > score2 ? 1 : 2;
-          const leadingScore = leading === 1 ? score1 : score2;
-          const trailingScore = leading === 1 ? score2 : score1;
+          return {
+            player1Score: state.player1Score,
+            player2Score: state.player2Score,
+            player1Name: state.player1Name,
+            player2Name: state.player2Name,
+            gameOver: state.gameOver,
+            winner: state.winner,
+            positions: { ...state.positions },
+            servingTeam: state.servingTeam,
+            settings: { ...state.settings }
+          };
+        };
+
+        return {
+          // Initial state
+          player1Score: 0,
+          player2Score: 0,
+          player1Name: 'Player 1',
+          player2Name: 'Player 2',
+          gameOver: false,
+          winner: '',
+          positions: initialPositions,
+          servingTeam: TEAM_NAME.TEAM2,
+          settingsOpen: false,
+          settings: {
+            maxScore: 21,
+            pointsToWin: 2,
+            bestOf: 3,
+            player1Name: 'Player 1',
+            player2Name: 'Player 2',
+            swapSides: true,
+            showCourtLayout: true,
+            doubleMatch: true
+          },
+          tempSettings: {
+            maxScore: 21,
+            pointsToWin: 2,
+            bestOf: 3,
+            player1Name: 'Player 1',
+            player2Name: 'Player 2',
+            swapSides: true,
+            showCourtLayout: true,
+            doubleMatch: true
+          },
           
-          if ((leadingScore >= maxScore) && ((leadingScore - trailingScore) >= pointsToWin)) {
-            const winnerName = leading === 1 ? state.player1Name : state.player2Name;
-            set((state) => {
-              state.gameOver = true;
-              state.winner = winnerName;
-            });
-          }
-        },
+          // Undo history
+          history: [],
+          currentHistoryIndex: -1,
 
-        handleScore: (scoringTeam) => {
-          const state = get();
-          if (state.gameOver) return;
-
-          // For doubles match, track which team scored
-          if (state.settings.doubleMatch) {
-            // If the scoring team is the serving team, they keep serving
-            // Otherwise, the service changes to the scoring team
-            if (scoringTeam !== state.servingTeam) {
-              set((state) => { state.servingTeam = scoringTeam; });
-            } else {
-              state.swapPosition(scoringTeam);
+          // Undo functionality
+          saveHistory: () => set((state) => {
+            // Capture current state
+            const currentState = captureUndoableState();
+            
+            // If we're in the middle of the history, remove future states
+            if (state.currentHistoryIndex >= 0 && state.currentHistoryIndex < state.history.length - 1) {
+              state.history = state.history.slice(0, state.currentHistoryIndex + 1);
             }
-          }
+            
+            // Add current state to history
+            state.history.push(currentState);
+            state.currentHistoryIndex = state.history.length - 1;
+          }),
+          
+          canUndo: () => {
+            const state = get();
+            return state.currentHistoryIndex > 0;
+          },
+          
+          undo: () => set((state) => {
+            if (state.currentHistoryIndex > 0) {
+              state.currentHistoryIndex--;
+              const previousState = state.history[state.currentHistoryIndex];
+              
+              // Restore state from history (except settingsOpen and tempSettings)
+              state.player1Score = previousState.player1Score;
+              state.player2Score = previousState.player2Score;
+              state.player1Name = previousState.player1Name;
+              state.player2Name = previousState.player2Name;
+              state.gameOver = previousState.gameOver;
+              state.winner = previousState.winner;
+              state.positions = { ...previousState.positions };
+              state.servingTeam = previousState.servingTeam;
+              state.settings = { ...previousState.settings };
+            }
+          }),
 
-          if (scoringTeam === TEAM_NAME.TEAM1) {
-            const newScore = state.player1Score + 1;
-            set((state) => { state.player1Score = newScore; });
-            state.checkWinCondition(newScore, state.player2Score);
-          } else {
-            const newScore = state.player2Score + 1;
-            set((state) => { state.player2Score = newScore; });
-            state.checkWinCondition(state.player1Score, newScore);
-          }
-        },
+          // Basic setters - modified to save history
+          setGameOver: (gameOver) => set((state) => { 
+            state.saveHistory();
+            state.gameOver = gameOver; 
+          }),
+          setPlayer1Name: (name) => set((state) => { 
+            state.saveHistory();
+            state.player1Name = name; 
+          }),
+          setPlayer1Score: (score) => set((state) => { 
+            state.saveHistory();
+            state.player1Score = score; 
+          }),
+          setPlayer2Name: (name) => set((state) => { 
+            state.saveHistory();
+            state.player2Name = name; 
+          }),
+          setPlayer2Score: (score) => set((state) => { 
+            state.saveHistory();
+            state.player2Score = score; 
+          }),
+          setPositions: (positions) => set((state) => { 
+            state.saveHistory();
+            state.positions = positions; 
+          }),
+          setServingTeam: (team) => set((state) => { 
+            state.saveHistory();
+            state.servingTeam = team; 
+          }),
+          setSettings: (settings) => set((state) => { 
+            state.saveHistory();
+            state.settings = settings; 
+          }),
+          
+          // These are exempt from undo/redo
+          setSettingsOpen: (open) => set((state) => { state.settingsOpen = open; }),
+          setTempSettings: (settings) => set((state) => { state.tempSettings = settings; }),
+          
+          setWinner: (winner) => set((state) => { 
+            state.saveHistory();
+            state.winner = winner; 
+          }),
 
-        resetGame: () => set((state) => {
-          state.player1Score = 0;
-          state.player2Score = 0;
-          state.gameOver = false;
-          state.winner = '';
-        }),
+          // Complex actions
+          handleSettingsChange: <K extends keyof BadmintonScoreSettings>(field: K, value: BadmintonScoreSettings[K]) => set((state) => {
+            state.tempSettings[field] = value;
+          }),
 
-        handleOpenSettings: () => set((state) => {
-          state.tempSettings = { ...state.settings };
-          state.settingsOpen = true;
-        }),
+          swapPosition: (scoringTeam) => set((state) => {
+            state.saveHistory();
+            if (scoringTeam === TEAM_NAME.TEAM1) {
+              // Swap positions for team Q1Q4
+              const tempQ1 = state.positions.Q1;
+              state.positions.Q1 = state.positions.Q4;
+              state.positions.Q4 = tempQ1;
+            } else {
+              // Swap positions for team Q2Q3
+              const tempQ2 = state.positions.Q2;
+              state.positions.Q2 = state.positions.Q3;
+              state.positions.Q3 = tempQ2;
+            }
+          }),
 
-        handleCloseSettings: () => set((state) => {
-          state.settingsOpen = false;
-        }),
+          checkWinCondition: (score1, score2) => {
+            const state = get();
+            const { maxScore, pointsToWin } = state.settings;
+            const leading = score1 > score2 ? 1 : 2;
+            const leadingScore = leading === 1 ? score1 : score2;
+            const trailingScore = leading === 1 ? score2 : score1;
+            
+            if ((leadingScore >= maxScore) && ((leadingScore - trailingScore) >= pointsToWin)) {
+              const winnerName = leading === 1 ? state.player1Name : state.player2Name;
+              set((state) => {
+                state.gameOver = true;
+                state.winner = winnerName;
+              });
+            }
+          },
 
-        handleSaveSettings: () => {
-          const state = get();
-          set((state) => {
-            state.settings = { ...state.tempSettings };
-            state.player1Name = state.tempSettings.player1Name;
-            state.player2Name = state.tempSettings.player2Name;
+          handleScore: (scoringTeam) => {
+            const state = get();
+            if (state.gameOver) return;
+
+            // Save history before making changes
+            get().saveHistory();
+
+            set((state) => {
+              // For doubles match, track which team scored
+              if (state.settings.doubleMatch) {
+                // If the scoring team is the serving team, they keep serving
+                // Otherwise, the service changes to the scoring team
+                if (scoringTeam !== state.servingTeam) {
+                  state.servingTeam = scoringTeam;
+                } else {
+                  // We need to call swapPosition logic directly here instead of calling the function
+                  // to keep all state changes in a single transaction
+                  if (scoringTeam === TEAM_NAME.TEAM1) {
+                    // Swap positions for team Q1Q4
+                    const tempQ1 = state.positions.Q1;
+                    state.positions.Q1 = state.positions.Q4;
+                    state.positions.Q4 = tempQ1;
+                  } else {
+                    // Swap positions for team Q2Q3
+                    const tempQ2 = state.positions.Q2;
+                    state.positions.Q2 = state.positions.Q3;
+                    state.positions.Q3 = tempQ2;
+                  }
+                }
+              }
+
+              // Update the score in the same transaction
+              if (scoringTeam === TEAM_NAME.TEAM1) {
+                state.player1Score += 1;
+              } else {
+                state.player2Score += 1;
+              }
+            });
+
+            // Check win condition after state update
+            const updatedState = get();
+            const score1 = updatedState.player1Score;
+            const score2 = updatedState.player2Score;
+            updatedState.checkWinCondition(score1, score2);
+          },
+
+          resetGame: () => set((state) => {
+            state.saveHistory();
+            state.player1Score = 0;
+            state.player2Score = 0;
+            state.gameOver = false;
+            state.winner = '';
+          }),
+
+          handleOpenSettings: () => set((state) => {
+            state.tempSettings = { ...state.settings };
+            state.settingsOpen = true;
+          }),
+
+          handleCloseSettings: () => set((state) => {
             state.settingsOpen = false;
-          });
-          state.resetGame();
-        }
-      })),
+          }),
+
+          handleSaveSettings: () => {
+            const state = get();
+            state.saveHistory(); // Save history before applying settings
+            set((state) => {
+              state.settings = { ...state.tempSettings };
+              state.player1Name = state.tempSettings.player1Name;
+              state.player2Name = state.tempSettings.player2Name;
+              state.settingsOpen = false;
+            });
+            state.resetGame();
+          }
+        };
+      }),
       {
-        name: 'badminton-score-storage'
+        name: 'badminton-score-storage',
+        // Don't persist undo history
+        partialize: (state) => ({
+          ...state,
+          history: [],
+          currentHistoryIndex: -1,
+          settingsOpen: false, // Don't persist dialog state
+        }),
       }
     )
   )

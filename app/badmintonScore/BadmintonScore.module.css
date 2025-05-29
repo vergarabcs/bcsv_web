@@ -45,6 +45,29 @@
   margin-bottom: 1rem;
 }
 
+.topControls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.undoButton {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  margin-left: 8px;
+}
+
+.undoButton:hover {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.undoButton:disabled {
+  opacity: 0.4;
+}
+
 .settingsButton {
   position: absolute;
   top: 10px;
