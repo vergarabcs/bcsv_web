@@ -53,6 +53,7 @@ interface BadmintonScoreState {
   handleSettingsChange: <K extends keyof BadmintonScoreSettings>(field: K, value: BadmintonScoreSettings[K]) => void;
   handleScore: (scoringTeam: T_TEAMS) => void;
   resetGame: () => void;
+  resetStore: () => void;  // Added resetStore function
   handleOpenSettings: () => void;
   handleCloseSettings: () => void;
   handleSaveSettings: () => void;
@@ -62,6 +63,41 @@ interface BadmintonScoreState {
   canUndo: () => boolean;
   undo: () => void;
 }
+
+// Initial state definition
+const initialState = {
+  player1Score: 0,
+  player2Score: 0,
+  player1Name: 'Player 1',
+  player2Name: 'Player 2',
+  gameOver: false,
+  winner: '',
+  positions: initialPositions,
+  servingTeam: TEAM_NAME.TEAM2,
+  settingsOpen: false,
+  settings: {
+    maxScore: 21,
+    pointsToWin: 2,
+    bestOf: 3,
+    player1Name: 'Player 1',
+    player2Name: 'Player 2',
+    swapSides: true,
+    showCourtLayout: true,
+    doubleMatch: true
+  },
+  tempSettings: {
+    maxScore: 21,
+    pointsToWin: 2,
+    bestOf: 3,
+    player1Name: 'Player 1',
+    player2Name: 'Player 2',
+    swapSides: true,
+    showCourtLayout: true,
+    doubleMatch: true
+  },
+  history: [],
+  currentHistoryIndex: -1,
+};
 
 // Create the Zustand store
 export const useBadmintonStore = create<BadmintonScoreState>()(
@@ -86,40 +122,8 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
 
         return {
           // Initial state
-          player1Score: 0,
-          player2Score: 0,
-          player1Name: 'Player 1',
-          player2Name: 'Player 2',
-          gameOver: false,
-          winner: '',
-          positions: initialPositions,
-          servingTeam: TEAM_NAME.TEAM2,
-          settingsOpen: false,
-          settings: {
-            maxScore: 21,
-            pointsToWin: 2,
-            bestOf: 3,
-            player1Name: 'Player 1',
-            player2Name: 'Player 2',
-            swapSides: true,
-            showCourtLayout: true,
-            doubleMatch: true
-          },
-          tempSettings: {
-            maxScore: 21,
-            pointsToWin: 2,
-            bestOf: 3,
-            player1Name: 'Player 1',
-            player2Name: 'Player 2',
-            swapSides: true,
-            showCourtLayout: true,
-            doubleMatch: true
-          },
+          ...initialState,
           
-          // Undo history
-          history: [],
-          currentHistoryIndex: -1,
-
           // Undo functionality
           saveHistory: () => set((state) => {
             // Capture current state
@@ -262,11 +266,14 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
             state.winner = '';
           }),
 
+          // Complete reset function that resets the entire store to initial values
+          resetStore: () => set(initialState),
+
           handleOpenSettings: () => set((state) => {
             state.tempSettings = { ...state.settings };
             state.settingsOpen = true;
           }),
-
+          
           handleCloseSettings: () => set((state) => {
             state.settingsOpen = false;
           }),
