@@ -191,6 +191,11 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
           // These are exempt from undo/redo
           setSettingsOpen: (open) => set((state) => { state.settingsOpen = open; }),
           
+          setServingTeam: (team) => set((state) => { 
+            state.servingTeam = team;
+            state.saveHistory(); 
+          }),
+          
           setWinner: (winner) => set((state) => { 
             state.winner = winner;
             state.saveHistory(); 
