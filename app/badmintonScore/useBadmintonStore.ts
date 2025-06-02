@@ -3,6 +3,7 @@ import { immer } from 'zustand/middleware/immer';
 import { devtools, persist } from 'zustand/middleware';
 import { BadmintonScoreSettings, CourtPosition, PlayerColor } from './types';
 import { initialPositions, T_TEAMS, TEAM_NAME } from './constants';
+import { State } from 'aws-cdk-lib/aws-stepfunctions';
 
 // Type for the state that can be undone
 interface UndoableState {
@@ -41,14 +42,6 @@ interface BadmintonScoreState {
   currentHistoryIndex: number;
   
   // Actions
-  setPlayer1Score: (score: number) => void;
-  setPlayer2Score: (score: number) => void;
-  setPlayer1Name: (name: string) => void;
-  setPlayer2Name: (name: string) => void;
-  setGameOver: (gameOver: boolean) => void;
-  setWinner: (winner: string) => void;
-  setServingTeam: (team: T_TEAMS) => void;
-  setSettingsOpen: (open: boolean) => void;
   setSettings: (settings: BadmintonScoreSettings) => void;
   handleSettingsChange: <K extends keyof BadmintonScoreSettings>(field: K, value: BadmintonScoreSettings[K]) => void;
   handleScore: (scoringTeam: T_TEAMS) => void;
@@ -162,45 +155,13 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
             }
           }),
 
-          // Basic setters - modified to save history
-          setGameOver: (gameOver) => set((state) => { 
-            state.gameOver = gameOver;
-            state.saveHistory();
-          }),
-          setPlayer1Name: (name) => set((state) => { 
-            state.player1Name = name; 
-            state.saveHistory();
-          }),
-          setPlayer1Score: (score) => set((state) => { 
-            state.player1Score = score;
-            state.saveHistory(); 
-          }),
-          setPlayer2Name: (name) => set((state) => { 
-            state.player2Name = name;
-            state.saveHistory(); 
-          }),
-          setPlayer2Score: (score) => set((state) => { 
-            state.player2Score = score;
-            state.saveHistory(); 
-          }),
-          setSettings: (settings) => set((state) => { 
-            state.settings = settings;
-            state.saveHistory(); 
-          }),
+          setSettings: (settings) => {
+            set((state) => { 
+              state.settings = settings;
+            })
+            get().saveHistory(); 
+          },
           
-          // These are exempt from undo/redo
-          setSettingsOpen: (open) => set((state) => { state.settingsOpen = open; }),
-          
-          setServingTeam: (team) => set((state) => { 
-            state.servingTeam = team;
-            state.saveHistory(); 
-          }),
-          
-          setWinner: (winner) => set((state) => { 
-            state.winner = winner;
-            state.saveHistory(); 
-          }),
-
           // Complex actions
           handleSettingsChange: <K extends keyof BadmintonScoreSettings>(field: K, value: BadmintonScoreSettings[K]) => set((state) => {
             state.tempSettings[field] = value;

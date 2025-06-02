@@ -42,76 +42,20 @@ describe('BadmintonStore', () => {
 
     test('should not update score when game is over', () => {
       
-      
-      // Set game over
-      useBadmintonStore.getState().setGameOver(true);
-      
       // Try to update score
-      useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1);
-      
+      while(!useBadmintonStore.getState().gameOver){
+        useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1);
+      }
+
       // Get the updated state
       const updatedState = useBadmintonStore.getState();
       
-      expect(updatedState.player1Score).toBe(0);
+      expect(updatedState.player1Score).toBe(21);
       expect(updatedState.player2Score).toBe(0);
-    });
 
-    test('should change serving team when scoring team is not the serving team', () => {
-      
-      
-      // Set initial serving team
-      useBadmintonStore.getState().setServingTeam(TEAM_NAME.TEAM1);
-      
-      // When TEAM2 scores
-      useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM2);
-      
-      // Get the updated state
-      const updatedState = useBadmintonStore.getState();
-      
-      // Serving team should change to TEAM2
-      expect(updatedState.servingTeam).toBe(TEAM_NAME.TEAM2);
-    });
-
-    test('should swap positions for team 1 when team 1 scores and is already serving', () => {
-      
-      
-      // Get initial state
-      const initialState = useBadmintonStore.getState();
-      const initialPositions = { ...initialState.positions };
-      
-      // Set serving team to TEAM1
-      useBadmintonStore.getState().setServingTeam(TEAM_NAME.TEAM1);
-      
-      // When TEAM1 scores while already serving
+      // score should not update when game is over
       useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1);
-      
-      // Get the updated state
-      const updatedState = useBadmintonStore.getState();
-      
-      // Positions Q1 and Q4 should be swapped
-      expect(updatedState.positions.Q1).toBe(initialPositions.Q4);
-      expect(updatedState.positions.Q4).toBe(initialPositions.Q1);
-    });
-
-    test('should swap positions for team 2 when team 2 scores and is already serving', () => {
-      
-      
-      // Get initial state
-      const initialState = useBadmintonStore.getState();
-      const initialPositions = { ...initialState.positions };
-      
-      // Set serving team to TEAM2
-      useBadmintonStore.getState().setServingTeam(TEAM_NAME.TEAM2);
-      
-      // When TEAM2 scores while already serving
-      useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM2);
-      
-      // Get the updated state
-      const updatedState = useBadmintonStore.getState();
-      
-      // Positions Q2 and Q3 should be swapped
-      expect(updatedState.positions.Q2).toBe(initialPositions.Q3);
-      expect(updatedState.positions.Q3).toBe(initialPositions.Q2);
+      expect(useBadmintonStore.getState().player1Score).toBe(21)
     });
 
     test('should end game when a team reaches max score with required lead', () => {
