@@ -168,6 +168,24 @@ export const SettingsDialog = () => {
             />
           </Box>
           
+          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
+            <Button 
+              variant="outlined"
+              color="primary"
+              fullWidth
+              sx={{ mt: 2 }}
+              onClick={() => {
+                if (document.fullscreenElement) {
+                  document.exitFullscreen();
+                } else {
+                  document.documentElement.requestFullscreen();
+                }
+              }}
+            >
+              Toggle Fullscreen
+            </Button>
+          </Box>
+          
           {/* Gamepad Controls Section */}
           <Box sx={{ flexBasis: '100%', mt: 2 }}>
             <Divider />
