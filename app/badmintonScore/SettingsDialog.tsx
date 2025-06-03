@@ -13,7 +13,8 @@ import {
   Button,
   Box,
   Typography,
-  Divider
+  Divider,
+  Chip
 } from '@mui/material';
 import { useBadmintonStore } from './useBadmintonStore';
 import { useGamepad } from '@/app/lib/hooks/useGamepad';
@@ -33,6 +34,7 @@ export const SettingsDialog = () => {
   const {
     isListening,
     startListening,
+    buttonMappings
   } = useGamepad();
 
   const handleGamepadMapping = (action: TGamePadAction) => {
@@ -50,6 +52,23 @@ export const SettingsDialog = () => {
       }
     });
   };
+
+  // Helper function to find a button number mapped to a specific action
+  const getMappedButton = (action: TGamePadAction): number | null => {
+    if (!buttonMappings || !buttonMappings.current) return null;
+    
+    for (const [buttonIndex, mappedAction] of Object.entries(buttonMappings.current)) {
+      if (mappedAction === action) {
+        return parseInt(buttonIndex);
+      }
+    }
+    return null;
+  };
+
+  // Get mapped buttons for each action
+  const team1Button = getMappedButton("team1Scores");
+  const team2Button = getMappedButton("team2Scores");
+  const undoButton = getMappedButton("undo");
 
   return (
     <Dialog 
@@ -171,32 +190,59 @@ export const SettingsDialog = () => {
             <Typography variant="h6" sx={{ my: 2 }}>Gamepad Controls</Typography>
             
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-              <Button 
-                variant="outlined"
-                color={isListening && "secondary" || "primary"}
-                onClick={() => handleGamepadMapping("team1Scores")}
-                sx={{ flexBasis: { xs: '100%', sm: '30%' } }}
-              >
-                {isListening ? "Press a button..." : "Map Player 1 Score"}
-              </Button>
+              <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+                <Button 
+                  variant="outlined"
+                  color={isListening && "secondary" || "primary"}
+                  onClick={() => handleGamepadMapping("team1Scores")}
+                  fullWidth
+                >
+                  {isListening ? "Press a button..." : "Map Player 1 Score"}
+                </Button>
+                {team1Button !== null && (
+                  <Chip 
+                    label={`Button ${team1Button}`} 
+                    color="primary" 
+                    size="small"
+                  />
+                )}
+              </Box>
               
-              <Button 
-                variant="outlined"
-                color={isListening && "secondary" || "primary"}
-                onClick={() => handleGamepadMapping("team2Scores")}
-                sx={{ flexBasis: { xs: '100%', sm: '30%' } }}
-              >
-                {isListening ? "Press a button..." : "Map Player 2 Score"}
-              </Button>
+              <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+                <Button 
+                  variant="outlined"
+                  color={isListening && "secondary" || "primary"}
+                  onClick={() => handleGamepadMapping("team2Scores")}
+                  fullWidth
+                >
+                  {isListening ? "Press a button..." : "Map Player 2 Score"}
+                </Button>
+                {team2Button !== null && (
+                  <Chip 
+                    label={`Button ${team2Button}`} 
+                    color="primary" 
+                    size="small"
+                  />
+                )}
+              </Box>
               
-              <Button 
-                variant="outlined"
-                color={isListening && "secondary" || "primary"}
-                onClick={() => handleGamepadMapping("undo")}
-                sx={{ flexBasis: { xs: '100%', sm: '30%' } }}
-              >
-                {isListening ? "Press a button..." : "Map Undo Action"}
-              </Button>
+              <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+                <Button 
+                  variant="outlined"
+                  color={isListening && "secondary" || "primary"}
+                  onClick={() => handleGamepadMapping("undo")}
+                  fullWidth
+                >
+                  {isListening ? "Press a button..." : "Map Undo Action"}
+                </Button>
+                {undoButton !== null && (
+                  <Chip 
+                    label={`Button ${undoButton}`} 
+                    color="primary" 
+                    size="small"
+                  />
+                )}
+              </Box>
             </Box>
           </Box>
         </Box>
