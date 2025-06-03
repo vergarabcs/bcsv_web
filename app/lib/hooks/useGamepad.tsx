@@ -1,19 +1,20 @@
 import { TGamePadAction } from '@/app/badmintonScore/types';
 import { useState, useEffect, useCallback, useRef } from 'react';
-
-interface ButtonMapping {
-  [key: number]: TGamePadAction;
-}
+import { useBadmintonStore } from '@/app/badmintonScore/useBadmintonStore';
 
 export const useGamepad = () => {
   const [isListening, setIsListening] = useState<boolean>(false);
   const [enabled, setIsEnabled] = useState<boolean>(true);
-  const handlers = useRef<Map<TGamePadAction, () => void>>(new Map());
-  const buttonMappings = useRef<ButtonMapping>({});
+  const listeningForAction = useRef<TGamePadAction | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const connectedGamepads = useRef<Set<number>>(new Set());
   // Track previously pressed buttons to prevent repeated triggering
   const previousButtonStates = useRef<Map<number, boolean[]>>(new Map());
+  
+  // Get button mappings and actions from the store
+  const buttonMappings = useBadmintonStore(state => state.buttonMappings);
+  const updateButtonMapping = useBadmintonStore(state => state.updateButtonMapping);
+  const dispatchGamepadAction = useBadmintonStore(state => state.dispatchGamepadAction);
 
   // Poll for gamepad button states
   const pollGamepads = useCallback(() => {
@@ -46,17 +47,14 @@ export const useGamepad = () => {
         
         // Only handle button press on initial press (not while held)
         if (isPressed && !wasPressed) {
-          const action = buttonMappings.current[index];
+          const action = buttonMappings[index];
           if (action) {
-            const handler = handlers.current.get(action);
-            if (handler) {
-              handler();
-            }
+            dispatchGamepadAction(action);
           }
 
           // If we're in listening mode, map this button press to the action
           if (isListening && listeningForAction.current) {
-            buttonMappings.current[index] = listeningForAction.current;
+            updateButtonMapping(index, listeningForAction.current);
             // Stop listening once we've mapped a button
             setIsListening(false);
             listeningForAction.current = null;
@@ -67,10 +65,7 @@ export const useGamepad = () => {
 
     // Continue polling
     animationFrameId.current = requestAnimationFrame(pollGamepads);
-  }, [enabled, isListening]);
-
-  // Track which action we're currently listening for
-  const listeningForAction = useRef<TGamePadAction | null>(null);
+  }, [enabled, isListening, buttonMappings, updateButtonMapping, dispatchGamepadAction]);
 
   // Start gamepad polling
   const startPolling = useCallback(() => {
@@ -132,10 +127,7 @@ export const useGamepad = () => {
     };
   }, [handleGamepadConnected, handleGamepadDisconnected, startPolling, stopPolling]);
 
-  const startListening = useCallback((eventName: TGamePadAction, handler: () => void) => {
-    // Store the handler
-    handlers.current.set(eventName, handler);
-    
+  const startListening = useCallback((eventName: TGamePadAction) => {
     // Set listening state
     setIsListening(true);
     listeningForAction.current = eventName;
@@ -143,14 +135,6 @@ export const useGamepad = () => {
     // Make sure polling is active
     startPolling();
   }, [startPolling]);
-
-  const dispatchAction = useCallback((eventName: TGamePadAction) => {
-    // Execute the handler mapped to eventName
-    const handler = handlers.current.get(eventName);
-    if (handler && enabled) {
-      handler();
-    }
-  }, [enabled]);
 
   const setEnabled = useCallback((isEnabled: boolean) => {
     setIsEnabled(isEnabled);
@@ -171,7 +155,6 @@ export const useGamepad = () => {
 
     // actions
     startListening,
-    dispatchAction,
     setEnabled
   };
 }

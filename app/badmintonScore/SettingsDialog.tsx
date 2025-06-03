@@ -24,40 +24,24 @@ export const SettingsDialog = () => {
   const {
     settingsOpen,
     tempSettings,
-    undo,
-    handleScore,
     handleSettingsChange,
     handleCloseSettings,
-    handleSaveSettings
+    handleSaveSettings,
+    buttonMappings
   } = useBadmintonStore();
 
   const {
     isListening,
-    startListening,
-    buttonMappings
+    startListening
   } = useGamepad();
 
   const handleGamepadMapping = (action: TGamePadAction) => {
-    startListening(action, () => {
-      switch(action) {
-        case "undo":
-          undo();
-          break;
-        case "team1Scores":
-          handleScore("Team 1");
-          break;
-        case "team2Scores":
-          handleScore("Team 2");
-          break;
-      }
-    });
+    startListening(action);
   };
 
   // Helper function to find a button number mapped to a specific action
   const getMappedButton = (action: TGamePadAction): number | null => {
-    if (!buttonMappings || !buttonMappings.current) return null;
-    
-    for (const [buttonIndex, mappedAction] of Object.entries(buttonMappings.current)) {
+    for (const [buttonIndex, mappedAction] of Object.entries(buttonMappings)) {
       if (mappedAction === action) {
         return parseInt(buttonIndex);
       }
@@ -248,8 +232,12 @@ export const SettingsDialog = () => {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCloseSettings}>Cancel</Button>
-        <Button onClick={handleSaveSettings} variant="contained">Save</Button>
+        <Button onClick={handleCloseSettings} color="primary">
+          Cancel
+        </Button>
+        <Button onClick={handleSaveSettings} color="primary">
+          Save
+        </Button>
       </DialogActions>
     </Dialog>
   );

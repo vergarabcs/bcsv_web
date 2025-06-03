@@ -1,9 +1,8 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { devtools, persist } from 'zustand/middleware';
-import { BadmintonScoreSettings, CourtPosition, PlayerColor } from './types';
+import { BadmintonScoreSettings, CourtPosition, PlayerColor, TGamePadAction } from './types';
 import { initialPositions, T_TEAMS, TEAM_NAME } from './constants';
-import { State } from 'aws-cdk-lib/aws-stepfunctions';
 
 // Type for the state that can be undone
 interface UndoableState {
@@ -37,6 +36,9 @@ interface BadmintonScoreState {
   settings: BadmintonScoreSettings;
   tempSettings: BadmintonScoreSettings;
   
+  // Gamepad controls
+  buttonMappings: Record<number, TGamePadAction>;
+  
   // Undo history
   history: UndoableState[];
   currentHistoryIndex: number;
@@ -50,6 +52,10 @@ interface BadmintonScoreState {
   handleOpenSettings: () => void;
   handleCloseSettings: () => void;
   handleSaveSettings: () => void;
+  
+  // Gamepad actions
+  updateButtonMapping: (buttonIndex: number, action: TGamePadAction) => void;
+  dispatchGamepadAction: (action: TGamePadAction) => void;
   
   // Undo functionality
   saveHistory: () => void;
@@ -88,6 +94,7 @@ const initialState = {
     showCourtLayout: true,
     doubleMatch: true
   },
+  buttonMappings: {},
   history: [],
   currentHistoryIndex: -1,
 };
@@ -251,6 +258,31 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
               state.saveHistory(); // Moved saveHistory to after state changes
             });
             get().resetGame();
+          },
+
+          // Gamepad action methods
+          updateButtonMapping: (buttonIndex: number, action: TGamePadAction) => {
+            set((state) => {
+              state.buttonMappings[buttonIndex] = action;
+              state.saveHistory();
+            });
+          },
+          
+          dispatchGamepadAction: (action: TGamePadAction) => {
+            const state = get();
+            switch(action) {
+              case "undo":
+                if (state.canUndo()) {
+                  state.undo();
+                }
+                break;
+              case "team1Scores":
+                state.handleScore(TEAM_NAME.TEAM1);
+                break;
+              case "team2Scores":
+                state.handleScore(TEAM_NAME.TEAM2);
+                break;
+            }
           }
         };
       }),
