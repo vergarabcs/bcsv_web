@@ -9,6 +9,8 @@ export interface BadmintonScoreSettings {
   doubleMatch: boolean;
 }
 
+export type TGamePadAction = "undo" | "team1Scores" | "team2Scores"
+
 // Define the court position types
 export type CourtPosition = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 export type PlayerColor = 'blue' | 'red' | 'yellow' | 'white';

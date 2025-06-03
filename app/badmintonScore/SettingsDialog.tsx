@@ -11,18 +11,45 @@ import {
   FormControlLabel,
   Switch,
   Button,
-  Box
+  Box,
+  Typography,
+  Divider
 } from '@mui/material';
 import { useBadmintonStore } from './useBadmintonStore';
+import { useGamepad } from '@/app/lib/hooks/useGamepad';
+import { TGamePadAction } from './types';
 
 export const SettingsDialog = () => {
   const {
     settingsOpen,
     tempSettings,
+    undo,
+    handleScore,
     handleSettingsChange,
     handleCloseSettings,
     handleSaveSettings
   } = useBadmintonStore();
+
+  const {
+    isListening,
+    startListening,
+  } = useGamepad();
+
+  const handleGamepadMapping = (action: TGamePadAction) => {
+    startListening(action, () => {
+      switch(action) {
+        case "undo":
+          undo();
+          break;
+        case "team1Scores":
+          handleScore("Team 1");
+          break;
+        case "team2Scores":
+          handleScore("Team 2");
+          break;
+      }
+    });
+  };
 
   return (
     <Dialog 
@@ -136,6 +163,41 @@ export const SettingsDialog = () => {
               label="Swap sides after games"
               sx={{ mt: 2 }}
             />
+          </Box>
+          
+          {/* Gamepad Controls Section */}
+          <Box sx={{ flexBasis: '100%', mt: 2 }}>
+            <Divider />
+            <Typography variant="h6" sx={{ my: 2 }}>Gamepad Controls</Typography>
+            
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+              <Button 
+                variant="outlined"
+                color={isListening && "secondary" || "primary"}
+                onClick={() => handleGamepadMapping("team1Scores")}
+                sx={{ flexBasis: { xs: '100%', sm: '30%' } }}
+              >
+                {isListening ? "Press a button..." : "Map Player 1 Score"}
+              </Button>
+              
+              <Button 
+                variant="outlined"
+                color={isListening && "secondary" || "primary"}
+                onClick={() => handleGamepadMapping("team2Scores")}
+                sx={{ flexBasis: { xs: '100%', sm: '30%' } }}
+              >
+                {isListening ? "Press a button..." : "Map Player 2 Score"}
+              </Button>
+              
+              <Button 
+                variant="outlined"
+                color={isListening && "secondary" || "primary"}
+                onClick={() => handleGamepadMapping("undo")}
+                sx={{ flexBasis: { xs: '100%', sm: '30%' } }}
+              >
+                {isListening ? "Press a button..." : "Map Undo Action"}
+              </Button>
+            </Box>
           </Box>
         </Box>
       </DialogContent>
