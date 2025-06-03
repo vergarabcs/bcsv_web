@@ -12,6 +12,8 @@ export const useGamepad = () => {
   const buttonMappings = useRef<ButtonMapping>({});
   const animationFrameId = useRef<number | null>(null);
   const connectedGamepads = useRef<Set<number>>(new Set());
+  // Track previously pressed buttons to prevent repeated triggering
+  const previousButtonStates = useRef<Map<number, boolean[]>>(new Map());
 
   // Poll for gamepad button states
   const pollGamepads = useCallback(() => {
@@ -24,9 +26,26 @@ export const useGamepad = () => {
       const gamepad = gamepads[gamepadId];
       if (!gamepad) continue;
 
+      // Initialize button state tracking for this gamepad if needed
+      if (!previousButtonStates.current.has(gamepadId)) {
+        previousButtonStates.current.set(
+          gamepadId, 
+          Array(gamepad.buttons.length).fill(false)
+        );
+      }
+      
+      const prevStates = previousButtonStates.current.get(gamepadId)!;
+
       // Check each button
       gamepad.buttons.forEach((button, index) => {
-        if (button.pressed) {
+        const wasPressed = prevStates[index];
+        const isPressed = button.pressed;
+        
+        // Update the previous state for next frame
+        prevStates[index] = isPressed;
+        
+        // Only handle button press on initial press (not while held)
+        if (isPressed && !wasPressed) {
           const action = buttonMappings.current[index];
           if (action) {
             const handler = handlers.current.get(action);
@@ -77,6 +96,8 @@ export const useGamepad = () => {
   // Handle gamepad disconnection
   const handleGamepadDisconnected = useCallback((e: GamepadEvent) => {
     connectedGamepads.current.delete(e.gamepad.index);
+    // Clean up button state tracking for this gamepad
+    previousButtonStates.current.delete(e.gamepad.index);
     
     if (connectedGamepads.current.size === 0) {
       stopPolling(); // Stop polling if no gamepads are connected
@@ -106,6 +127,8 @@ export const useGamepad = () => {
       window.removeEventListener('gamepadconnected', handleGamepadConnected);
       window.removeEventListener('gamepaddisconnected', handleGamepadDisconnected);
       stopPolling();
+      // Clear button state tracking
+      previousButtonStates.current.clear();
     };
   }, [handleGamepadConnected, handleGamepadDisconnected, startPolling, stopPolling]);
 
@@ -144,6 +167,7 @@ export const useGamepad = () => {
     // states
     isListening,
     enabled,
+    buttonMappings,
 
     // actions
     startListening,
