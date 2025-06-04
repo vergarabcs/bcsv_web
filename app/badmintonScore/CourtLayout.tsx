@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Box, Grid, keyframes } from '@mui/material';
-import { T_TEAMS, TEAM_NAME } from './constants';
+import { T_TEAMS, TEAM_NAME, TOP_HALF } from './constants';
 import { CourtPosition, PlayerColor } from './types';
 import { useBadmintonStore } from './useBadmintonStore';
+import CompassCalibrationIcon from '@mui/icons-material/CompassCalibration';
 
 // Map colors to their CSS color values
 const colorValues: Record<PlayerColor, string> = {
@@ -14,34 +15,54 @@ const colorValues: Record<PlayerColor, string> = {
 
 // Define blinking animation keyframes
 const blinkAnimation = keyframes`
-  0% { 
-    box-shadow: inset 0 0 0 0 rgba(0,0,0,0);
+  0% {
   }
-  50% { 
-    box-shadow: inset 0 0 0 2000px rgba(0,0,0,0.3);
+  50% {
+    transform: rotate(20deg);
   }
   100% { 
-    box-shadow: inset 0 0 0 0 rgba(0,0,0,0);
   }
 `;
 
 interface QuadrantProps {
-  colorName: PlayerColor;
+  positionName: CourtPosition;
   isServing: boolean;
 }
 
 // Extracted Quadrant component
-const Quadrant: React.FC<QuadrantProps> = ({ colorName, isServing }) => {
+const Quadrant: React.FC<QuadrantProps> = ({ positionName, isServing }) => {
+  const colorName = useBadmintonStore(state => state.positions[positionName])
   const transition = 'background-color 1s ease-in-out';
+  const servingTeam = useBadmintonStore(state => state.servingTeam);
 
+  const verticalPosition: React.CSSProperties = TOP_HALF.includes(positionName) 
+    ? { top: "2rem" } 
+    : { bottom: "2rem" };
+
+  console.log('vertPos', verticalPosition, positionName)
   return (
     <Grid size={6}>
       <Box sx={{
         height: "100%",
         backgroundColor: colorValues[colorName],
         transition: transition,
-        animation: isServing ? `${blinkAnimation} 1.0s infinite` : 'none'
-      }} />
+        position: 'relative'
+      }}>
+      {isServing && (
+        <CompassCalibrationIcon 
+        sx={{
+          animation: isServing ? `${blinkAnimation} 1.0s infinite` : 'none',
+          fontSize: '3rem',
+          position: 'absolute',
+          right: '2rem',
+          transform: 'rotate(45deg)',
+          scale: 2.0,
+          color: servingTeam === TEAM_NAME.TEAM1? 'black' : 'white',
+          ...verticalPosition
+        }}
+        />
+      )}
+      </Box>
     </Grid>
   );
 };
@@ -76,19 +97,19 @@ export const CourtLayout: React.FC = () => {
 
       <Grid container rowSpacing={0} columnSpacing={0} sx={{ width: '100%', height: '100%' }}>
         <Quadrant
-          colorName={positions.Q2}
+          positionName={"Q2"}
           isServing={isServingQuadrant(2)}
         />
         <Quadrant
-          colorName={positions.Q1}
+          positionName={"Q1"}
           isServing={isServingQuadrant(1)}
         />
         <Quadrant
-          colorName={positions.Q3}
+          positionName={"Q3"}
           isServing={isServingQuadrant(3)}
         />
         <Quadrant
-          colorName={positions.Q4}
+          positionName={"Q4"}
           isServing={isServingQuadrant(4)}
         />
       </Grid>

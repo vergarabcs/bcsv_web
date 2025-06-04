@@ -14,3 +14,5 @@ export const initialPositions: Record<CourtPosition, PlayerColor> = {
   Q3: 'yellow',
   Q4: 'red'
 };
+
+export const TOP_HALF = ["Q1", "Q2"]
