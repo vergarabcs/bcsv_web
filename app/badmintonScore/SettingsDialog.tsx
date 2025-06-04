@@ -27,7 +27,8 @@ export const SettingsDialog = () => {
     handleSettingsChange,
     handleCloseSettings,
     handleSaveSettings,
-    buttonMappings
+    buttonMappings,
+    resetGame
   } = useBadmintonStore();
 
   const {
@@ -129,6 +130,21 @@ export const SettingsDialog = () => {
               }}
             >
               Toggle Fullscreen
+            </Button>
+          </Box>
+          
+          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
+            <Button 
+              variant="outlined"
+              color="error"
+              fullWidth
+              sx={{ mt: 2 }}
+              onClick={() => {
+                resetGame();
+                handleCloseSettings();
+              }}
+            >
+              Reset Game
             </Button>
           </Box>
           
