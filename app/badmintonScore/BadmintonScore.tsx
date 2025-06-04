@@ -25,8 +25,6 @@ export default function BadmintonScore() {
   const {
     gameOver,
     winner,
-    positions,
-    settings,
     resetGame,
     history,
     handleOpenSettings,
@@ -94,9 +92,7 @@ export default function BadmintonScore() {
           </div>
 
           {/* Court layout as background */}
-          <CourtLayout
-            positions={positions}
-          />
+          <CourtLayout/>
 
           {/* Score display overlaid on court layout */}
           <div className={styles.scoreDisplay} style={{ position: 'relative', zIndex: 1 }}>

@@ -182,15 +182,15 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
               } else {
                 // Position swapping logic
                 if (scoringTeam === TEAM_NAME.TEAM1) {
-                  // Swap positions for team Q1Q4
-                  const tempQ1 = state.positions.Q1;
-                  state.positions.Q1 = state.positions.Q4;
-                  state.positions.Q4 = tempQ1;
-                } else {
                   // Swap positions for team Q2Q3
                   const tempQ2 = state.positions.Q2;
                   state.positions.Q2 = state.positions.Q3;
                   state.positions.Q3 = tempQ2;
+                } else {
+                  // Swap positions for team Q1Q4
+                  const tempQ1 = state.positions.Q1;
+                  state.positions.Q1 = state.positions.Q4;
+                  state.positions.Q4 = tempQ1;
                 }
               }
 
