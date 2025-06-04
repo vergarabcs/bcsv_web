@@ -52,6 +52,7 @@ interface BadmintonScoreState {
   handleOpenSettings: () => void;
   handleCloseSettings: () => void;
   handleSaveSettings: () => void;
+  swapServingTeam: () => void;  // New handler for swapping the serving team
 
   // Gamepad actions
   updateButtonMapping: (buttonIndex: number, action: TGamePadAction) => void;
@@ -248,6 +249,17 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
               state.saveHistory(); // Moved saveHistory to after state changes
             });
             get().resetGame();
+          },
+
+          // New action to swap the serving team
+          swapServingTeam: () => {
+            const state = get();
+            // Only swap if both scores are 0
+            if (state.player1Score === 0 && state.player2Score === 0) {
+              set((state) => {
+                state.servingTeam = state.servingTeam === TEAM_NAME.TEAM1 ? TEAM_NAME.TEAM2 : TEAM_NAME.TEAM1;
+              });
+            }
           },
 
           // Gamepad action methods

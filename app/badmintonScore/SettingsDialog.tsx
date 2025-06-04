@@ -28,8 +28,15 @@ export const SettingsDialog = () => {
     handleCloseSettings,
     handleSaveSettings,
     buttonMappings,
-    resetGame
+    resetGame,
+    player1Score,
+    player2Score,
+    servingTeam,
+    swapServingTeam
   } = useBadmintonStore();
+
+  // Check if swapping serving team is allowed (both scores must be 0)
+  const canSwapServe = player1Score === 0 && player2Score === 0;
 
   const {
     isListening,
@@ -146,6 +153,24 @@ export const SettingsDialog = () => {
             >
               Reset Game
             </Button>
+          </Box>
+          
+          <Box sx={{ flexBasis: { xs: '100%' } }}>
+            <Button 
+              variant="outlined"
+              color="secondary"
+              fullWidth
+              sx={{ mt: 2 }}
+              onClick={swapServingTeam}
+              disabled={!canSwapServe}
+            >
+              Swap Serving Team
+            </Button>
+            {!canSwapServe && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 0.5 }}>
+                Serving team can only be swapped when both scores are 0
+              </Typography>
+            )}
           </Box>
           
           {/* Gamepad Controls Section */}
