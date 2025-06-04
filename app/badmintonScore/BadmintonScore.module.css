@@ -26,13 +26,11 @@
 .playerArea1 {
   composes: playerArea;
   background-color: #e3f2fd;
-  border-right: 2px solid #1976d2;
 }
 
 .playerArea2 {
   composes: playerArea;
   background-color: #ffebee;
-  border-left: 2px solid #d32f2f;
 }
 
 .scoreNumber {
