@@ -94,11 +94,9 @@ export default function BadmintonScore() {
           </div>
 
           {/* Court layout as background */}
-          {settings.doubleMatch && (
-            <CourtLayout
-              positions={positions}
-            />
-          )}
+          <CourtLayout
+            positions={positions}
+          />
 
           {/* Score display overlaid on court layout */}
           <div className={styles.scoreDisplay} style={{ position: 'relative', zIndex: 1 }}>

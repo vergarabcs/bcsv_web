@@ -1,8 +1,8 @@
 import { CourtPosition, PlayerColor } from "./types";
 
 export const TEAM_NAME = {
-  TEAM1: 'Team 1',
-  TEAM2: 'Team 2'
+  TEAM1: 'Q1Q2',
+  TEAM2: 'Q3Q4'
 } as const;  // Add "as const" here
 
 export type T_TEAMS = typeof TEAM_NAME[keyof typeof TEAM_NAME];

@@ -27,7 +27,7 @@ interface BadmintonScoreState {
   gameOver: boolean;
   winner: string;
   positions: Record<CourtPosition, PlayerColor>;
-  
+
   // Court layout state
   servingTeam: T_TEAMS;
 
@@ -35,14 +35,14 @@ interface BadmintonScoreState {
   settingsOpen: boolean;
   settings: BadmintonScoreSettings;
   tempSettings: BadmintonScoreSettings;
-  
+
   // Gamepad controls
   buttonMappings: Record<number, TGamePadAction>;
-  
+
   // Undo history
   history: UndoableState[];
   currentHistoryIndex: number;
-  
+
   // Actions
   setSettings: (settings: BadmintonScoreSettings) => void;
   handleSettingsChange: <K extends keyof BadmintonScoreSettings>(field: K, value: BadmintonScoreSettings[K]) => void;
@@ -52,11 +52,11 @@ interface BadmintonScoreState {
   handleOpenSettings: () => void;
   handleCloseSettings: () => void;
   handleSaveSettings: () => void;
-  
+
   // Gamepad actions
   updateButtonMapping: (buttonIndex: number, action: TGamePadAction) => void;
   dispatchGamepadAction: (action: TGamePadAction) => void;
-  
+
   // Undo functionality
   saveHistory: () => void;
   canUndo: () => boolean;
@@ -77,22 +77,14 @@ const initialState = {
   settings: {
     maxScore: 21,
     pointsToWin: 2,
-    bestOf: 3,
     player1Name: 'Player 1',
-    player2Name: 'Player 2',
-    swapSides: true,
-    showCourtLayout: true,
-    doubleMatch: true
+    player2Name: 'Player 2'
   },
   tempSettings: {
     maxScore: 21,
     pointsToWin: 2,
-    bestOf: 3,
     player1Name: 'Player 1',
     player2Name: 'Player 2',
-    swapSides: true,
-    showCourtLayout: true,
-    doubleMatch: true
   },
   buttonMappings: {},
   history: [],
@@ -123,32 +115,32 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
         return {
           // Initial state
           ...initialState,
-          
+
           // Undo functionality
           saveHistory: () => set((state) => {
             // Capture current state
             const currentState = captureUndoableState();
-            
+
             // If we're in the middle of the history, remove future states
             if (state.currentHistoryIndex >= 0 && state.currentHistoryIndex < state.history.length - 1) {
               state.history = state.history.slice(0, state.currentHistoryIndex + 1);
             }
-            
+
             // Add current state to history
             state.history.push(currentState);
             state.currentHistoryIndex = state.history.length - 1;
           }),
-          
+
           canUndo: () => {
             const state = get();
             return state.currentHistoryIndex > 0;
           },
-          
+
           undo: () => set((state) => {
             if (state.currentHistoryIndex > 0) {
               state.currentHistoryIndex--;
               const previousState = state.history[state.currentHistoryIndex];
-              
+
               // Restore state from history (except settingsOpen and tempSettings)
               state.player1Score = previousState.player1Score;
               state.player2Score = previousState.player2Score;
@@ -163,12 +155,12 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
           }),
 
           setSettings: (settings) => {
-            set((state) => { 
+            set((state) => {
               state.settings = settings;
             })
-            get().saveHistory(); 
+            get().saveHistory();
           },
-          
+
           // Complex actions
           handleSettingsChange: <K extends keyof BadmintonScoreSettings>(field: K, value: BadmintonScoreSettings[K]) => set((state) => {
             state.tempSettings[field] = value;
@@ -179,28 +171,26 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
             if (state.gameOver) return;
 
             // Save history before making changes
-            
+
 
             set((state) => {
               // For doubles match, track which team scored
-              if (state.settings.doubleMatch) {
-                // If the scoring team is the serving team, they keep serving
-                // Otherwise, the service changes to the scoring team
-                if (scoringTeam !== state.servingTeam) {
-                  state.servingTeam = scoringTeam;
+              // If the scoring team is the serving team, they keep serving
+              // Otherwise, the service changes to the scoring team
+              if (scoringTeam !== state.servingTeam) {
+                state.servingTeam = scoringTeam;
+              } else {
+                // Position swapping logic
+                if (scoringTeam === TEAM_NAME.TEAM1) {
+                  // Swap positions for team Q1Q4
+                  const tempQ1 = state.positions.Q1;
+                  state.positions.Q1 = state.positions.Q4;
+                  state.positions.Q4 = tempQ1;
                 } else {
-                  // Position swapping logic
-                  if (scoringTeam === TEAM_NAME.TEAM1) {
-                    // Swap positions for team Q1Q4
-                    const tempQ1 = state.positions.Q1;
-                    state.positions.Q1 = state.positions.Q4;
-                    state.positions.Q4 = tempQ1;
-                  } else {
-                    // Swap positions for team Q2Q3
-                    const tempQ2 = state.positions.Q2;
-                    state.positions.Q2 = state.positions.Q3;
-                    state.positions.Q3 = tempQ2;
-                  }
+                  // Swap positions for team Q2Q3
+                  const tempQ2 = state.positions.Q2;
+                  state.positions.Q2 = state.positions.Q3;
+                  state.positions.Q3 = tempQ2;
                 }
               }
 
@@ -218,7 +208,7 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
               const leading = score1 > score2 ? 1 : 2;
               const leadingScore = leading === 1 ? score1 : score2;
               const trailingScore = leading === 1 ? score2 : score1;
-              
+
               if ((leadingScore >= maxScore) && ((leadingScore - trailingScore) >= pointsToWin)) {
                 const winnerName = leading === 1 ? state.player1Name : state.player2Name;
                 state.gameOver = true;
@@ -244,7 +234,7 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
             state.tempSettings = { ...state.settings };
             state.settingsOpen = true;
           }),
-          
+
           handleCloseSettings: () => set((state) => {
             state.settingsOpen = false;
           }),
@@ -267,10 +257,10 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
               state.saveHistory();
             });
           },
-          
+
           dispatchGamepadAction: (action: TGamePadAction) => {
             const state = get();
-            switch(action) {
+            switch (action) {
               case "undo":
                 if (state.canUndo()) {
                   state.undo();

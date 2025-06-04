@@ -115,60 +115,6 @@ export const SettingsDialog = () => {
           </Box>
           
           <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Best of</InputLabel>
-              <Select
-                value={tempSettings.bestOf}
-                onChange={(e) => handleSettingsChange('bestOf', Number(e.target.value))}
-                label="Best of"
-              >
-                <MenuItem value={1}>1 game</MenuItem>
-                <MenuItem value={3}>3 games</MenuItem>
-                <MenuItem value={5}>5 games</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-          
-          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={tempSettings.doubleMatch}
-                  onChange={(e) => handleSettingsChange('doubleMatch', e.target.checked)}
-                />
-              }
-              label="Doubles Match"
-              sx={{ mt: 2 }}
-            />
-          </Box>
-
-          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={tempSettings.showCourtLayout}
-                  onChange={(e) => handleSettingsChange('showCourtLayout', e.target.checked)}
-                />
-              }
-              label="Show Court Layout"
-              sx={{ mt: 2 }}
-            />
-          </Box>
-          
-          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={tempSettings.swapSides}
-                  onChange={(e) => handleSettingsChange('swapSides', e.target.checked)}
-                />
-              }
-              label="Swap sides after games"
-              sx={{ mt: 2 }}
-            />
-          </Box>
-          
-          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
             <Button 
               variant="outlined"
               color="primary"
