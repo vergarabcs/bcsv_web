@@ -5,7 +5,14 @@ export interface BadmintonScoreSettings {
   player2Name: string;
 }
 
-export type TGamePadAction = "undo" | "team1Scores" | "team2Scores"
+export const GAMEPAD_ACTIONS = {
+  UNDO: 'undo',
+  TEAM1_SCORES: 'team1Scores',
+  TEAM2_SCORES: 'team2Scores',
+  SWAP_SERVE: 'swapServe'
+} as const;  // Add "as const" here
+
+export type TGamePadAction = typeof GAMEPAD_ACTIONS[keyof typeof GAMEPAD_ACTIONS];
 
 // Define the court position types
 export type CourtPosition = 'Q1' | 'Q2' | 'Q3' | 'Q4';

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { devtools, persist } from 'zustand/middleware';
-import { BadmintonScoreSettings, CourtPosition, PlayerColor, TGamePadAction } from './types';
+import { BadmintonScoreSettings, CourtPosition, GAMEPAD_ACTIONS, PlayerColor, TGamePadAction } from './types';
 import { initialPositions, T_TEAMS, TEAM_NAME } from './constants';
 
 // Type for the state that can be undone
@@ -273,16 +273,19 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
           dispatchGamepadAction: (action: TGamePadAction) => {
             const state = get();
             switch (action) {
-              case "undo":
+              case GAMEPAD_ACTIONS.UNDO:
                 if (state.canUndo()) {
                   state.undo();
                 }
                 break;
-              case "team1Scores":
+              case GAMEPAD_ACTIONS.TEAM1_SCORES:
                 state.handleScore(TEAM_NAME.TEAM1);
                 break;
-              case "team2Scores":
+              case GAMEPAD_ACTIONS.TEAM2_SCORES:
                 state.handleScore(TEAM_NAME.TEAM2);
+                break;
+              case GAMEPAD_ACTIONS.SWAP_SERVE:
+                state.swapServingTeam()
                 break;
             }
           }

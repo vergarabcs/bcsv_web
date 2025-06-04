@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { useBadmintonStore } from './useBadmintonStore';
 import { useGamepad } from '@/app/lib/hooks/useGamepad';
-import { TGamePadAction } from './types';
+import { GAMEPAD_ACTIONS, TGamePadAction } from './types';
 
 export const SettingsDialog = () => {
   const {
@@ -31,7 +31,6 @@ export const SettingsDialog = () => {
     resetGame,
     player1Score,
     player2Score,
-    servingTeam,
     swapServingTeam
   } = useBadmintonStore();
 
@@ -61,6 +60,7 @@ export const SettingsDialog = () => {
   const team1Button = getMappedButton("team1Scores");
   const team2Button = getMappedButton("team2Scores");
   const undoButton = getMappedButton("undo");
+  const swapServeButton = getMappedButton("swapServe");
 
   return (
     <Dialog 
@@ -183,7 +183,7 @@ export const SettingsDialog = () => {
                 <Button 
                   variant="outlined"
                   color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping("team1Scores")}
+                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.TEAM1_SCORES)}
                   fullWidth
                 >
                   {isListening ? "Press a button..." : "Map Player 1 Score"}
@@ -201,7 +201,7 @@ export const SettingsDialog = () => {
                 <Button 
                   variant="outlined"
                   color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping("team2Scores")}
+                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.TEAM2_SCORES)}
                   fullWidth
                 >
                   {isListening ? "Press a button..." : "Map Player 2 Score"}
@@ -219,7 +219,7 @@ export const SettingsDialog = () => {
                 <Button 
                   variant="outlined"
                   color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping("undo")}
+                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.UNDO)}
                   fullWidth
                 >
                   {isListening ? "Press a button..." : "Map Undo Action"}
@@ -227,6 +227,24 @@ export const SettingsDialog = () => {
                 {undoButton !== null && (
                   <Chip 
                     label={`Button ${undoButton}`} 
+                    color="primary" 
+                    size="small"
+                  />
+                )}
+              </Box>
+
+              <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+                <Button 
+                  variant="outlined"
+                  color={isListening && "secondary" || "primary"}
+                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.SWAP_SERVE)}
+                  fullWidth
+                >
+                  {isListening ? "Press a button..." : "Map Swap Serve"}
+                </Button>
+                {swapServeButton !== null && (
+                  <Chip 
+                    label={`Button ${swapServeButton}`} 
                     color="primary" 
                     size="small"
                   />
