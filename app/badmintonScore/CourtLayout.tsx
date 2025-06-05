@@ -39,7 +39,6 @@ const Quadrant: React.FC<QuadrantProps> = ({ positionName, isServing }) => {
     ? { top: "2rem" } 
     : { bottom: "2rem" };
 
-  console.log('vertPos', verticalPosition, positionName)
   return (
     <Grid size={6}>
       <Box sx={{

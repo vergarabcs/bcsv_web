@@ -22,7 +22,6 @@ export const PlayerScore = ({
   const textStroke = `5px ${team === TEAM_NAME.TEAM1 ? 'white' : 'black'}`
   const fontColor = team === TEAM_NAME.TEAM1 ? 'black' : 'white'
   const textShadow = `0px 0px 5px ${team === TEAM_NAME.TEAM1 ? 'black' : 'white'}`
-  console.log('rerender', team)
 
   return (
     <div 

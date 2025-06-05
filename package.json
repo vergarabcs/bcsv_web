@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "npm run printIp && next dev -H 0.0.0.0",
+    "start": "npm run printIp && next dev --experimental-https -H 0.0.0.0",
     "printIp": "node -e \"console.log('Local IP:', require('os').networkInterfaces()['en0'].find(i => i.family === 'IPv4').address)\"",
     "build": "next build",
     "dev": "next start",

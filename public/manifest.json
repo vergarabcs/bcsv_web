@@ -1,0 +1,33 @@
+{
+  "name": "Badminton Score",
+  "short_name": "BadScore",
+  "description": "A badminton scoring app with gamepad support",
+  "start_url": "/badmintonScore",
+  "id": "/badmintonScore",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0032A0",
+  "categories": ["sports", "games", "utilities"],
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icons/screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png"
+    }
+  ]
+}
