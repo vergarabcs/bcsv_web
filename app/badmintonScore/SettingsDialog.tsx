@@ -8,8 +8,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  FormControlLabel,
-  Switch,
   Button,
   Box,
   Typography,
@@ -17,8 +15,8 @@ import {
   Chip
 } from '@mui/material';
 import { useBadmintonStore } from './useBadmintonStore';
-import { useGamepad } from '@/app/lib/hooks/useGamepad';
 import { GAMEPAD_ACTIONS, TGamePadAction } from './types';
+import { useGamepad } from './useGamepad';
 
 export const SettingsDialog = () => {
   const {
