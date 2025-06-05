@@ -53,10 +53,7 @@ export const isPWAInstalled = (): boolean => {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
   
   // Check for iOS PWA
-  const isIOSPWA = 
-    window.navigator.standalone === true || 
-    // @ts-ignore - Safari specific property
-    (window.navigator as any).standalone === true;
+  const isIOSPWA = (window.navigator as any).standalone === true;
     
   return isStandalone || isIOSPWA;
 };
