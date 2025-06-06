@@ -100,7 +100,7 @@ export const SettingsDialog = () => {
                 <MenuItem value={11}>11 points</MenuItem>
                 <MenuItem value={15}>15 points</MenuItem>
                 <MenuItem value={21}>21 points</MenuItem>
-                <MenuItem value={30}>30 points</MenuItem>
+                <MenuItem value={35}>35 points</MenuItem>
               </Select>
             </FormControl>
           </Box>
