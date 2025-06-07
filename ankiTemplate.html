@@ -109,7 +109,7 @@
           log('Set language: English', 'info');
         }
         
-        api.ankiTtsSpeak(segment, 1);
+        api.ankiTtsSpeak(segment, 0);
         log(`Speaking segment ${i+1}...`, 'info');
         
         // Wait for speech to complete before continuing to next segment
@@ -130,7 +130,8 @@
         try {
           if (api.ankiTtsIsSpeaking()) {
             // If still speaking, check again after a short delay
-            setTimeout(checkSpeaking, 100);
+            log(`Still speaking . . .`)
+            setTimeout(checkSpeaking, 500);
           } else {
             // Speech completed, resolve promise
             resolve();
@@ -141,7 +142,7 @@
         }
       };
       // Start checking
-      setTimeout(checkSpeaking, 100);
+      setTimeout(checkSpeaking, 500);
     });
   }
   
