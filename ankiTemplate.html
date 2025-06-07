@@ -1,0 +1,52 @@
+<button onclick="playTts()">
+  Play Audio
+</button>
+
+<div id="Expression" class="Jap">
+  {{Japanese}}
+</div>
+{{tts ja_JP voices=Apple_Kyoko,com.google.android.tts-ja-JP-language speed=0.75:Japanese}}
+
+<div class="line" />
+<div class="Jap">
+  <span class="field">
+    {{furigana:Reading}}
+  </span>
+</div>
+
+{{#English}}
+<div id="English" class="English">
+  {{English}}
+</div>
+{{/English}}
+{{tts en_US voices=Apple_Samantha,com.google.android.tts-en-US-language:English}}
+
+<div id="explanation" class="explanation">
+  {{Explanation}}
+</div>
+
+{{Audio_Sentence}}
+
+<br />
+<div class="screenshot">
+  {{Screenshot}}
+</div>
+<div id="Context" style="font-size: 20px">
+  {{Context}}
+</div>
+
+<script>
+  // A debug console is strongly recommended: https://github.com/ankidroid/Anki-Android/wiki/Development-Guide#html-javascript-inspection
+  var jsApiContract = { version: "0.0.3", developer: "vergarabcs@gmail.com" };
+  var api = new AnkiDroidJS(jsApiContract);
+  api.ankiTtsSetLanguage("en-US")
+  const defaultLocale = "en-US"
+
+  async function playTts() {
+    api.ankiTtsSetLanguage("en-US")
+    api.ankiTtsSpeak(document.getElementById('explanation').textContent, 1)
+  }
+
+
+  var userJs1 = playTts
+</script>
