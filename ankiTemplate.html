@@ -43,10 +43,61 @@
   const defaultLocale = "en-US"
 
   async function playTts() {
-    api.ankiTtsSetLanguage("en-US")
-    api.ankiTtsSpeak(document.getElementById('explanation').textContent, 1)
+    const text = document.getElementById('explanation').textContent;
+    const segments = splitByLanguage(text);
+    
+    for (const segment of segments) {
+      if (isJapanese(segment)) {
+        api.ankiTtsSetLanguage("ja-JP");
+      } else {
+        api.ankiTtsSetLanguage("en-US");
+      }
+      await new Promise(resolve => {
+        api.ankiTtsSpeak(segment, 1);
+        // Wait for speech to complete before continuing to next segment
+        // Estimate time based on text length (roughly 5 characters per second)
+        setTimeout(resolve, Math.max(500, segment.length * 200));
+      });
+    }
   }
-
+  
+  // Check if a string contains Japanese characters
+  function isJapanese(text) {
+    // Check for Hiragana, Katakana, or Kanji character ranges
+    return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+  }
+  
+  // Split text into segments of same language (Japanese or non-Japanese)
+  function splitByLanguage(text) {
+    const result = [];
+    let currentSegment = '';
+    let currentIsJapanese = false;
+    
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const charIsJapanese = isJapanese(char);
+      
+      // If we're starting a new segment or continuing the same language type
+      if (currentSegment === '' || charIsJapanese === currentIsJapanese) {
+        currentSegment += char;
+        currentIsJapanese = charIsJapanese;
+      } else {
+        // Language changed, push current segment and start a new one
+        if (currentSegment.trim()) {
+          result.push(currentSegment);
+        }
+        currentSegment = char;
+        currentIsJapanese = charIsJapanese;
+      }
+    }
+    
+    // Add the last segment
+    if (currentSegment.trim()) {
+      result.push(currentSegment);
+    }
+    
+    return result;
+  }
 
   var userJs1 = playTts
 </script>
