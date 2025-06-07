@@ -2,6 +2,17 @@
   Play Audio
 </button>
 
+<!-- Log display for debugging -->
+<div id="logContainer" style="border: 1px solid #ccc; padding: 10px; margin-top: 10px; max-height: 200px; overflow-y: auto; display: none; background-color: #f5f5f5; font-family: monospace; font-size: 12px;">
+  <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+    <span style="font-weight: bold;">Debug Log</span>
+    <button onclick="clearLogs()" style="font-size: 10px;">Clear</button>
+    <button onclick="toggleLogVisibility()" style="font-size: 10px;">Hide</button>
+  </div>
+  <div id="logContent"></div>
+</div>
+<button onclick="toggleLogVisibility()" style="font-size: 12px; margin-top: 5px;">Show/Hide Debug Logs</button>
+
 <div id="Expression" class="Jap">
   {{Japanese}}
 </div>
@@ -42,21 +53,73 @@
   api.ankiTtsSetLanguage("en-US")
   const defaultLocale = "en-US"
 
-  async function playTts() {
-    const text = document.getElementById('explanation').textContent;
-    const segments = splitByLanguage(text);
+  // Logging functions for debugging
+  function log(message, type = 'info') {
+    const logContent = document.getElementById('logContent');
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = document.createElement('div');
     
-    for (const segment of segments) {
-      if (isJapanese(segment)) {
-        api.ankiTtsSetLanguage("ja-JP");
-      } else {
-        api.ankiTtsSetLanguage("en-US");
+    let color = 'black';
+    switch(type) {
+      case 'error': color = 'red'; break;
+      case 'warning': color = 'orange'; break;
+      case 'success': color = 'green'; break;
+      case 'info': color = 'blue'; break;
+    }
+    
+    logEntry.innerHTML = `<span style="color:gray">[${timestamp}]</span> <span style="color:${color}">${type.toUpperCase()}</span>: ${message}`;
+    logContent.appendChild(logEntry);
+    
+    // Auto-scroll to bottom
+    const logContainer = document.getElementById('logContainer');
+    logContainer.scrollTop = logContainer.scrollHeight;
+  }
+  
+  function clearLogs() {
+    document.getElementById('logContent').innerHTML = '';
+    log('Logs cleared');
+  }
+  
+  function toggleLogVisibility() {
+    const logContainer = document.getElementById('logContainer');
+    logContainer.style.display = logContainer.style.display === 'none' ? 'block' : 'none';
+  }
+
+  async function playTts() {
+    try {
+      log('Starting TTS playback');
+      const text = document.getElementById('explanation').textContent;
+      log(`Text to speak: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`, 'info');
+      
+      const segments = splitByLanguage(text);
+      log(`Split into ${segments.length} language segments`, 'info');
+      
+      for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i];
+        const isJap = isJapanese(segment);
+        const lang = isJap ? 'ja-JP' : 'en-US';
+        
+        log(`Segment ${i+1}/${segments.length}: ${isJap ? 'Japanese' : 'English'} - "${segment.substring(0, 30)}${segment.length > 30 ? '...' : ''}"`, 'info');
+        
+        if (isJap) {
+          api.ankiTtsSetLanguage("ja-JP");
+          log('Set language: Japanese', 'info');
+        } else {
+          api.ankiTtsSetLanguage("en-US");
+          log('Set language: English', 'info');
+        }
+        
+        api.ankiTtsSpeak(segment, 1);
+        log(`Speaking segment ${i+1}...`, 'info');
+        
+        // Wait for speech to complete before continuing to next segment
+        await waitForSpeechToComplete();
+        log(`Finished speaking segment ${i+1}`, 'success');
       }
       
-      api.ankiTtsSpeak(segment, 1);
-      
-      // Wait for speech to complete before continuing to next segment
-      await waitForSpeechToComplete();
+      log('TTS playback completed successfully', 'success');
+    } catch (error) {
+      log(`Error in playTts: ${error.message}`, 'error');
     }
   }
   
@@ -64,12 +127,17 @@
   async function waitForSpeechToComplete() {
     return new Promise(resolve => {
       const checkSpeaking = () => {
-        if (api.ankiTtsIsSpeaking()) {
-          // If still speaking, check again after a short delay
-          setTimeout(checkSpeaking, 100);
-        } else {
-          // Speech completed, resolve promise
-          resolve();
+        try {
+          if (api.ankiTtsIsSpeaking()) {
+            // If still speaking, check again after a short delay
+            setTimeout(checkSpeaking, 100);
+          } else {
+            // Speech completed, resolve promise
+            resolve();
+          }
+        } catch (error) {
+          log(`Error in waitForSpeechToComplete: ${error.message}`, 'error');
+          resolve(); // Resolve anyway to prevent hanging
         }
       };
       // Start checking
@@ -114,6 +182,18 @@
     
     return result;
   }
+
+  // Initialize logs when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    log('Page loaded', 'info');
+    log('AnkiDroid API version: ' + jsApiContract.version, 'info');
+    try {
+      const availableVoices = api.ankiTtsAvailableVoices();
+      log(`Available TTS voices: ${availableVoices}`, 'info');
+    } catch (error) {
+      log('Could not retrieve available voices', 'warning');
+    }
+  });
 
   var userJs1 = playTts
 </script>
