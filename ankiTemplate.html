@@ -171,6 +171,16 @@
     segmentIndex = (segmentIndex + 1) % segments.length
   }
 
-  var userJs1 = playTts
-  var userJs2 = nextSegmentIndex
+  const playNext = () => {
+    nextSegmentIndex()
+    playTts()
+  }
+
+  const playPrev = () => {
+    segmentIndex = (segmentIndex - 1 + segments.length) % segments.length;
+    playTts();
+  }
+
+  var userJs1 = playPrev
+  var userJs2 = playNext
 </script>
