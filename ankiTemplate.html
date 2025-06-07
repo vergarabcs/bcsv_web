@@ -52,13 +52,29 @@
       } else {
         api.ankiTtsSetLanguage("en-US");
       }
-      await new Promise(resolve => {
-        api.ankiTtsSpeak(segment, 1);
-        // Wait for speech to complete before continuing to next segment
-        // Estimate time based on text length (roughly 5 characters per second)
-        setTimeout(resolve, Math.max(500, segment.length * 200));
-      });
+      
+      api.ankiTtsSpeak(segment, 1);
+      
+      // Wait for speech to complete before continuing to next segment
+      await waitForSpeechToComplete();
     }
+  }
+  
+  // Helper function to wait until TTS has finished speaking
+  async function waitForSpeechToComplete() {
+    return new Promise(resolve => {
+      const checkSpeaking = () => {
+        if (api.ankiTtsIsSpeaking()) {
+          // If still speaking, check again after a short delay
+          setTimeout(checkSpeaking, 100);
+        } else {
+          // Speech completed, resolve promise
+          resolve();
+        }
+      };
+      // Start checking
+      setTimeout(checkSpeaking, 100);
+    });
   }
   
   // Check if a string contains Japanese characters
