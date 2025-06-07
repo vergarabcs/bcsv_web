@@ -87,6 +87,9 @@
 
   async function playTts() {
     try {
+      log('Stoping previous speech')
+      api.ankiTtsStop()
+      
       log('Starting TTS playback');
       const text = document.getElementById('explanation').textContent;
       log(`Text to speak: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`, 'info');
