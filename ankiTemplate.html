@@ -151,8 +151,9 @@
       log('Stoping previous speech')
       api.ankiTtsStop()
 
-      log('Starting TTS playback');
       const segment = segments[segmentIndex];
+      log(`Starting TTS playback, ${segment}`);
+      log(`index: ${segmentIndex}`)
       const isJap = isJapanese(segment);
       const lang = isJap ? 'ja-JP' : 'en-US';
 
