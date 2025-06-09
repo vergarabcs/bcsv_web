@@ -120,7 +120,30 @@
     logContainer.style.display = logContainer.style.display === 'none' ? 'block' : 'none';
   }
 
-  const segments = splitByLanguage();
+  function mergeJapanese(segments) {
+    let isMerging = false;
+    const result = []
+    for(let i=0 ; i<segments.length ; i++){
+      const currSegment = segments[i]
+      if(isMerging){
+        if(isJapanese(currSegment) || !hasAlpha(currSegment)){
+          result[result.length - 1] = result[result.length - 1] + currSegment
+        }else{
+          isMerging = false
+          result.push(currSegment)
+        }
+      } else if (isJapanese(currSegment)){
+        isMerging = true
+        result.push(currSegment)
+      } else {
+        result.push(currSegment)
+      }
+    }
+    return result;
+  }
+
+  let segments = splitByLanguage();
+  segments = mergeJapanese(segments);
   let segmentIndex = 0;
 
   async function playTts() {
@@ -155,6 +178,10 @@
     return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
   }
 
+  function hasAlpha(someString) {
+    return /[a-zA-Z]/.test(someString);
+  }
+
   // Initialize logs when page loads
   document.addEventListener('DOMContentLoaded', function () {
     log('Page loaded', 'info');
@@ -181,6 +208,6 @@
     playTts();
   }
 
-  var userJs1 = playPrev
-  var userJs2 = playNext
+  var userJs1 = playNext
+  var userJs2 = playPrev
 </script>
