@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { devtools, persist } from 'zustand/middleware';
 import { BadmintonScoreSettings, CourtPosition, GAMEPAD_ACTIONS, PlayerColor, TGamePadAction } from './types';
-import { initialPositions, T_TEAMS, TEAM_NAME } from './constants';
+import { T_TEAMS, TEAM_NAME } from './constants';
+import { PositionFlags } from '../types';
 
 // Type for the state that can be undone
 interface UndoableState {
@@ -12,13 +13,13 @@ interface UndoableState {
   player2Name: string;
   gameOver: boolean;
   winner: string;
-  positions: Record<CourtPosition, PlayerColor>;
   servingTeam: T_TEAMS;
   settings: BadmintonScoreSettings;
+  positionFlags: PositionFlags;
 }
 
 // Define the state interface
-interface BadmintonScoreState {
+interface State {
   // Score state
   player1Score: number;
   player2Score: number;
@@ -26,7 +27,7 @@ interface BadmintonScoreState {
   player2Name: string;
   gameOver: boolean;
   winner: string;
-  positions: Record<CourtPosition, PlayerColor>;
+  positionFlags: PositionFlags;
 
   // Court layout state
   servingTeam: T_TEAMS;
@@ -42,7 +43,9 @@ interface BadmintonScoreState {
   // Undo history
   history: UndoableState[];
   currentHistoryIndex: number;
+}
 
+interface StoreActions {
   // Actions
   setSettings: (settings: BadmintonScoreSettings) => void;
   handleSettingsChange: <K extends keyof BadmintonScoreSettings>(field: K, value: BadmintonScoreSettings[K]) => void;
@@ -52,7 +55,7 @@ interface BadmintonScoreState {
   handleOpenSettings: () => void;
   handleCloseSettings: () => void;
   handleSaveSettings: () => void;
-  swapServingTeam: () => void;  // New handler for swapping the serving team
+  swapServingTeam: () => void;  // handler for swapping the serving team
 
   // Gamepad actions
   updateButtonMapping: (buttonIndex: number, action: TGamePadAction) => void;
@@ -64,15 +67,21 @@ interface BadmintonScoreState {
   undo: () => void;
 }
 
+type BadmintonStore = State & StoreActions
+
 // Initial state definition
-const initialState = {
+const initialState : State = {
   player1Score: 0,
   player2Score: 0,
   player1Name: 'Player 1',
   player2Name: 'Player 2',
   gameOver: false,
   winner: '',
-  positions: initialPositions,
+  positionFlags: {
+    p1: false,
+    p2: false,
+    courtPos: false
+  },
   servingTeam: TEAM_NAME.TEAM2,
   settingsOpen: false,
   settings: {
@@ -93,7 +102,7 @@ const initialState = {
 };
 
 // Create the Zustand store
-export const useBadmintonStore = create<BadmintonScoreState>()(
+export const useBadmintonStore = create<BadmintonStore>()(
   devtools(
     persist(
       immer((set, get) => {
@@ -107,7 +116,7 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
             player2Name: state.player2Name,
             gameOver: state.gameOver,
             winner: state.winner,
-            positions: { ...state.positions },
+            positionFlags: {...state.positionFlags},
             servingTeam: state.servingTeam,
             settings: { ...state.settings }
           };
@@ -149,7 +158,6 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
               state.player2Name = previousState.player2Name;
               state.gameOver = previousState.gameOver;
               state.winner = previousState.winner;
-              state.positions = { ...previousState.positions };
               state.servingTeam = previousState.servingTeam;
               state.settings = { ...previousState.settings };
             }
@@ -184,14 +192,10 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
                 // Position swapping logic
                 if (scoringTeam === TEAM_NAME.TEAM1) {
                   // Swap positions for team Q2Q3
-                  const tempQ2 = state.positions.Q2;
-                  state.positions.Q2 = state.positions.Q3;
-                  state.positions.Q3 = tempQ2;
+                  state.positionFlags.p1 = !state.positionFlags.p1
                 } else {
                   // Swap positions for team Q1Q4
-                  const tempQ1 = state.positions.Q1;
-                  state.positions.Q1 = state.positions.Q4;
-                  state.positions.Q4 = tempQ1;
+                  state.positionFlags.p2 = !state.positionFlags.p2
                 }
               }
 
@@ -296,6 +300,7 @@ export const useBadmintonStore = create<BadmintonScoreState>()(
         // Don't persist undo history
         partialize: (state) => ({
           ...state,
+          tempSettings: state.settings,
           history: [],
           currentHistoryIndex: -1,
           settingsOpen: false, // Don't persist dialog state

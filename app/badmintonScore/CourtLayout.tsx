@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Box, Grid, keyframes } from '@mui/material';
-import { T_TEAMS, TEAM_NAME, TOP_HALF } from './constants';
+import { initialColorMap, T_TEAMS, TEAM_NAME, TOP_HALF } from './constants';
 import { CourtPosition, PlayerColor } from './types';
 import { useBadmintonStore } from './useBadmintonStore';
 import CompassCalibrationIcon from '@mui/icons-material/CompassCalibration';
+import { PositionFlags } from '../types';
 
 // Map colors to their CSS color values
 const colorValues: Record<PlayerColor, string> = {
@@ -29,12 +30,31 @@ interface QuadrantProps {
   isServing: boolean;
 }
 
+const getColorKey = (positionFlags: PositionFlags, positionName: CourtPosition): CourtPosition => {
+  const transformMap: Record<CourtPosition, CourtPosition> = {
+    Q1: "Q1",
+    Q2: "Q2",
+    Q3: "Q3",
+    Q4: "Q4"
+  }
+  if(positionFlags.courtPos){
+    // swap (Q1 and Q2) and (Q3 and Q4)
+  }
+  if(positionFlags.p1){
+    // swap (Q2 and Q3)
+  }
+  if(positionFlags.p2){
+    // swap (Q1 and Q4)
+  }
+  return transformMap[positionName]
+}
+
 // Extracted Quadrant component
 const Quadrant: React.FC<QuadrantProps> = ({ positionName, isServing }) => {
-  const colorName = useBadmintonStore(state => state.positions[positionName])
   const transition = 'background-color 1s ease-in-out';
   const servingTeam = useBadmintonStore(state => state.servingTeam);
-
+  const positionFlags = useBadmintonStore(state => state.positionFlags);
+  const colorKey = getColorKey(positionFlags, positionName);
   const verticalPosition: React.CSSProperties = TOP_HALF.includes(positionName) 
     ? { top: "2rem" } 
     : { bottom: "2rem" };
@@ -43,7 +63,7 @@ const Quadrant: React.FC<QuadrantProps> = ({ positionName, isServing }) => {
     <Grid size={6}>
       <Box sx={{
         height: "100%",
-        backgroundColor: colorValues[colorName],
+        backgroundColor: initialColorMap[colorKey],
         transition: transition,
         position: 'relative'
       }}>
@@ -67,7 +87,6 @@ const Quadrant: React.FC<QuadrantProps> = ({ positionName, isServing }) => {
 };
 
 export const CourtLayout: React.FC = () => {
-  const positions = useBadmintonStore(state => state.positions)
 
   let servingPlayer = useBadmintonStore(state => {
     // For team 1 (Q2 & Q3)

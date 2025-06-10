@@ -8,7 +8,7 @@ export const TEAM_NAME = {
 export type T_TEAMS = typeof TEAM_NAME[keyof typeof TEAM_NAME];
 
 // The initial position of each player color
-export const initialPositions: Record<CourtPosition, PlayerColor> = {
+export const initialColorMap: Record<CourtPosition, PlayerColor> = {
   Q1: 'blue',
   Q2: 'white',
   Q3: 'yellow',
