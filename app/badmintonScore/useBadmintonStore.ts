@@ -56,6 +56,7 @@ interface StoreActions {
   handleCloseSettings: () => void;
   handleSaveSettings: () => void;
   swapServingTeam: () => void;  // handler for swapping the serving team
+  swapCourt: () => void;
 
   // Gamepad actions
   updateButtonMapping: (buttonIndex: number, action: TGamePadAction) => void;
@@ -266,6 +267,16 @@ export const useBadmintonStore = create<BadmintonStore>()(
             }
           },
 
+          swapCourt: () => {
+            const state = get();
+            // Only swap if both scores are 0
+            if (state.player1Score === 0 && state.player2Score === 0) {
+              set((state) => {
+                state.positionFlags.courtPos = !state.positionFlags.courtPos
+              });
+            }
+          },
+
           // Gamepad action methods
           updateButtonMapping: (buttonIndex: number, action: TGamePadAction) => {
             set((state) => {
@@ -290,6 +301,9 @@ export const useBadmintonStore = create<BadmintonStore>()(
                 break;
               case GAMEPAD_ACTIONS.SWAP_SERVE:
                 state.swapServingTeam()
+                break;
+              case GAMEPAD_ACTIONS.SWAP_COURT:
+                state.swapCourt()
                 break;
             }
           }
