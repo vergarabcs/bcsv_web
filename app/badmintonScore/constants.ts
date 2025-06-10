@@ -8,11 +8,11 @@ export const TEAM_NAME = {
 export type T_TEAMS = typeof TEAM_NAME[keyof typeof TEAM_NAME];
 
 // The initial position of each player color
-export const initialColorMap: Record<CourtPosition, PlayerColor> = {
-  Q1: 'blue',
+export const initialColorMap: Record<CourtPosition, string> = {
+  Q1: '#0032A0', // blue
   Q2: 'white',
-  Q3: 'yellow',
-  Q4: 'red'
+  Q3: '#FED141', // yellow
+  Q4: '#BF0D3E' // red
 };
 
 export const TOP_HALF = ["Q1", "Q2"]

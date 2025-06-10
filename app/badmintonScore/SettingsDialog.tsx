@@ -12,13 +12,17 @@ import {
   Box,
   Typography,
   Divider,
-  Chip
+  Chip,
+  Alert,
+  Collapse
 } from '@mui/material';
 import { useBadmintonStore } from './useBadmintonStore';
 import { GAMEPAD_ACTIONS, TGamePadAction } from './types';
 import { useGamepad } from './useGamepad';
+import { useState } from 'react';
 
 export const SettingsDialog = () => {
+  const [showClearAlert, setShowClearAlert] = useState(false);
   const {
     settingsOpen,
     tempSettings,
@@ -29,8 +33,21 @@ export const SettingsDialog = () => {
     resetGame,
     player1Score,
     player2Score,
-    swapServingTeam
+    swapServingTeam,
+    resetStore
   } = useBadmintonStore();
+
+  // Handle clearing local storage cache
+  const handleClearCache = () => {
+    // Clear the specific storage key for badminton score
+    localStorage.removeItem('badminton-score-storage');
+    // Reset the store state to defaults
+    resetStore();
+    // Show confirmation alert
+    setShowClearAlert(true);
+    // Hide alert after 3 seconds
+    setTimeout(() => setShowClearAlert(false), 3000);
+  };
 
   // Check if swapping serving team is allowed (both scores must be 0)
   const canSwapServe = player1Score === 0 && player2Score === 0;
@@ -268,6 +285,31 @@ export const SettingsDialog = () => {
                 )}
               </Box>
             </Box>
+          </Box>
+
+          {/* Clear Cache Section */}
+          <Box sx={{ flexBasis: '100%', mt: 2 }}>
+            <Divider />
+            <Typography variant="h6" sx={{ my: 2 }}>Clear Cache</Typography>
+            
+            <Button 
+              variant="outlined"
+              color="error"
+              fullWidth
+              onClick={handleClearCache}
+            >
+              Clear Local Storage Cache
+            </Button>
+            
+            <Collapse in={showClearAlert}>
+              <Alert 
+                severity="success" 
+                sx={{ mt: 1 }}
+                onClose={() => setShowClearAlert(false)}
+              >
+                Cache cleared successfully!
+              </Alert>
+            </Collapse>
           </Box>
         </Box>
       </DialogContent>

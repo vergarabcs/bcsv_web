@@ -43,7 +43,6 @@ export default function BadmintonScore() {
   } = useBadmintonStore();
 
   const courtPos = useBadmintonStore(state => state.positionFlags.courtPos)
-
   // Register service worker on component mount
   useEffect(() => {
     const initServiceWorker = async () => {
@@ -248,12 +247,12 @@ export default function BadmintonScore() {
           <div className={styles.scoreDisplay} style={{ position: 'relative', zIndex: 1 }}>
             {/* Player 1 side */}
             <PlayerScore 
-              team={courtPos ? TEAM_NAME.TEAM1 : TEAM_NAME.TEAM2}
+              team={courtPos ? TEAM_NAME.TEAM2 : TEAM_NAME.TEAM1}
             />
 
             {/* Player 2 side */}
             <PlayerScore 
-              team={courtPos ? TEAM_NAME.TEAM2 : TEAM_NAME.TEAM1}
+              team={courtPos ? TEAM_NAME.TEAM1 : TEAM_NAME.TEAM2}
             />
           </div>
 
