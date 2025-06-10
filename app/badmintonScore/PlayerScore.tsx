@@ -6,12 +6,10 @@ import { useCallback } from 'react';
 
 interface PlayerScoreProps {
   team: T_TEAMS;
-  className: string;
 }
 
 export const PlayerScore = ({
-  team,
-  className
+  team
 }: PlayerScoreProps) => {
   // Selectively subscribe only to the data needed for this specific team
   const score = useBadmintonStore(state => team === TEAM_NAME.TEAM1 ? state.player1Score : state.player2Score);
@@ -26,7 +24,7 @@ export const PlayerScore = ({
   return (
     <div 
       onClick={() => handleScore(team)}
-      className={className}
+      className={styles.playerArea}
       style={{ 
         cursor: gameOver ? 'default' : 'pointer',
         backgroundColor: 'transparent' 

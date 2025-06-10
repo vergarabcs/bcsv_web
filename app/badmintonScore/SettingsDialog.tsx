@@ -59,6 +59,7 @@ export const SettingsDialog = () => {
   const team2Button = getMappedButton("team2Scores");
   const undoButton = getMappedButton("undo");
   const swapServeButton = getMappedButton("swapServe");
+  const swapCourtButton = getMappedButton("swapCourt");
 
   return (
     <Dialog 
@@ -243,6 +244,24 @@ export const SettingsDialog = () => {
                 {swapServeButton !== null && (
                   <Chip 
                     label={`Button ${swapServeButton}`} 
+                    color="primary" 
+                    size="small"
+                  />
+                )}
+              </Box>
+
+              <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+                <Button 
+                  variant="outlined"
+                  color={isListening && "secondary" || "primary"}
+                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.SWAP_COURT)}
+                  fullWidth
+                >
+                  {isListening ? "Press a button..." : "Map Swap Court"}
+                </Button>
+                {swapServeButton !== null && (
+                  <Chip 
+                    label={`Button ${swapCourtButton}`} 
                     color="primary" 
                     size="small"
                   />

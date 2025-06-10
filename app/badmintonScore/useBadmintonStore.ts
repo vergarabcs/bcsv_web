@@ -230,6 +230,7 @@ export const useBadmintonStore = create<BadmintonStore>()(
             state.player2Score = 0;
             state.gameOver = false;
             state.winner = '';
+            state.positionFlags = initialState.positionFlags
             state.saveHistory();
           }),
 

@@ -15,7 +15,6 @@ export const useGamepad = () => {
   const buttonMappings = useBadmintonStore(state => state.buttonMappings);
   const updateButtonMapping = useBadmintonStore(state => state.updateButtonMapping);
   const dispatchGamepadAction = useBadmintonStore(state => state.dispatchGamepadAction);
-
   // Poll for gamepad button states
   const pollGamepads = useCallback(() => {
     if (!enabled) return;

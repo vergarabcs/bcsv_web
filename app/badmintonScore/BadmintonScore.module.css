@@ -23,16 +23,6 @@
   user-select: none;
 }
 
-.playerArea1 {
-  composes: playerArea;
-  background-color: #e3f2fd;
-}
-
-.playerArea2 {
-  composes: playerArea;
-  background-color: #ffebee;
-}
-
 .scoreNumber {
   font-size: 15rem;
   font-weight: bold;

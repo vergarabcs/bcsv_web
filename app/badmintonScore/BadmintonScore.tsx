@@ -37,11 +37,12 @@ export default function BadmintonScore() {
     gameOver,
     winner,
     resetGame,
-    history,
     handleOpenSettings,
     undo,
-    canUndo
+    canUndo,
   } = useBadmintonStore();
+
+  const courtPos = useBadmintonStore(state => state.positionFlags.courtPos)
 
   // Register service worker on component mount
   useEffect(() => {
@@ -247,14 +248,12 @@ export default function BadmintonScore() {
           <div className={styles.scoreDisplay} style={{ position: 'relative', zIndex: 1 }}>
             {/* Player 1 side */}
             <PlayerScore 
-              team={TEAM_NAME.TEAM1}
-              className={styles.playerArea1}
+              team={courtPos ? TEAM_NAME.TEAM1 : TEAM_NAME.TEAM2}
             />
 
             {/* Player 2 side */}
             <PlayerScore 
-              team={TEAM_NAME.TEAM2}
-              className={styles.playerArea2}
+              team={courtPos ? TEAM_NAME.TEAM2 : TEAM_NAME.TEAM1}
             />
           </div>
 
