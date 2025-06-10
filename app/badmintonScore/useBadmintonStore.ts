@@ -37,8 +37,9 @@ interface State {
   settings: BadmintonScoreSettings;
   tempSettings: BadmintonScoreSettings;
 
-  // Gamepad controls
+  // Input controls
   buttonMappings: Record<number, TGamePadAction>;
+  keyMappings: Record<string, TGamePadAction>; // New: keyboard mappings
 
   // Undo history
   history: UndoableState[];
@@ -60,6 +61,7 @@ interface StoreActions {
 
   // Gamepad actions
   updateButtonMapping: (buttonIndex: number, action: TGamePadAction) => void;
+  updateKeyMapping: (key: string, action: TGamePadAction) => void; // Add keyboard mapping
   dispatchGamepadAction: (action: TGamePadAction) => void;
 
   // Undo functionality
@@ -98,6 +100,7 @@ const initialState : State = {
     player2Name: 'Player 2',
   },
   buttonMappings: {},
+  keyMappings: {}, // Initialize keyMappings
   history: [],
   currentHistoryIndex: -1,
 };
@@ -282,6 +285,14 @@ export const useBadmintonStore = create<BadmintonStore>()(
           updateButtonMapping: (buttonIndex: number, action: TGamePadAction) => {
             set((state) => {
               state.buttonMappings[buttonIndex] = action;
+              state.saveHistory();
+            });
+          },
+
+          // New method to update key mappings
+          updateKeyMapping: (key: string, action: TGamePadAction) => {
+            set((state) => {
+              state.keyMappings[key] = action;
               state.saveHistory();
             });
           },

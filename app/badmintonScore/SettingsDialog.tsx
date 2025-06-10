@@ -14,15 +14,23 @@ import {
   Divider,
   Chip,
   Alert,
-  Collapse
+  Collapse,
+  ToggleButtonGroup,
+  ToggleButton,
+  Tabs,
+  Tab
 } from '@mui/material';
 import { useBadmintonStore } from './useBadmintonStore';
 import { GAMEPAD_ACTIONS, TGamePadAction } from './types';
-import { useGamepad } from './useGamepad';
+import { useGamepad, InputDevice } from './useGamepad';
 import { useState } from 'react';
+import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
+import KeyboardIcon from '@mui/icons-material/Keyboard';
 
 export const SettingsDialog = () => {
   const [showClearAlert, setShowClearAlert] = useState(false);
+  const [inputDevice, setInputDevice] = useState<InputDevice>('gamepad');
+  
   const {
     settingsOpen,
     tempSettings,
@@ -30,6 +38,7 @@ export const SettingsDialog = () => {
     handleCloseSettings,
     handleSaveSettings,
     buttonMappings,
+    keyMappings,
     resetGame,
     player1Score,
     player2Score,
@@ -54,11 +63,12 @@ export const SettingsDialog = () => {
 
   const {
     isListening,
-    startListening
+    startListening,
+    listeningDevice
   } = useGamepad();
 
-  const handleGamepadMapping = (action: TGamePadAction) => {
-    startListening(action);
+  const handleInputMapping = (action: TGamePadAction) => {
+    startListening(action, inputDevice);
   };
 
   // Helper function to find a button number mapped to a specific action
@@ -71,12 +81,44 @@ export const SettingsDialog = () => {
     return null;
   };
 
-  // Get mapped buttons for each action
-  const team1Button = getMappedButton("team1Scores");
-  const team2Button = getMappedButton("team2Scores");
-  const undoButton = getMappedButton("undo");
-  const swapServeButton = getMappedButton("swapServe");
-  const swapCourtButton = getMappedButton("swapCourt");
+  // Helper function to find a key mapped to a specific action
+  const getMappedKey = (action: TGamePadAction): string | null => {
+    for (const [key, mappedAction] of Object.entries(keyMappings)) {
+      if (mappedAction === action) {
+        return key;
+      }
+    }
+    return null;
+  };
+
+  // Format key code for display (convert "KeyA" to "A")
+  const formatKeyCode = (keyCode: string | null): string => {
+    if (!keyCode) return "None";
+    
+    // Handle special keys
+    if (keyCode === "Space") return "Spacebar";
+    if (keyCode === "ArrowLeft") return "←";
+    if (keyCode === "ArrowRight") return "→";
+    if (keyCode === "ArrowUp") return "↑";
+    if (keyCode === "ArrowDown") return "↓";
+    if (keyCode.startsWith("Key")) return keyCode.substring(3);
+    if (keyCode.startsWith("Digit")) return keyCode.substring(5);
+    
+    return keyCode;
+  };
+
+  // Get mapped inputs for each action
+  const team1Button = getMappedButton(GAMEPAD_ACTIONS.TEAM1_SCORES);
+  const team2Button = getMappedButton(GAMEPAD_ACTIONS.TEAM2_SCORES);
+  const undoButton = getMappedButton(GAMEPAD_ACTIONS.UNDO);
+  const swapServeButton = getMappedButton(GAMEPAD_ACTIONS.SWAP_SERVE);
+  const swapCourtButton = getMappedButton(GAMEPAD_ACTIONS.SWAP_COURT);
+  
+  const team1Key = getMappedKey(GAMEPAD_ACTIONS.TEAM1_SCORES);
+  const team2Key = getMappedKey(GAMEPAD_ACTIONS.TEAM2_SCORES);
+  const undoKey = getMappedKey(GAMEPAD_ACTIONS.UNDO);
+  const swapServeKey = getMappedKey(GAMEPAD_ACTIONS.SWAP_SERVE);
+  const swapCourtKey = getMappedKey(GAMEPAD_ACTIONS.SWAP_COURT);
 
   return (
     <Dialog 
@@ -189,100 +231,165 @@ export const SettingsDialog = () => {
             )}
           </Box>
           
-          {/* Gamepad Controls Section */}
+          {/* Input Controls Section */}
           <Box sx={{ flexBasis: '100%', mt: 2 }}>
             <Divider />
-            <Typography variant="h6" sx={{ my: 2 }}>Gamepad Controls</Typography>
+            <Typography variant="h6" sx={{ my: 2 }}>Input Controls</Typography>
+            
+            {/* Toggle between gamepad and keyboard */}
+            <ToggleButtonGroup
+              value={inputDevice}
+              exclusive
+              onChange={(_, newDevice) => {
+                if (newDevice !== null) {
+                  setInputDevice(newDevice);
+                }
+              }}
+              aria-label="Input device"
+              sx={{ mb: 2, display: 'flex', width: '100%' }}
+            >
+              <ToggleButton value="gamepad" aria-label="gamepad" sx={{ flex: 1 }}>
+                <VideogameAssetIcon sx={{ mr: 1 }} /> Gamepad
+              </ToggleButton>
+              <ToggleButton value="keyboard" aria-label="keyboard" sx={{ flex: 1 }}>
+                <KeyboardIcon sx={{ mr: 1 }} /> Keyboard
+              </ToggleButton>
+            </ToggleButtonGroup>
             
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+              {/* Player 1 Score Mapping */}
               <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
                 <Button 
                   variant="outlined"
-                  color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.TEAM1_SCORES)}
+                  color={isListening && listeningDevice === inputDevice && "secondary" || "primary"}
+                  onClick={() => handleInputMapping(GAMEPAD_ACTIONS.TEAM1_SCORES)}
                   fullWidth
                 >
-                  {isListening ? "Press a button..." : "Map Player 1 Score"}
+                  {isListening && listeningDevice === inputDevice ? 
+                    inputDevice === 'gamepad' ? "Press a button..." : "Press a key..." : 
+                    `Map Player 1 Score`}
                 </Button>
-                {team1Button !== null && (
+                {inputDevice === 'gamepad' && team1Button !== null ? (
                   <Chip 
                     label={`Button ${team1Button}`} 
                     color="primary" 
                     size="small"
                   />
-                )}
+                ) : inputDevice === 'keyboard' && team1Key ? (
+                  <Chip 
+                    label={formatKeyCode(team1Key)} 
+                    color="primary" 
+                    size="small"
+                  />
+                ) : null}
               </Box>
               
+              {/* Player 2 Score Mapping */}
               <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
                 <Button 
                   variant="outlined"
-                  color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.TEAM2_SCORES)}
+                  color={isListening && listeningDevice === inputDevice && "secondary" || "primary"}
+                  onClick={() => handleInputMapping(GAMEPAD_ACTIONS.TEAM2_SCORES)}
                   fullWidth
                 >
-                  {isListening ? "Press a button..." : "Map Player 2 Score"}
+                  {isListening && listeningDevice === inputDevice ? 
+                    inputDevice === 'gamepad' ? "Press a button..." : "Press a key..." : 
+                    `Map Player 2 Score`}
                 </Button>
-                {team2Button !== null && (
+                {inputDevice === 'gamepad' && team2Button !== null ? (
                   <Chip 
                     label={`Button ${team2Button}`} 
                     color="primary" 
                     size="small"
                   />
-                )}
+                ) : inputDevice === 'keyboard' && team2Key ? (
+                  <Chip 
+                    label={formatKeyCode(team2Key)} 
+                    color="primary" 
+                    size="small"
+                  />
+                ) : null}
               </Box>
               
+              {/* Undo Mapping */}
               <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
                 <Button 
                   variant="outlined"
-                  color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.UNDO)}
+                  color={isListening && listeningDevice === inputDevice && "secondary" || "primary"}
+                  onClick={() => handleInputMapping(GAMEPAD_ACTIONS.UNDO)}
                   fullWidth
                 >
-                  {isListening ? "Press a button..." : "Map Undo Action"}
+                  {isListening && listeningDevice === inputDevice ? 
+                    inputDevice === 'gamepad' ? "Press a button..." : "Press a key..." : 
+                    `Map Undo Action`}
                 </Button>
-                {undoButton !== null && (
+                {inputDevice === 'gamepad' && undoButton !== null ? (
                   <Chip 
                     label={`Button ${undoButton}`} 
                     color="primary" 
                     size="small"
                   />
-                )}
+                ) : inputDevice === 'keyboard' && undoKey ? (
+                  <Chip 
+                    label={formatKeyCode(undoKey)} 
+                    color="primary" 
+                    size="small"
+                  />
+                ) : null}
               </Box>
 
+              {/* Swap Serve Mapping */}
               <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
                 <Button 
                   variant="outlined"
-                  color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.SWAP_SERVE)}
+                  color={isListening && listeningDevice === inputDevice && "secondary" || "primary"}
+                  onClick={() => handleInputMapping(GAMEPAD_ACTIONS.SWAP_SERVE)}
                   fullWidth
                 >
-                  {isListening ? "Press a button..." : "Map Swap Serve"}
+                  {isListening && listeningDevice === inputDevice ? 
+                    inputDevice === 'gamepad' ? "Press a button..." : "Press a key..." : 
+                    `Map Swap Serve`}
                 </Button>
-                {swapServeButton !== null && (
+                {inputDevice === 'gamepad' && swapServeButton !== null ? (
                   <Chip 
                     label={`Button ${swapServeButton}`} 
                     color="primary" 
                     size="small"
                   />
-                )}
+                ) : inputDevice === 'keyboard' && swapServeKey ? (
+                  <Chip 
+                    label={formatKeyCode(swapServeKey)} 
+                    color="primary" 
+                    size="small"
+                  />
+                ) : null}
               </Box>
 
+              {/* Swap Court Mapping */}
               <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
                 <Button 
                   variant="outlined"
-                  color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.SWAP_COURT)}
+                  color={isListening && listeningDevice === inputDevice && "secondary" || "primary"}
+                  onClick={() => handleInputMapping(GAMEPAD_ACTIONS.SWAP_COURT)}
                   fullWidth
                 >
-                  {isListening ? "Press a button..." : "Map Swap Court"}
+                  {isListening && listeningDevice === inputDevice ? 
+                    inputDevice === 'gamepad' ? "Press a button..." : "Press a key..." : 
+                    `Map Swap Court`}
                 </Button>
-                {swapServeButton !== null && (
+                {inputDevice === 'gamepad' && swapCourtButton !== null ? (
                   <Chip 
                     label={`Button ${swapCourtButton}`} 
                     color="primary" 
                     size="small"
                   />
-                )}
+                ) : inputDevice === 'keyboard' && swapCourtKey ? (
+                  <Chip 
+                    label={formatKeyCode(swapCourtKey)} 
+                    color="primary" 
+                    size="small"
+                  />
+                ) : null}
               </Box>
             </Box>
           </Box>
