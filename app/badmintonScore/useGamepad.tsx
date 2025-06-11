@@ -2,18 +2,6 @@ import { TGamePadAction } from '@/app/badmintonScore/types';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useBadmintonStore } from './useBadmintonStore';
 
-// Create a global interface to expose our debugging functions
-declare global {
-  interface Window {
-    badmintonDebug: {
-      dispatchGamepadAction?: (action: TGamePadAction) => void;
-      getButtonMappings?: () => Record<number, TGamePadAction>;
-      getKeyMappings?: () => Record<string, TGamePadAction>;
-      connectedGamepads?: () => number[];
-    };
-  }
-}
-
 export type InputDevice = 'gamepad' | 'keyboard';
 
 export interface InputMapping {
@@ -42,30 +30,6 @@ export const useGamepad = () => {
   const updateButtonMapping = useBadmintonStore(state => state.updateButtonMapping);
   const updateKeyMapping = useBadmintonStore(state => state.updateKeyMapping);
   const dispatchGamepadAction = useBadmintonStore(state => state.dispatchGamepadAction);
-  
-  // Expose functions to the global window object for debugging
-  useEffect(() => {
-    // Initialize the debug object if it doesn't exist
-    if (!window.badmintonDebug) {
-      window.badmintonDebug = {};
-    }
-    
-    // Expose the dispatchGamepadAction function
-    window.badmintonDebug.dispatchGamepadAction = dispatchGamepadAction;
-    
-    // Also expose useful debugging helpers
-    window.badmintonDebug.getButtonMappings = () => buttonMappings;
-    window.badmintonDebug.getKeyMappings = () => keyMappings;
-    window.badmintonDebug.connectedGamepads = () => Array.from(connectedGamepads.current);
-    
-    return () => {
-      // Clean up when component unmounts
-      delete window.badmintonDebug.dispatchGamepadAction;
-      delete window.badmintonDebug.getButtonMappings;
-      delete window.badmintonDebug.getKeyMappings;
-      delete window.badmintonDebug.connectedGamepads;
-    };
-  }, [dispatchGamepadAction, buttonMappings, keyMappings]);
   
   // Poll for gamepad button states
   const pollGamepads = useCallback(() => {
