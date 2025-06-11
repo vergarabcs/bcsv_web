@@ -1,19 +1,20 @@
 import { Box, Grid, keyframes } from '@mui/material';
-import { initialColorMap, TEAM_NAME, TOP_HALF } from './constants';
+import { initialColorMap, TEAM_NAME } from './constants';
 import { CourtPosition } from './types';
 import { useBadmintonStore } from './useBadmintonStore';
-import CompassCalibrationIcon from '@mui/icons-material/CompassCalibration';
 import { PositionFlags } from '../types';
 
 
 // Define blinking animation keyframes
 const blinkAnimation = keyframes`
   0% {
+    filter: saturate(1) brightness(0.5);
   }
   50% {
-    transform: rotate(20deg);
+    filter: saturate(1.6) brightness(1.1);
   }
-  100% { 
+  100% {
+    filter: saturate(1) brightness(0.5);
   }
 `;
 
@@ -61,12 +62,8 @@ const getColorKey = (positionFlags: PositionFlags, positionName: CourtPosition):
 // Extracted Quadrant component
 const Quadrant: React.FC<QuadrantProps> = ({ positionName, isServing }) => {
   const transition = 'background-color 1s ease-in-out';
-  const servingTeam = useBadmintonStore(state => state.servingTeam);
   const positionFlags = useBadmintonStore(state => state.positionFlags);
   const colorKey = getColorKey(positionFlags, positionName);
-  const verticalPosition: React.CSSProperties = TOP_HALF.includes(positionName) 
-    ? { top: "2rem" } 
-    : { bottom: "2rem" };
 
   return (
     <Grid size={6}>
@@ -74,22 +71,9 @@ const Quadrant: React.FC<QuadrantProps> = ({ positionName, isServing }) => {
         height: "100%",
         backgroundColor: initialColorMap[colorKey],
         transition: transition,
-        position: 'relative'
+        position: 'relative',
+        animation: isServing ? `${blinkAnimation} 1.0s infinite`: 'none'
       }}>
-      {isServing && (
-        <CompassCalibrationIcon 
-        sx={{
-          animation: isServing ? `${blinkAnimation} 1.0s infinite` : 'none',
-          fontSize: '3rem',
-          position: 'absolute',
-          right: '2rem',
-          transform: 'rotate(45deg)',
-          scale: 2.0,
-          color: servingTeam === TEAM_NAME.TEAM1? 'black' : 'white',
-          ...verticalPosition
-        }}
-        />
-      )}
       </Box>
     </Grid>
   );
