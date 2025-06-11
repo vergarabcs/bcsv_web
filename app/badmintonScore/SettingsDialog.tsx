@@ -263,11 +263,11 @@ export const SettingsDialog = () => {
                   variant="outlined"
                   color={isListening && listeningDevice === inputDevice && "secondary" || "primary"}
                   onClick={() => handleInputMapping(GAMEPAD_ACTIONS.TEAM1_SCORES)}
-                  fullWidth
+                  fullWidth 
                 >
                   {isListening && listeningDevice === inputDevice ? 
                     inputDevice === 'gamepad' ? "Press a button..." : "Press a key..." : 
-                    `Map Player 1 Score`}
+                    `Player 1 Score`}
                 </Button>
                 {inputDevice === 'gamepad' && team1Button !== null ? (
                   <Chip 
@@ -294,7 +294,7 @@ export const SettingsDialog = () => {
                 >
                   {isListening && listeningDevice === inputDevice ? 
                     inputDevice === 'gamepad' ? "Press a button..." : "Press a key..." : 
-                    `Map Player 2 Score`}
+                    `Player 2 Score`}
                 </Button>
                 {inputDevice === 'gamepad' && team2Button !== null ? (
                   <Chip 
@@ -321,7 +321,7 @@ export const SettingsDialog = () => {
                 >
                   {isListening && listeningDevice === inputDevice ? 
                     inputDevice === 'gamepad' ? "Press a button..." : "Press a key..." : 
-                    `Map Undo Action`}
+                    `Undo Action`}
                 </Button>
                 {inputDevice === 'gamepad' && undoButton !== null ? (
                   <Chip 
@@ -348,7 +348,7 @@ export const SettingsDialog = () => {
                 >
                   {isListening && listeningDevice === inputDevice ? 
                     inputDevice === 'gamepad' ? "Press a button..." : "Press a key..." : 
-                    `Map Swap Serve`}
+                    `Swap Serve`}
                 </Button>
                 {inputDevice === 'gamepad' && swapServeButton !== null ? (
                   <Chip 
@@ -375,7 +375,7 @@ export const SettingsDialog = () => {
                 >
                   {isListening && listeningDevice === inputDevice ? 
                     inputDevice === 'gamepad' ? "Press a button..." : "Press a key..." : 
-                    `Map Swap Court`}
+                    `Swap Court`}
                 </Button>
                 {inputDevice === 'gamepad' && swapCourtButton !== null ? (
                   <Chip 
