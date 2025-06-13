@@ -1,22 +1,10 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { devtools, persist } from 'zustand/middleware';
+import { temporal } from 'zundo';
 import { BadmintonScoreSettings, CourtPosition, GAMEPAD_ACTIONS, PlayerColor, TGamePadAction } from './types';
 import { T_TEAMS, TEAM_NAME } from './constants';
 import { PositionFlags } from '../types';
-
-// Type for the state that can be undone
-interface UndoableState {
-  player1Score: number;
-  player2Score: number;
-  player1Name: string;
-  player2Name: string;
-  gameOver: boolean;
-  winner: string;
-  servingTeam: T_TEAMS;
-  settings: BadmintonScoreSettings;
-  positionFlags: PositionFlags;
-}
 
 // Define the state interface
 interface State {
@@ -40,10 +28,6 @@ interface State {
   // Input controls
   buttonMappings: Record<number, TGamePadAction>;
   keyMappings: Record<string, TGamePadAction>; // New: keyboard mappings
-
-  // Undo history
-  history: UndoableState[];
-  currentHistoryIndex: number;
 }
 
 interface StoreActions {
@@ -63,11 +47,6 @@ interface StoreActions {
   updateButtonMapping: (buttonIndex: number, action: TGamePadAction) => void;
   updateKeyMapping: (key: string, action: TGamePadAction) => void; // Add keyboard mapping
   dispatchGamepadAction: (action: TGamePadAction) => void;
-
-  // Undo functionality
-  saveHistory: () => void;
-  canUndo: () => boolean;
-  undo: () => void;
 }
 
 type BadmintonStore = State & StoreActions
@@ -101,77 +80,21 @@ const initialState : State = {
   },
   buttonMappings: {},
   keyMappings: {}, // Initialize keyMappings
-  history: [],
-  currentHistoryIndex: -1,
 };
 
 // Create the Zustand store
 export const useBadmintonStore = create<BadmintonStore>()(
   devtools(
     persist(
-      immer((set, get) => {
-        // Helper function to capture current undoable state
-        const captureUndoableState = (): UndoableState => {
-          const state = get();
-          return {
-            player1Score: state.player1Score,
-            player2Score: state.player2Score,
-            player1Name: state.player1Name,
-            player2Name: state.player2Name,
-            gameOver: state.gameOver,
-            winner: state.winner,
-            positionFlags: {...state.positionFlags},
-            servingTeam: state.servingTeam,
-            settings: { ...state.settings }
-          };
-        };
-
-        return {
+      temporal(
+        immer((set, get) => ({
           // Initial state
           ...initialState,
-
-          // Undo functionality
-          saveHistory: () => set((state) => {
-            // Capture current state
-            const currentState = captureUndoableState();
-
-            // If we're in the middle of the history, remove future states
-            if (state.currentHistoryIndex >= 0 && state.currentHistoryIndex < state.history.length - 1) {
-              state.history = state.history.slice(0, state.currentHistoryIndex + 1);
-            }
-
-            // Add current state to history
-            state.history.push(currentState);
-            state.currentHistoryIndex = state.history.length - 1;
-          }),
-
-          canUndo: () => {
-            const state = get();
-            return state.currentHistoryIndex > 0;
-          },
-
-          undo: () => set((state) => {
-            if (state.currentHistoryIndex > 0) {
-              state.currentHistoryIndex--;
-              const previousState = state.history[state.currentHistoryIndex];
-
-              // Restore state from history (except settingsOpen and tempSettings)
-              state.player1Score = previousState.player1Score;
-              state.player2Score = previousState.player2Score;
-              state.player1Name = previousState.player1Name;
-              state.player2Name = previousState.player2Name;
-              state.gameOver = previousState.gameOver;
-              state.winner = previousState.winner;
-              state.servingTeam = previousState.servingTeam;
-              state.settings = { ...previousState.settings };
-            }
-          }),
 
           setSettings: (settings) => {
             set((state) => {
               state.settings = settings;
-            })
-            get().saveHistory();
+            });
           },
 
           // Complex actions
@@ -182,9 +105,6 @@ export const useBadmintonStore = create<BadmintonStore>()(
           handleScore: (scoringTeam) => {
             const state = get();
             if (state.gameOver) return;
-
-            // Save history before making changes
-
 
             set((state) => {
               // For doubles match, track which team scored
@@ -197,10 +117,10 @@ export const useBadmintonStore = create<BadmintonStore>()(
                 // Position swapping logic
                 if (scoringTeam === TEAM_NAME.TEAM1) {
                   // Swap positions for team TEAM1
-                  state.positionFlags.p1 = !state.positionFlags.p1
+                  state.positionFlags.p1 = !state.positionFlags.p1;
                 } else {
                   // Swap positions for team TEAM2
-                  state.positionFlags.p2 = !state.positionFlags.p2
+                  state.positionFlags.p2 = !state.positionFlags.p2;
                 }
               }
 
@@ -225,8 +145,6 @@ export const useBadmintonStore = create<BadmintonStore>()(
                 state.winner = winnerName;
               }
             });
-
-            get().saveHistory();
           },
 
           resetGame: () => set((state) => {
@@ -234,8 +152,7 @@ export const useBadmintonStore = create<BadmintonStore>()(
             state.player2Score = 0;
             state.gameOver = false;
             state.winner = '';
-            state.positionFlags = initialState.positionFlags
-            state.saveHistory();
+            state.positionFlags = initialState.positionFlags;
           }),
 
           // Complete reset function that resets the entire store to initial values
@@ -256,7 +173,6 @@ export const useBadmintonStore = create<BadmintonStore>()(
               state.player1Name = state.tempSettings.player1Name;
               state.player2Name = state.tempSettings.player2Name;
               state.settingsOpen = false;
-              state.saveHistory(); // Moved saveHistory to after state changes
             });
             get().resetGame();
           },
@@ -277,7 +193,7 @@ export const useBadmintonStore = create<BadmintonStore>()(
             // Only swap if both scores are 0
             if (state.player1Score === 0 && state.player2Score === 0) {
               set((state) => {
-                state.positionFlags.courtPos = !state.positionFlags.courtPos
+                state.positionFlags.courtPos = !state.positionFlags.courtPos;
               });
             }
           },
@@ -286,7 +202,6 @@ export const useBadmintonStore = create<BadmintonStore>()(
           updateButtonMapping: (buttonIndex: number, action: TGamePadAction) => {
             set((state) => {
               state.buttonMappings[buttonIndex] = action;
-              state.saveHistory();
             });
           },
 
@@ -294,7 +209,6 @@ export const useBadmintonStore = create<BadmintonStore>()(
           updateKeyMapping: (key: string, action: TGamePadAction) => {
             set((state) => {
               state.keyMappings[key] = action;
-              state.saveHistory();
             });
           },
 
@@ -302,9 +216,8 @@ export const useBadmintonStore = create<BadmintonStore>()(
             const state = get();
             switch (action) {
               case GAMEPAD_ACTIONS.UNDO:
-                if (state.canUndo()) {
-                  state.undo();
-                }
+                // Use zundo's undo function
+                useBadmintonStore.temporal.getState().undo();
                 break;
               case GAMEPAD_ACTIONS.TEAM1_SCORES:
                 state.handleScore(TEAM_NAME.TEAM1);
@@ -313,23 +226,36 @@ export const useBadmintonStore = create<BadmintonStore>()(
                 state.handleScore(TEAM_NAME.TEAM2);
                 break;
               case GAMEPAD_ACTIONS.SWAP_SERVE:
-                state.swapServingTeam()
+                state.swapServingTeam();
                 break;
               case GAMEPAD_ACTIONS.SWAP_COURT:
-                state.swapCourt()
+                state.swapCourt();
                 break;
             }
           }
-        };
-      }),
+        })),
+        {
+          // Configure zundo options
+          partialize: (state: BadmintonStore) => ({
+            player1Score: state.player1Score,
+            player2Score: state.player2Score,
+            player1Name: state.player1Name,
+            player2Name: state.player2Name,
+            gameOver: state.gameOver,
+            winner: state.winner,
+            positionFlags: state.positionFlags,
+            servingTeam: state.servingTeam,
+            settings: state.settings,
+          }),
+          limit: 100, // Limit the number of states stored in history
+        }
+      ),
       {
         name: 'badminton-score-storage',
-        // Don't persist undo history
+        // Don't persist some temporary state
         partialize: (state) => ({
           ...state,
           tempSettings: state.settings,
-          history: [],
-          currentHistoryIndex: -1,
           settingsOpen: false, // Don't persist dialog state
         }),
       }

@@ -6,6 +6,8 @@ describe('BadmintonStore', () => {
   // Reset the useBadmintonStore before each test
   beforeEach(() => {
     useBadmintonStore.getState().resetStore();
+    // Also clear the temporal store history
+    useBadmintonStore.temporal.getState().clear();
   })
 
   describe('handleScore functionality', () => {
@@ -25,8 +27,7 @@ describe('BadmintonStore', () => {
       expect(updatedState.player2Score).toBe(0);
 
       // Verify history is recorded
-      expect(updatedState.history.length).toBe(1);
-      expect(updatedState.currentHistoryIndex).toBe(0);
+      expect(useBadmintonStore.temporal.getState().pastStates.length).toBe(1);
     });
 
     test('should update score when team 2 scores', () => {
@@ -140,57 +141,49 @@ describe('BadmintonStore', () => {
 
   describe('undo functionality', () => {
     test('should save history when score is updated', () => {
-
-
       // Update the score
       useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1);
 
       // Get updated state
-      const updatedState = useBadmintonStore.getState();
+      const temporalState = useBadmintonStore.temporal.getState();
 
-      expect(updatedState.history.length).toBe(1);
-      expect(updatedState.currentHistoryIndex).toBe(0);
+      expect(temporalState.pastStates.length).toBe(1);
     });
 
     test('should not be able to undo when there is no history', () => {
+      // Check if can undo - with zundo, we can check if pastStates is empty
+      const temporalState = useBadmintonStore.temporal.getState();
 
-
-      // Check if can undo
-      const canUndo = useBadmintonStore.getState().canUndo();
-
-      expect(canUndo).toBe(false);
+      expect(temporalState.pastStates.length).toBe(0);
     });
 
     test('should be able to undo after action is performed', () => {
-
-
       // Perform an action
       useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1);
 
       // Check if can undo after first action
-      const canUndoAfterFirstAction = useBadmintonStore.getState().canUndo();
-      expect(canUndoAfterFirstAction).toBe(false); // First action can't be undone yet
+      const pastStatesAfterFirstAction = useBadmintonStore.temporal.getState().pastStates;
+      expect(pastStatesAfterFirstAction.length).toBe(1); // Now we can undo after first action
 
       // Perform another action
       useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM2);
 
       // Check if can undo after second action
-      const canUndoAfterSecondAction = useBadmintonStore.getState().canUndo();
-      expect(canUndoAfterSecondAction).toBe(true); // Now we can undo
+      const pastStatesAfterSecondAction = useBadmintonStore.temporal.getState().pastStates;
+      expect(pastStatesAfterSecondAction.length).toBe(2); // Now we can undo twice
     });
 
     test('should restore previous state when undo is called, score 1 0', () => {
-
       // Perform initial action
       useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1);
 
       // Check initial action state
-      const stateAfterSecondAction = useBadmintonStore.getState();
-      expect(stateAfterSecondAction.player1Score).toBe(1);
-      expect(stateAfterSecondAction.player2Score).toBe(0);
+      const stateAfterAction = useBadmintonStore.getState();
+      expect(stateAfterAction.player1Score).toBe(1);
+      expect(stateAfterAction.player2Score).toBe(0);
       
       // Undo first action
-      useBadmintonStore.getState().undo();
+      useBadmintonStore.temporal.getState().undo();
 
       // Get state after undo
       const stateAfterUndo = useBadmintonStore.getState();
@@ -201,8 +194,6 @@ describe('BadmintonStore', () => {
     });
 
     test('should restore previous state when undo is called, score 1 1', () => {
-
-
       // Perform initial action
       useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1);
 
@@ -219,7 +210,7 @@ describe('BadmintonStore', () => {
       expect(stateAfterSecondAction.player2Score).toBe(1);
 
       // Undo second action
-      useBadmintonStore.getState().undo();
+      useBadmintonStore.temporal.getState().undo();
 
       // Get state after undo
       const stateAfterUndo = useBadmintonStore.getState();
@@ -230,8 +221,6 @@ describe('BadmintonStore', () => {
     });
 
     test('should save history when settings are updated', () => {
-
-
       // Update settings
       useBadmintonStore.getState().setSettings({
         ...useBadmintonStore.getState().settings,
@@ -239,14 +228,12 @@ describe('BadmintonStore', () => {
       });
 
       // Get updated state
-      const updatedState = useBadmintonStore.getState();
+      const temporalState = useBadmintonStore.temporal.getState();
 
-      expect(updatedState.history.length).toBe(1);
+      expect(temporalState.pastStates.length).toBe(1);
     });
 
     test('should properly restore settings when undoing', () => {
-
-
       // Get initial state
       const initialState = useBadmintonStore.getState();
       const originalMaxScore = initialState.settings.maxScore;
@@ -261,7 +248,7 @@ describe('BadmintonStore', () => {
       });
 
       // Undo settings change
-      useBadmintonStore.getState().undo();
+      useBadmintonStore.temporal.getState().undo();
 
       // Get state after undo
       const stateAfterUndo = useBadmintonStore.getState();
@@ -271,20 +258,23 @@ describe('BadmintonStore', () => {
     });
 
     test('should trim future history when action is performed after undo', () => {
-
-
       // Perform initial actions
       useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1); // Player 1: 1, Player 2: 0
       useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1); // Player 1: 2, Player 2: 0
       useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM2); // Player 1: 2, Player 2: 1
 
       // Undo last action
-      useBadmintonStore.getState().undo();
+      useBadmintonStore.temporal.getState().undo();
 
       // Get state after undo
       const stateAfterUndo = useBadmintonStore.getState();
       expect(stateAfterUndo.player1Score).toBe(2);
       expect(stateAfterUndo.player2Score).toBe(0);
+
+      // Temporal history check
+      const temporalStateAfterUndo = useBadmintonStore.temporal.getState();
+      expect(temporalStateAfterUndo.pastStates.length).toBe(2);
+      expect(temporalStateAfterUndo.futureStates.length).toBe(1);
 
       // Perform new action after undo
       useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1); // Player 1: 3, Player 2: 0
@@ -293,22 +283,78 @@ describe('BadmintonStore', () => {
       const finalState = useBadmintonStore.getState();
 
       // History should be trimmed and new action should be added
-      expect(finalState.history.length).toBe(3);
+      const temporalStateFinal = useBadmintonStore.temporal.getState();
+      expect(temporalStateFinal.pastStates.length).toBe(3);
+      expect(temporalStateFinal.futureStates.length).toBe(0);
       expect(finalState.player1Score).toBe(3);
       expect(finalState.player2Score).toBe(0);
 
       // Should not be able to redo the original action
-      useBadmintonStore.getState().undo(); // Go back to Player 1: 2, Player 2: 0
+      useBadmintonStore.temporal.getState().undo(); // Go back to Player 1: 2, Player 2: 0
       const stateAfterFirstUndo = useBadmintonStore.getState();
       expect(stateAfterFirstUndo.player1Score).toBe(2);
 
-      useBadmintonStore.getState().undo(); // Go back to Player 1: 1, Player 2: 0
+      useBadmintonStore.temporal.getState().undo(); // Go back to Player 1: 1, Player 2: 0
       const stateAfterSecondUndo = useBadmintonStore.getState();
       expect(stateAfterSecondUndo.player1Score).toBe(1);
 
-      // No more history to go back
-      const canUndoFurther = useBadmintonStore.getState().canUndo();
-      expect(canUndoFurther).toBe(false);
+      // Check that we have gone back as far as possible
+      const canUndoFurther = useBadmintonStore.temporal.getState().pastStates.length <= 1;
+      expect(canUndoFurther).toBe(true);
+    });
+
+    test('should support redo functionality', () => {
+      // Perform actions
+      useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1); // Player 1: 1, Player 2: 0
+      useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM2); // Player 1: 1, Player 2: 1
+
+      // Undo twice
+      useBadmintonStore.temporal.getState().undo(); // Go back to Player 1: 1, Player 2: 0
+      useBadmintonStore.temporal.getState().undo(); // Go back to Player 1: 0, Player 2: 0
+
+      // Check state after undos
+      const stateAfterUndos = useBadmintonStore.getState();
+      expect(stateAfterUndos.player1Score).toBe(0);
+      expect(stateAfterUndos.player2Score).toBe(0);
+
+      // Check temporal state
+      const temporalStateAfterUndos = useBadmintonStore.temporal.getState();
+      expect(temporalStateAfterUndos.pastStates.length).toBe(0);
+      expect(temporalStateAfterUndos.futureStates.length).toBe(2);
+
+      // Redo once
+      useBadmintonStore.temporal.getState().redo(); // Go forward to Player 1: 1, Player 2: 0
+
+      // Check state after redo
+      const stateAfterRedo = useBadmintonStore.getState();
+      expect(stateAfterRedo.player1Score).toBe(1);
+      expect(stateAfterRedo.player2Score).toBe(0);
+
+      // Redo again
+      useBadmintonStore.temporal.getState().redo(); // Go forward to Player 1: 1, Player 2: 1
+
+      // Check final state after all redos
+      const finalState = useBadmintonStore.getState();
+      expect(finalState.player1Score).toBe(1);
+      expect(finalState.player2Score).toBe(1);
+
+      // Future states should now be empty
+      expect(useBadmintonStore.temporal.getState().futureStates.length).toBe(0);
+    });
+    
+    test('should clear history when clear is called', () => {
+      // Perform actions
+      useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM1);
+      useBadmintonStore.getState().handleScore(TEAM_NAME.TEAM2);
+      
+      // Verify history exists
+      expect(useBadmintonStore.temporal.getState().pastStates.length).toBe(2);
+      
+      // Clear history
+      useBadmintonStore.temporal.getState().clear();
+      
+      // Verify history is cleared
+      expect(useBadmintonStore.temporal.getState().pastStates.length).toBe(0);
     });
   });
 });
