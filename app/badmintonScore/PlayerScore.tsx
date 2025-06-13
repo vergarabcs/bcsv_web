@@ -32,11 +32,12 @@ export const PlayerScore = ({
       }}
     >
       <Typography 
-        variant="h1" 
+        variant="h1"
         className={styles.scoreNumber}
         sx={{ 
           color: fontColor,
-          fontSize: "45vh",
+          lineHeight: 1,
+          fontSize: 'clamp(0px, 85vh, 45vw)',
           WebkitTextStroke: textStroke, 
           textShadow: textShadow,
           fontWeight: 'bold'
@@ -49,7 +50,8 @@ export const PlayerScore = ({
         className={styles.playerName} 
         sx={{ 
           color: fontColor, 
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          fontSize: 'clamp(0px, 5vh, 2.5vw)'
         }}
       >
         {name}
