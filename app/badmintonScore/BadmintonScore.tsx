@@ -37,10 +37,11 @@ export default function BadmintonScore() {
     gameOver,
     winner,
     resetGame,
-    handleOpenSettings,
-    undo,
-    canUndo,
+    handleOpenSettings
   } = useBadmintonStore();
+
+  const { undo, pastStates } = useBadmintonStore.temporal.getState();
+  const canUndo = !!pastStates.length;
 
   const courtPos = useBadmintonStore(state => state.positionFlags.courtPos)
   // Register service worker on component mount
@@ -214,8 +215,8 @@ export default function BadmintonScore() {
               <span>
                 <IconButton 
                   color="primary" 
-                  onClick={undo} 
-                  disabled={!canUndo()}
+                  onClick={() => undo()} 
+                  disabled={!canUndo}
                   className={styles.undoButton}
                   size="large"
                 >
