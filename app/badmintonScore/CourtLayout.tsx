@@ -20,11 +20,15 @@ const blinkAnimation = keyframes`
 
 interface QuadrantProps {
   positionName: CourtPosition;
-  isServing: boolean;
+}
+
+const swap = (obj: Record<CourtPosition, CourtPosition>, key1: CourtPosition, key2: CourtPosition) => {
+  const temp = obj[key1]
+  obj[key1] = obj[key2]
+  obj[key2] = temp
 }
 
 const getColorKey = (positionFlags: PositionFlags, positionName: CourtPosition): CourtPosition => {
-  
   // Initialize mapping
   const transformMap: Record<CourtPosition, CourtPosition> = {
     Q1: "Q1",
@@ -35,24 +39,14 @@ const getColorKey = (positionFlags: PositionFlags, positionName: CourtPosition):
   
   // Apply court position swap (horizontal swap) - swap Q1↔Q2 and Q3↔Q4
   if (positionFlags.courtPos) {
-    transformMap.Q1 = "Q2";
-    transformMap.Q2 = "Q1";
-    transformMap.Q3 = "Q4";
-    transformMap.Q4 = "Q3";
-  }
-  
-  // Apply player 1 position swap (diagonal swap) - swap Q2↔Q3
-  if (positionFlags.p1) {
-    const temp = transformMap.Q2;
-    transformMap.Q2 = transformMap.Q3;
-    transformMap.Q3 = temp;
-  }
-  
-  // Apply player 2 position swap (diagonal swap) - swap Q1↔Q4
-  if (positionFlags.p2) {
-    const temp = transformMap.Q1;
-    transformMap.Q1 = transformMap.Q4;
-    transformMap.Q4 = temp;
+    swap(transformMap, "Q1", "Q2")
+    swap(transformMap, "Q3", "Q4")
+
+    positionFlags.p1 && swap(transformMap, "Q1", "Q4")
+    positionFlags.p2 && swap(transformMap, "Q2", "Q3")
+  }else{
+    positionFlags.p2 && swap(transformMap, "Q1", "Q4")
+    positionFlags.p1 && swap(transformMap, "Q2", "Q3")
   }
   
   // Return the transformed position
@@ -60,7 +54,24 @@ const getColorKey = (positionFlags: PositionFlags, positionName: CourtPosition):
 }
 
 // Extracted Quadrant component
-const Quadrant: React.FC<QuadrantProps> = ({ positionName, isServing }) => {
+const Quadrant: React.FC<QuadrantProps> = ({ positionName }) => {
+  const isServing = useBadmintonStore(state => {
+    const isServingFromLeft = (state.servingTeam === TEAM_NAME.TEAM1) !== state.positionFlags.courtPos;
+    const leftSideScore = !state.positionFlags.courtPos ? state.player1Score : state.player2Score
+    const rightSideScore = !state.positionFlags.courtPos ? state.player2Score : state.player1Score
+
+    switch (positionName) {
+      case "Q2":
+        return (isServingFromLeft) && leftSideScore % 2 !== 0
+      case "Q3":
+        return (isServingFromLeft) && leftSideScore % 2 === 0
+      case "Q1":
+        return !isServingFromLeft && rightSideScore % 2 === 0
+      case "Q4":
+        return !isServingFromLeft && rightSideScore % 2 !== 0
+    }
+  });
+
   const transition = 'background-color 1s ease-in-out';
   const positionFlags = useBadmintonStore(state => state.positionFlags);
   const colorKey = getColorKey(positionFlags, positionName);
@@ -81,20 +92,6 @@ const Quadrant: React.FC<QuadrantProps> = ({ positionName, isServing }) => {
 
 export const CourtLayout: React.FC = () => {
 
-  let servingPlayer = useBadmintonStore(state => {
-    // For team 1 (Q2 & Q3)
-    if (state.servingTeam === TEAM_NAME.TEAM1) {
-      return state.player1Score % 2 === 0 ? 3 : 2;
-    }
-    // For team 2 (Q1 & Q4)
-    return state.player2Score % 2 === 0 ? 1 : 4;
-  });
-
-  // Helper function to determine if quadrant is the serving quadrant
-  const isServingQuadrant = (quadrant: number): boolean => {
-    return quadrant === servingPlayer;
-  };
-
   return (
     <Grid data-testid="courtLayout" container sx={{
       width: '100%',
@@ -109,19 +106,15 @@ export const CourtLayout: React.FC = () => {
       <Grid container rowSpacing={0} columnSpacing={0} sx={{ width: '100%', height: '100%' }}>
         <Quadrant
           positionName={"Q2"}
-          isServing={isServingQuadrant(2)}
         />
         <Quadrant
           positionName={"Q1"}
-          isServing={isServingQuadrant(1)}
         />
         <Quadrant
           positionName={"Q3"}
-          isServing={isServingQuadrant(3)}
         />
         <Quadrant
           positionName={"Q4"}
-          isServing={isServingQuadrant(4)}
         />
       </Grid>
     </Grid>

@@ -190,15 +190,16 @@ export const useBadmintonStore = create<BadmintonStore>()(
               // For doubles match, track which team scored
               // If the scoring team is the serving team, they keep serving
               // Otherwise, the service changes to the scoring team
+
               if (scoringTeam !== state.servingTeam) {
                 state.servingTeam = scoringTeam;
               } else {
                 // Position swapping logic
                 if (scoringTeam === TEAM_NAME.TEAM1) {
-                  // Swap positions for team Q2Q3
+                  // Swap positions for team TEAM1
                   state.positionFlags.p1 = !state.positionFlags.p1
                 } else {
-                  // Swap positions for team Q1Q4
+                  // Swap positions for team TEAM2
                   state.positionFlags.p2 = !state.positionFlags.p2
                 }
               }

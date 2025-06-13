@@ -36,7 +36,7 @@ export const PlayerScore = ({
         className={styles.scoreNumber}
         sx={{ 
           color: fontColor,
-          fontSize: "20rem",
+          fontSize: "45vh",
           WebkitTextStroke: textStroke, 
           textShadow: textShadow,
           fontWeight: 'bold'
