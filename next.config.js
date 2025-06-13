@@ -2,7 +2,6 @@
 const nextConfig = {
   // Add PWA configuration
   reactStrictMode: true,
-  swcMinify: true,
   // Configure headers to allow service worker registration
   async headers() {
     return [

@@ -25,3 +25,9 @@ export interface AppMeta {
   description: string;
   component: React.LazyExoticComponent<any>;
 }
+
+export type PositionFlags = {
+  p1: boolean,
+  p2: boolean,
+  courtPos: boolean
+}

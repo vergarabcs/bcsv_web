@@ -1,21 +1,36 @@
 import { TGamePadAction } from '@/app/badmintonScore/types';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useBadmintonStore } from '@/app/badmintonScore/useBadmintonStore';
+import { useBadmintonStore } from './useBadmintonStore';
+
+export type InputDevice = 'gamepad' | 'keyboard';
+
+export interface InputMapping {
+  device: InputDevice;
+  code: string | number; // key code for keyboard, button index for gamepad
+  action: TGamePadAction;
+}
 
 export const useGamepad = () => {
   const [isListening, setIsListening] = useState<boolean>(false);
   const [enabled, setIsEnabled] = useState<boolean>(true);
+  const [listeningDevice, setListeningDevice] = useState<InputDevice>('gamepad');
   const listeningForAction = useRef<TGamePadAction | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const connectedGamepads = useRef<Set<number>>(new Set());
+  
   // Track previously pressed buttons to prevent repeated triggering
   const previousButtonStates = useRef<Map<number, boolean[]>>(new Map());
   
+  // Track pressed keyboard keys to prevent repeated triggering
+  const pressedKeys = useRef<Set<string>>(new Set());
+  
   // Get button mappings and actions from the store
   const buttonMappings = useBadmintonStore(state => state.buttonMappings);
+  const keyMappings = useBadmintonStore(state => state.keyMappings);
   const updateButtonMapping = useBadmintonStore(state => state.updateButtonMapping);
+  const updateKeyMapping = useBadmintonStore(state => state.updateKeyMapping);
   const dispatchGamepadAction = useBadmintonStore(state => state.dispatchGamepadAction);
-
+  
   // Poll for gamepad button states
   const pollGamepads = useCallback(() => {
     if (!enabled) return;
@@ -52,8 +67,8 @@ export const useGamepad = () => {
             dispatchGamepadAction(action);
           }
 
-          // If we're in listening mode, map this button press to the action
-          if (isListening && listeningForAction.current) {
+          // If we're in listening mode for gamepad, map this button press to the action
+          if (isListening && listeningForAction.current && listeningDevice === 'gamepad') {
             updateButtonMapping(index, listeningForAction.current);
             // Stop listening once we've mapped a button
             setIsListening(false);
@@ -65,7 +80,40 @@ export const useGamepad = () => {
 
     // Continue polling
     animationFrameId.current = requestAnimationFrame(pollGamepads);
-  }, [enabled, isListening, buttonMappings, updateButtonMapping, dispatchGamepadAction]);
+  }, [enabled, isListening, listeningDevice, buttonMappings, updateButtonMapping, dispatchGamepadAction]);
+
+  // Handle keyboard events
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (!enabled) return;
+    
+    // Prevent repeated triggers while key is held down
+    if (pressedKeys.current.has(event.code)) return;
+    
+    // Add to pressed keys
+    pressedKeys.current.add(event.code);
+    
+    // If we're in listening mode for keyboard, map this key to the action
+    if (isListening && listeningForAction.current && listeningDevice === 'keyboard') {
+      event.preventDefault();
+      updateKeyMapping(event.code, listeningForAction.current);
+      // Stop listening once we've mapped a key
+      setIsListening(false);
+      listeningForAction.current = null;
+      return;
+    }
+    
+    // Otherwise check if this key has a mapping
+    const action = keyMappings[event.code];
+    if (action) {
+      event.preventDefault();
+      dispatchGamepadAction(action);
+    }
+  }, [enabled, isListening, listeningDevice, keyMappings, updateKeyMapping, dispatchGamepadAction]);
+  
+  const handleKeyUp = useCallback((event: KeyboardEvent) => {
+    // Remove from pressed keys
+    pressedKeys.current.delete(event.code);
+  }, []);
 
   // Start gamepad polling
   const startPolling = useCallback(() => {
@@ -100,9 +148,11 @@ export const useGamepad = () => {
   }, [stopPolling]);
 
   useEffect(() => {
-    // Add event listeners for gamepad connections
+    // Add event listeners for gamepad connections and keyboard events
     window.addEventListener('gamepadconnected', handleGamepadConnected);
     window.addEventListener('gamepaddisconnected', handleGamepadDisconnected);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
 
     // Check for already connected gamepads
     const initialGamepads = navigator.getGamepads();
@@ -121,19 +171,26 @@ export const useGamepad = () => {
       // Clean up event listeners
       window.removeEventListener('gamepadconnected', handleGamepadConnected);
       window.removeEventListener('gamepaddisconnected', handleGamepadDisconnected);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
       stopPolling();
       // Clear button state tracking
       previousButtonStates.current.clear();
+      // Clear pressed keys
+      pressedKeys.current.clear();
     };
-  }, [handleGamepadConnected, handleGamepadDisconnected, startPolling, stopPolling]);
+  }, [handleGamepadConnected, handleGamepadDisconnected, handleKeyDown, handleKeyUp, startPolling, stopPolling]);
 
-  const startListening = useCallback((eventName: TGamePadAction) => {
+  const startListening = useCallback((eventName: TGamePadAction, device: InputDevice = 'gamepad') => {
     // Set listening state
     setIsListening(true);
+    setListeningDevice(device);
     listeningForAction.current = eventName;
     
-    // Make sure polling is active
-    startPolling();
+    // Make sure polling is active for gamepad
+    if (device === 'gamepad') {
+      startPolling();
+    }
   }, [startPolling]);
 
   const setEnabled = useCallback((isEnabled: boolean) => {
@@ -150,8 +207,10 @@ export const useGamepad = () => {
   return {
     // states
     isListening,
+    listeningDevice,
     enabled,
     buttonMappings,
+    keyMappings,
 
     // actions
     startListening,

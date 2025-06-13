@@ -12,53 +12,58 @@ import {
   Box,
   Typography,
   Divider,
-  Chip
+  Alert,
+  Collapse,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import { useBadmintonStore } from './useBadmintonStore';
 import { GAMEPAD_ACTIONS, TGamePadAction } from './types';
-import { useGamepad } from './useGamepad';
+import { useGamepad, InputDevice } from './useGamepad';
+import { useState } from 'react';
+import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
+import KeyboardIcon from '@mui/icons-material/Keyboard';
+import { MapButton } from './MapButton';
 
 export const SettingsDialog = () => {
+  const [showClearAlert, setShowClearAlert] = useState(false);
+  const [inputDevice, setInputDevice] = useState<InputDevice>('gamepad');
+  
   const {
     settingsOpen,
     tempSettings,
     handleSettingsChange,
     handleCloseSettings,
     handleSaveSettings,
-    buttonMappings,
     resetGame,
     player1Score,
     player2Score,
-    swapServingTeam
+    swapServingTeam,
+    resetStore
   } = useBadmintonStore();
+
+  // Keep useGamepad in the parent component
+  const { isListening, listeningDevice, startListening } = useGamepad();
+
+  // Handle input mapping for a specific action
+  const handleInputMapping = (action: TGamePadAction) => {
+    startListening(action, inputDevice);
+  };
+
+  // Handle clearing local storage cache
+  const handleClearCache = () => {
+    // Clear the specific storage key for badminton score
+    localStorage.removeItem('badminton-score-storage');
+    // Reset the store state to defaults
+    resetStore();
+    // Show confirmation alert
+    setShowClearAlert(true);
+    // Hide alert after 3 seconds
+    setTimeout(() => setShowClearAlert(false), 3000);
+  };
 
   // Check if swapping serving team is allowed (both scores must be 0)
   const canSwapServe = player1Score === 0 && player2Score === 0;
-
-  const {
-    isListening,
-    startListening
-  } = useGamepad();
-
-  const handleGamepadMapping = (action: TGamePadAction) => {
-    startListening(action);
-  };
-
-  // Helper function to find a button number mapped to a specific action
-  const getMappedButton = (action: TGamePadAction): number | null => {
-    for (const [buttonIndex, mappedAction] of Object.entries(buttonMappings)) {
-      if (mappedAction === action) {
-        return parseInt(buttonIndex);
-      }
-    }
-    return null;
-  };
-
-  // Get mapped buttons for each action
-  const team1Button = getMappedButton("team1Scores");
-  const team2Button = getMappedButton("team2Scores");
-  const undoButton = getMappedButton("undo");
-  const swapServeButton = getMappedButton("swapServe");
 
   return (
     <Dialog 
@@ -171,84 +176,107 @@ export const SettingsDialog = () => {
             )}
           </Box>
           
-          {/* Gamepad Controls Section */}
+          {/* Input Controls Section */}
           <Box sx={{ flexBasis: '100%', mt: 2 }}>
             <Divider />
-            <Typography variant="h6" sx={{ my: 2 }}>Gamepad Controls</Typography>
+            <Typography variant="h6" sx={{ my: 2 }}>Input Controls</Typography>
+            
+            {/* Toggle between gamepad and keyboard */}
+            <ToggleButtonGroup
+              value={inputDevice}
+              exclusive
+              onChange={(_, newDevice) => {
+                if (newDevice !== null) {
+                  setInputDevice(newDevice);
+                }
+              }}
+              aria-label="Input device"
+              sx={{ mb: 2, display: 'flex', width: '100%' }}
+            >
+              <ToggleButton value="gamepad" aria-label="gamepad" sx={{ flex: 1 }}>
+                <VideogameAssetIcon sx={{ mr: 1 }} /> Gamepad
+              </ToggleButton>
+              <ToggleButton value="keyboard" aria-label="keyboard" sx={{ flex: 1 }}>
+                <KeyboardIcon sx={{ mr: 1 }} /> Keyboard
+              </ToggleButton>
+            </ToggleButtonGroup>
             
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-              <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
-                <Button 
-                  variant="outlined"
-                  color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.TEAM1_SCORES)}
-                  fullWidth
-                >
-                  {isListening ? "Press a button..." : "Map Player 1 Score"}
-                </Button>
-                {team1Button !== null && (
-                  <Chip 
-                    label={`Button ${team1Button}`} 
-                    color="primary" 
-                    size="small"
-                  />
-                )}
-              </Box>
+              {/* Player 1 Score Mapping */}
+              <MapButton 
+                action={GAMEPAD_ACTIONS.TEAM1_SCORES}
+                label="Player 1 Score"
+                inputDevice={inputDevice}
+                isListening={isListening}
+                listeningDevice={listeningDevice}
+                onMap={() => handleInputMapping(GAMEPAD_ACTIONS.TEAM1_SCORES)}
+              />
               
-              <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
-                <Button 
-                  variant="outlined"
-                  color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.TEAM2_SCORES)}
-                  fullWidth
-                >
-                  {isListening ? "Press a button..." : "Map Player 2 Score"}
-                </Button>
-                {team2Button !== null && (
-                  <Chip 
-                    label={`Button ${team2Button}`} 
-                    color="primary" 
-                    size="small"
-                  />
-                )}
-              </Box>
+              {/* Player 2 Score Mapping */}
+              <MapButton 
+                action={GAMEPAD_ACTIONS.TEAM2_SCORES}
+                label="Player 2 Score"
+                inputDevice={inputDevice}
+                isListening={isListening}
+                listeningDevice={listeningDevice}
+                onMap={() => handleInputMapping(GAMEPAD_ACTIONS.TEAM2_SCORES)}
+              />
               
-              <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
-                <Button 
-                  variant="outlined"
-                  color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.UNDO)}
-                  fullWidth
-                >
-                  {isListening ? "Press a button..." : "Map Undo Action"}
-                </Button>
-                {undoButton !== null && (
-                  <Chip 
-                    label={`Button ${undoButton}`} 
-                    color="primary" 
-                    size="small"
-                  />
-                )}
-              </Box>
+              {/* Undo Mapping */}
+              <MapButton 
+                action={GAMEPAD_ACTIONS.UNDO}
+                label="Undo Action"
+                inputDevice={inputDevice}
+                isListening={isListening}
+                listeningDevice={listeningDevice}
+                onMap={() => handleInputMapping(GAMEPAD_ACTIONS.UNDO)}
+              />
 
-              <Box sx={{ flexBasis: { xs: '100%', sm: '30%' }, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
-                <Button 
-                  variant="outlined"
-                  color={isListening && "secondary" || "primary"}
-                  onClick={() => handleGamepadMapping(GAMEPAD_ACTIONS.SWAP_SERVE)}
-                  fullWidth
-                >
-                  {isListening ? "Press a button..." : "Map Swap Serve"}
-                </Button>
-                {swapServeButton !== null && (
-                  <Chip 
-                    label={`Button ${swapServeButton}`} 
-                    color="primary" 
-                    size="small"
-                  />
-                )}
-              </Box>
+              {/* Swap Serve Mapping */}
+              <MapButton 
+                action={GAMEPAD_ACTIONS.SWAP_SERVE}
+                label="Swap Serve"
+                inputDevice={inputDevice}
+                isListening={isListening}
+                listeningDevice={listeningDevice}
+                onMap={() => handleInputMapping(GAMEPAD_ACTIONS.SWAP_SERVE)}
+              />
+
+              {/* Swap Court Mapping */}
+              <MapButton 
+                action={GAMEPAD_ACTIONS.SWAP_COURT}
+                label="Swap Court"
+                inputDevice={inputDevice}
+                isListening={isListening}
+                listeningDevice={listeningDevice}
+                onMap={() => handleInputMapping(GAMEPAD_ACTIONS.SWAP_COURT)}
+              />
             </Box>
+          </Box>
+
+          {/* Clear Cache Section */}
+          <Box sx={{ flexBasis: '100%', mt: 2 }}>
+            <Divider />
+            <Typography variant="h6" sx={{ my: 2 }}>Clear Cache</Typography>
+            
+            <Button 
+              variant="outlined"
+              color="error"
+              fullWidth
+              onClick={handleClearCache}
+            >
+              Clear Local Storage Cache
+            </Button>
+            
+            <Collapse in={showClearAlert}>
+              <Alert 
+                severity="success" 
+                sx={{ mt: 1 }}
+                onClose={() => setShowClearAlert(false)}
+              >
+                Cache cleared successfully!
+              </Alert>
+            </Collapse>
           </Box>
         </Box>
       </DialogContent>
