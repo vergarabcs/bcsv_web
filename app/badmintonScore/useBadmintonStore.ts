@@ -5,6 +5,7 @@ import { temporal } from 'zundo';
 import { BadmintonScoreSettings, CourtPosition, GAMEPAD_ACTIONS, PlayerColor, TGamePadAction } from './types';
 import { T_TEAMS, TEAM_NAME } from './constants';
 import { PositionFlags } from '../types';
+import { State } from 'aws-cdk-lib/aws-stepfunctions';
 
 // Define the state interface
 interface State {
@@ -191,11 +192,10 @@ export const useBadmintonStore = create<BadmintonStore>()(
           swapCourt: () => {
             const state = get();
             // Only swap if both scores are 0
-            if (state.player1Score === 0 && state.player2Score === 0) {
-              set((state) => {
-                state.positionFlags.courtPos = !state.positionFlags.courtPos;
-              });
-            }
+            set((state) => {
+              state.positionFlags.courtPos = !state.positionFlags.courtPos;
+            });
+
           },
 
           // Gamepad action methods
