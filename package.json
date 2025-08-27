@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "npm run printIp && next dev --experimental-https -H 0.0.0.0",
-    "printIp": "node -e \"console.log('Local IP:', require('os').networkInterfaces()['en0'].find(i => i.family === 'IPv4').address)\"",
+    "printIp": "node printIp.js",
     "build": "next build",
     "dev": "next start",
     "lint": "next lint",
@@ -39,6 +39,7 @@
     "@jest/globals": "^29.7.0",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^15.0.0",
+    "qrcode-terminal": "^0.12.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^20",
     "@types/react": "^18",
