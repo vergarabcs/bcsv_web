@@ -8,6 +8,21 @@ interface PlayerScoreProps {
   team: T_TEAMS;
 }
 
+function shadowBuilder(strokeWidth: string, strokeColor: string, glowColor: string) {
+  // strokeWidth like '2px', color like 'white', glowColor like 'black'
+  return [
+    `${strokeWidth} ${strokeWidth} 0 ${strokeColor}`,
+    `-${strokeWidth} -${strokeWidth} 0 ${strokeColor}`,
+    `${strokeWidth} -${strokeWidth} 0 ${strokeColor}`,
+    `-${strokeWidth} ${strokeWidth} 0 ${strokeColor}`,
+    `0 ${strokeWidth} 0 ${strokeColor}`,
+    `${strokeWidth} 0 0 ${strokeColor}`,
+    `-${strokeWidth} 0 0 ${strokeColor}`,
+    `0 -${strokeWidth} 0 ${strokeColor}`,
+    `0 0 5px ${glowColor}`
+  ].join(', ');
+}
+
 export const PlayerScore = ({
   team
 }: PlayerScoreProps) => {
@@ -17,9 +32,9 @@ export const PlayerScore = ({
   const gameOver = useBadmintonStore(state => state.gameOver);
   const handleScore = useBadmintonStore(state => state.handleScore);
   
-  const textStroke = `5px ${team === TEAM_NAME.TEAM1 ? 'white' : 'black'}`
+  const textStroke = `${team === TEAM_NAME.TEAM1 ? 'white' : 'black'}`
   const fontColor = team === TEAM_NAME.TEAM1 ? 'black' : 'white'
-  const textShadow = `0px 0px 5px ${team === TEAM_NAME.TEAM1 ? 'black' : 'white'}`
+  const textShadow = `${team === TEAM_NAME.TEAM1 ? 'black' : 'white'}`
   
   return (
     <div
@@ -38,8 +53,7 @@ export const PlayerScore = ({
           color: fontColor,
           lineHeight: 1,
           fontSize: 'clamp(0px, 85vh, 45vw)',
-          WebkitTextStroke: textStroke, 
-          textShadow: textShadow,
+          textShadow: shadowBuilder('1vh', textStroke, textShadow),
           fontWeight: 'bold'
         }}
       >
