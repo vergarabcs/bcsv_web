@@ -10,7 +10,8 @@ export const GAMEPAD_ACTIONS = {
   TEAM1_SCORES: 'team1Scores',
   TEAM2_SCORES: 'team2Scores',
   SWAP_SERVE: 'swapServe',
-  SWAP_COURT: 'swapCourt'
+  SWAP_COURT: 'swapCourt',
+  RESET_GAME: 'resetGame'
 } as const;  // Add "as const" here
 
 export type TGamePadAction = typeof GAMEPAD_ACTIONS[keyof typeof GAMEPAD_ACTIONS];

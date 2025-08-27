@@ -231,6 +231,8 @@ export const useBadmintonStore = create<BadmintonStore>()(
               case GAMEPAD_ACTIONS.SWAP_COURT:
                 state.swapCourt();
                 break;
+              case GAMEPAD_ACTIONS.RESET_GAME:
+                state.resetGame();
             }
           }
         })),

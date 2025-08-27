@@ -251,6 +251,16 @@ export const SettingsDialog = () => {
                 listeningDevice={listeningDevice}
                 onMap={() => handleInputMapping(GAMEPAD_ACTIONS.SWAP_COURT)}
               />
+
+              {/* Reset Game */}
+              <MapButton 
+                action={GAMEPAD_ACTIONS.RESET_GAME}
+                label="Reset Game"
+                inputDevice={inputDevice}
+                isListening={isListening}
+                listeningDevice={listeningDevice}
+                onMap={() => handleInputMapping(GAMEPAD_ACTIONS.RESET_GAME)}
+              />
             </Box>
           </Box>
 
