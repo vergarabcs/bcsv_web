@@ -5,7 +5,6 @@ import { temporal } from 'zundo';
 import { BadmintonScoreSettings, CourtPosition, GAMEPAD_ACTIONS, PlayerColor, TGamePadAction } from './types';
 import { T_TEAMS, TEAM_NAME } from './constants';
 import { PositionFlags } from '../types';
-import { State } from 'aws-cdk-lib/aws-stepfunctions';
 
 // Define the state interface
 interface State {
@@ -56,8 +55,8 @@ type BadmintonStore = State & StoreActions
 const initialState : State = {
   player1Score: 0,
   player2Score: 0,
-  player1Name: 'Player 1',
-  player2Name: 'Player 2',
+  player1Name: 'Team 1',
+  player2Name: 'Team 2',
   gameOver: false,
   winner: '',
   positionFlags: {
@@ -249,7 +248,14 @@ export const useBadmintonStore = create<BadmintonStore>()(
             servingTeam: state.servingTeam,
             settings: state.settings,
           }),
-          limit: 100, // Limit the number of states stored in history
+          limit: 100,
+          onSave: (pastState, currentState) => {
+            if(pastState.player1Score !== currentState.player1Score ||
+              pastState.player2Score !== currentState.player2Score
+            ){
+              speak(`${currentState.player1Name}, ${currentState.player1Score}, ${currentState.player2Name}, ${currentState.player2Score}`)
+            }
+          }
         }
       ),
       {
@@ -264,3 +270,12 @@ export const useBadmintonStore = create<BadmintonStore>()(
     )
   )
 );
+
+function speak(textToSpeak: string) {
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    const utter = new window.SpeechSynthesisUtterance(textToSpeak);
+    utter.lang = 'en-US';
+    window.speechSynthesis.cancel(); // Stop any previous speech
+    window.speechSynthesis.speak(utter);
+  }
+}
