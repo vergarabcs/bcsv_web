@@ -16,14 +16,19 @@ import {
   Collapse,
   ToggleButtonGroup,
   ToggleButton,
+  Snackbar,
+  Grid,
 } from '@mui/material';
 import { useBadmintonStore } from './useBadmintonStore';
 import { GAMEPAD_ACTIONS, TGamePadAction } from './types';
 import { useGamepad, InputDevice } from './useGamepad';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 import KeyboardIcon from '@mui/icons-material/Keyboard';
+
 import { MapButton } from './MapButton';
+
+import { InstallPwaButton } from './InstallPwaButton';
 
 export const SettingsDialog = () => {
   const [showClearAlert, setShowClearAlert] = useState(false);
@@ -53,7 +58,7 @@ export const SettingsDialog = () => {
   // Handle clearing local storage cache
   const handleClearCache = () => {
     // Clear the specific storage key for badminton score
-    localStorage.removeItem('badminton-score-storage');
+    localStorage.clear()
     // Reset the store state to defaults
     resetStore();
     // Show confirmation alert
@@ -72,109 +77,107 @@ export const SettingsDialog = () => {
       fullWidth
       maxWidth="sm"
     >
-      <DialogTitle>Badminton Score Settings</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
-          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
-            <TextField
-              fullWidth
-              label="Player 1 Name"
-              value={tempSettings.player1Name}
-              onChange={(e) => handleSettingsChange('player1Name', e.target.value)}
-              margin="normal"
-            />
-          </Box>
-          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
-            <TextField
-              fullWidth
-              label="Player 2 Name"
-              value={tempSettings.player2Name}
-              onChange={(e) => handleSettingsChange('player2Name', e.target.value)}
-              margin="normal"
-            />
-          </Box>
+          <Grid container spacing={{ xs: 2}} columns={{ xs: 4, sm: 8}}>
+            <Grid size={4}>
+              <TextField
+                fullWidth
+                label="Player 1 Name"
+                value={tempSettings.player1Name}
+                onChange={(e) => handleSettingsChange('player1Name', e.target.value)}
+                margin="normal"
+              />
+            </Grid>
+            <Grid size={4}>
+              <TextField
+                fullWidth
+                label="Player 2 Name"
+                value={tempSettings.player2Name}
+                onChange={(e) => handleSettingsChange('player2Name', e.target.value)}
+                margin="normal"
+              />
+            </Grid>
+            
+            <Grid size={4}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Max Score</InputLabel>
+                <Select
+                  value={tempSettings.maxScore}
+                  onChange={(e) => handleSettingsChange('maxScore', Number(e.target.value))}
+                  label="Max Score"
+                >
+                  <MenuItem value={11}>11 points</MenuItem>
+                  <MenuItem value={15}>15 points</MenuItem>
+                  <MenuItem value={21}>21 points</MenuItem>
+                  <MenuItem value={35}>35 points</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid size={4}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Points to Win</InputLabel>
+                <Select
+                  value={tempSettings.pointsToWin}
+                  onChange={(e) => handleSettingsChange('pointsToWin', Number(e.target.value))}
+                  label="Points to Win"
+                >
+                  <MenuItem value={1}>1 point lead</MenuItem>
+                  <MenuItem value={2}>2 points lead</MenuItem>
+                  <MenuItem value={3}>3 points lead</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+
+
           
-          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Max Score</InputLabel>
-              <Select
-                value={tempSettings.maxScore}
-                onChange={(e) => handleSettingsChange('maxScore', Number(e.target.value))}
-                label="Max Score"
+          <Grid container direction="row" spacing={{xs: 2}} sx={{justifyContent: 'space-between'}}>
+            <Grid>
+              <Button 
+                variant="outlined"
+                color="primary"
+                fullWidth
+                onClick={() => {
+                  if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                  } else {
+                    document.documentElement.requestFullscreen();
+                  }
+                }}
               >
-                <MenuItem value={11}>11 points</MenuItem>
-                <MenuItem value={15}>15 points</MenuItem>
-                <MenuItem value={21}>21 points</MenuItem>
-                <MenuItem value={35}>35 points</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-          
-          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Points to Win</InputLabel>
-              <Select
-                value={tempSettings.pointsToWin}
-                onChange={(e) => handleSettingsChange('pointsToWin', Number(e.target.value))}
-                label="Points to Win"
+                Fullscreen
+              </Button>
+            </Grid>
+            <Grid>
+              <Button 
+                variant="outlined"
+                color="secondary"
+                fullWidth
+                onClick={swapServingTeam}
+                disabled={!canSwapServe}
               >
-                <MenuItem value={1}>1 point lead</MenuItem>
-                <MenuItem value={2}>2 points lead</MenuItem>
-                <MenuItem value={3}>3 points lead</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-          
-          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
-            <Button 
-              variant="outlined"
-              color="primary"
-              fullWidth
-              sx={{ mt: 2 }}
-              onClick={() => {
-                if (document.fullscreenElement) {
-                  document.exitFullscreen();
-                } else {
-                  document.documentElement.requestFullscreen();
-                }
-              }}
-            >
-              Toggle Fullscreen
-            </Button>
-          </Box>
-          
-          <Box sx={{ flexBasis: { xs: '100%', sm: '45%' } }}>
-            <Button 
-              variant="outlined"
-              color="error"
-              fullWidth
-              sx={{ mt: 2 }}
-              onClick={() => {
-                resetGame();
-                handleCloseSettings();
-              }}
-            >
-              Reset Game
-            </Button>
-          </Box>
-          
-          <Box sx={{ flexBasis: { xs: '100%' } }}>
-            <Button 
-              variant="outlined"
-              color="secondary"
-              fullWidth
-              sx={{ mt: 2 }}
-              onClick={swapServingTeam}
-              disabled={!canSwapServe}
-            >
-              Swap Serving Team
-            </Button>
-            {!canSwapServe && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 0.5 }}>
-                Serving team can only be swapped when both scores are 0
-              </Typography>
-            )}
-          </Box>
+                Swap Serve
+              </Button>
+            </Grid>
+            <Grid>
+              <Button 
+                variant="outlined"
+                color="error"
+                fullWidth
+                onClick={() => {
+                  resetGame();
+                  handleCloseSettings();
+                }}
+              >
+                Reset Game
+              </Button>
+            </Grid>
+            <Grid>
+              <InstallPwaButton />
+            </Grid>
+          </Grid>
           
           {/* Input Controls Section */}
           <Box sx={{ flexBasis: '100%', mt: 2 }}>
@@ -298,6 +301,7 @@ export const SettingsDialog = () => {
           Save
         </Button>
       </DialogActions>
+
     </Dialog>
   );
 };

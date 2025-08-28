@@ -4,7 +4,7 @@
   "description": "A badminton scoring app with gamepad support",
   "start_url": "/badmintonScore",
   "id": "/badmintonScore",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#ffffff",
   "theme_color": "#0032A0",
   "categories": ["sports", "games", "utilities"],
