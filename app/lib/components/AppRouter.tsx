@@ -10,6 +10,7 @@ const WordFactory = lazy(() => import("@/app/word-factory/WordFactory"));
 const ScheduleFinder = lazy(() => import("@/app/scheduleFinder/ScheduleFinder"));
 const ServerSideValidationApp = lazy(() => import("@/app/serverSideValidationApp/ServerSideValidationApp"));
 const BadmintonScore = lazy(() => import("@/app/badmintonScore/BadmintonScore"));
+const DoublesQueue = lazy(() => import("@/app/doublesQueue/DoublesQueue"));
 
 const appList: AppMeta[] = [
   {
@@ -35,6 +36,12 @@ const appList: AppMeta[] = [
     title: 'Badminton Score',
     description: 'Track badminton scores with customizable game settings',
     component: BadmintonScore
+  },
+  {
+    id: 'doublesQueue',
+    title: 'Doubles Queue',
+    description: 'Manage badminton doubles queue with rating system',
+    component: DoublesQueue
   }
 ];
 

@@ -1,0 +1,113 @@
+.doubles-queue {
+  /* Mobile-first responsive design */
+  --header-height: 64px;
+  --tab-height: 48px;
+  --fab-size: 56px;
+  --touch-target-min: 44px;
+  
+  /* High contrast colors for outdoor use */
+  --success-light: #c8e6c9;
+  --error-light: #ffcdd2;
+  --warning-light: #fff3e0;
+  --info-light: #e1f5fe;
+}
+
+/* Large touch targets */
+.doubles-queue .MuiButton-root {
+  min-height: var(--touch-target-min);
+  padding: 12px 24px;
+}
+
+.doubles-queue .MuiIconButton-root {
+  padding: 12px;
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+}
+
+.doubles-queue .MuiListItem-root {
+  min-height: 64px;
+  padding: 12px 16px;
+}
+
+/* Thumb-friendly layout */
+.doubles-queue .MuiFab-root {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1200;
+}
+
+/* High contrast for outdoor visibility */
+.doubles-queue .player-rating-chip {
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.doubles-queue .queue-position {
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  color: white;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Responsive typography */
+@media (max-width: 600px) {
+  .doubles-queue .MuiTypography-h4 {
+    font-size: 1.75rem;
+  }
+  
+  .doubles-queue .MuiTypography-h5 {
+    font-size: 1.5rem;
+  }
+  
+  .doubles-queue .MuiTypography-h6 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Optimize for portrait mobile screens */
+@media (max-width: 480px) and (orientation: portrait) {
+  .doubles-queue .team-display {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .doubles-queue .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-height: 500px) and (orientation: landscape) {
+  .doubles-queue .MuiAppBar-root {
+    min-height: 48px;
+  }
+  
+  .doubles-queue .session-stats {
+    padding: 8px 16px;
+  }
+}
+
+/* Improve contrast for outdoor use */
+.doubles-queue .high-contrast {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+/* Haptic feedback simulation with animations */
+.doubles-queue .haptic-feedback:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+/* Loading states optimized for mobile */
+.doubles-queue .loading-skeleton {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
