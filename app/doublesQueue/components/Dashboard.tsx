@@ -258,6 +258,7 @@ const Dashboard: React.FC = () => {
                         <span>Wait: {waitTime}</span>
                       </Box>
                     }
+                    secondaryTypographyProps={{ component: 'div' }}
                     sx={{ pr: 8 }}
                   />
                   <Box sx={{ 
