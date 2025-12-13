@@ -18,7 +18,14 @@ export default defineConfig({
   projects: [
     {
       name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'], headless: false},
+      use: {
+        ...devices['Pixel 5'],
+        headless: false,
+        viewport: { width: 500, height: 900 }, // Hardcoded viewport size
+        launchOptions: {
+          args: ['--remote-debugging-port=9222']
+        }
+      },
     }
   ]
 });

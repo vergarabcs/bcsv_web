@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "npm run printIp && next dev --experimental-https -H 0.0.0.0",
+    "start": "npm run printIp && next dev",
     "printIp": "node printIp.js",
     "build": "next build",
     "dev": "next start",
