@@ -316,7 +316,7 @@ export class QueueManager {
         }, 0);
 
       // Combined score favoring balance and high priority players
-      const score = (balanceQuality * 2) + (totalPriority * 0.1) - partnershipPenalty;
+      const score = (balanceQuality * 1) + (totalPriority * 1) - partnershipPenalty;
 
       // Emergency rule: if someone has waited too long, prioritize them
       const hasEmergencyWait = [team1.player1, team1.player2, team2.player1, team2.player2]
