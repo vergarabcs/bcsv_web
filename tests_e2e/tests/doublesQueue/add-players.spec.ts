@@ -79,7 +79,6 @@ test('add players to doubles queue', async ({ page }) => {
     
     // Back to dashboard for next round
     await page.getByRole('tab', { name: 'Dashboard' }).click();
-    await page.pause();
   }
-  // await page.pause();
+  await page.pause();
 });

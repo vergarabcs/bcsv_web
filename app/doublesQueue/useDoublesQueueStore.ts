@@ -530,9 +530,13 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
       partialize: (state) => ({
         players: state.players,
         games: state.games,
+        queueEntries: state.queueEntries,
+        nextMatches: state.nextMatches,
         courts: state.courts,
         settings: state.settings,
-        partnershipHistory: state.partnershipHistory
+        partnershipHistory: state.partnershipHistory,
+        currentSession: state.currentSession
+
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
@@ -556,6 +560,18 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           state.partnershipHistory = state.partnershipHistory.map(partnership => ({
             ...partnership,
             lastPlayedTogether: new Date(partnership.lastPlayedTogether)
+          }));
+          state.queueEntries = state.queueEntries.map(entry => ({
+            ...entry,
+            player: {
+              ...entry.player,
+              lastGameTime: entry.player.lastGameTime ? new Date(entry.player.lastGameTime) : undefined,
+              joinedQueueTime: entry.player.joinedQueueTime ? new Date(entry.player.joinedQueueTime) : undefined,
+              ratingHistory: entry.player.ratingHistory.map(ratingEntry => ({
+                ...ratingEntry,
+                timestamp: new Date(ratingEntry.timestamp)
+              }))
+            }
           }));
         }
       }
