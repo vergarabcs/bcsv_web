@@ -56,7 +56,7 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const Statistics: React.FC = () => {
+const Players: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
 
@@ -124,7 +124,7 @@ const Statistics: React.FC = () => {
       {/* Session Overview */}
       <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
         <Typography variant="h6" gutterBottom>
-          📈 Session Statistics
+          📈 Player Overview
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Box sx={{ textAlign: 'center' }}>
@@ -142,7 +142,7 @@ const Statistics: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Player Statistics Tabs */}
+      {/* Player Tabs */}
       <Paper square>
         <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
           <Tab label="Rankings" />
@@ -439,4 +439,4 @@ const Statistics: React.FC = () => {
   );
 };
 
-export default Statistics;
+export default Players;

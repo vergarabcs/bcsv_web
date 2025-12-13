@@ -36,7 +36,7 @@ import { getRatingCategory, getRatingCategoryColor, PlayerStatus, CourtStatus } 
 import Dashboard from './components/Dashboard';
 import QueueManager from './components/QueueManager';
 import GameResults from './components/GameResults';
-import Statistics from './components/Statistics';
+import Players from './components/Players';
 import styles from './DoublesQueue.module.css';
 
 interface TabPanelProps {
@@ -189,7 +189,7 @@ const DoublesQueue: React.FC = () => {
           />
           <Tab 
             icon={<SettingsIcon />} 
-            label="Stats" 
+            label="Players" 
           />
         </Tabs>
       </Paper>
@@ -206,7 +206,7 @@ const DoublesQueue: React.FC = () => {
           <GameResults />
         </TabPanel>
         <TabPanel value={tabValue} index={3}>
-          <Statistics />
+          <Players />
         </TabPanel>
       </Box>
 

@@ -7,8 +7,8 @@ test('add players to doubles queue', async ({ page }) => {
   // Navigate to the doubles queue page
   await page.goto('http://localhost:3000/doublesQueue');
 
-  // Go to the Stats tab first
-  await page.getByRole('tab', { name: 'Stats' }).click();
+  // Go to the Players tab first
+  await page.getByRole('tab', { name: 'Players' }).click();
   
   await test.step('Add players', async () => {
     for (let i = 1; i <= 18; i++) {
@@ -79,6 +79,7 @@ test('add players to doubles queue', async ({ page }) => {
     
     // Back to dashboard for next round
     await page.getByRole('tab', { name: 'Dashboard' }).click();
+    await page.pause();
   }
   // await page.pause();
 });
