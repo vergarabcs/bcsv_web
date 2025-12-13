@@ -167,28 +167,6 @@ const DoublesQueue: React.FC = () => {
         </Alert>
       )}
 
-      {/* Quick Stats */}
-      {currentSession.isActive && (
-        <Box sx={{ display: 'flex', gap: 1, p: 2 }}>
-          <Paper sx={{ p: 1, textAlign: 'center', flex: 1 }}>
-            <Typography variant="h6" color="primary">{waitingCount}</Typography>
-            <Typography variant="caption">Waiting</Typography>
-          </Paper>
-          <Paper sx={{ p: 1, textAlign: 'center', flex: 1 }}>
-            <Typography variant="h6" color="success.main">{playingCount}</Typography>
-            <Typography variant="caption">Playing</Typography>
-          </Paper>
-          <Paper sx={{ p: 1, textAlign: 'center', flex: 1 }}>
-            <Typography variant="h6" color="info.main">{currentSession.totalGames}</Typography>
-            <Typography variant="caption">Games</Typography>
-          </Paper>
-          <Paper sx={{ p: 1, textAlign: 'center', flex: 1 }}>
-            <Typography variant="h6" color="warning.main">{nextMatches.length}</Typography>
-            <Typography variant="caption">Ready</Typography>
-          </Paper>
-        </Box>
-      )}
-
       {/* Navigation Tabs */}
       <Paper square sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs 
