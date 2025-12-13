@@ -533,7 +533,32 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         courts: state.courts,
         settings: state.settings,
         partnershipHistory: state.partnershipHistory
-      })
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Convert date strings back to Date objects
+          state.games = state.games
+            .filter(game => game.startTime) // Filter out games without startTime
+            .map(game => ({
+              ...game,
+              startTime: new Date(game.startTime),
+              endTime: game.endTime ? new Date(game.endTime) : undefined
+            }));
+          state.players = state.players.map(player => ({
+            ...player,
+            lastGameTime: player.lastGameTime ? new Date(player.lastGameTime) : undefined,
+            joinedQueueTime: player.joinedQueueTime ? new Date(player.joinedQueueTime) : undefined,
+            ratingHistory: player.ratingHistory.map(entry => ({
+              ...entry,
+              timestamp: new Date(entry.timestamp)
+            }))
+          }));
+          state.partnershipHistory = state.partnershipHistory.map(partnership => ({
+            ...partnership,
+            lastPlayedTogether: new Date(partnership.lastPlayedTogether)
+          }));
+        }
+      }
     }
   )
 );
