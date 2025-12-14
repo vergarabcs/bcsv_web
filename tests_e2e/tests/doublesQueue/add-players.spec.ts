@@ -80,5 +80,36 @@ test('add players to doubles queue', async ({ page }) => {
     // Back to dashboard for next round
     await page.getByRole('tab', { name: 'Dashboard' }).click();
   }
-  await page.pause();
+
+  await test.step('Verify state persistence after refresh', async () => {
+    const tabs = ['Dashboard', 'Queue', 'Results', 'Players'];
+    const snapshots: Record<string, string> = {};
+
+    // Capture state
+    for (let i = 0; i < tabs.length; i++) {
+      const tabName = tabs[i];
+      await page.getByRole('tab', { name: tabName }).click();
+      // Wait for the tab panel to be visible using specific ID
+      const tabPanel = page.locator(`#simple-tabpanel-${i}`);
+      await expect(tabPanel).toBeVisible();
+      // Small wait to ensure content is rendered
+      await page.waitForTimeout(500); 
+      snapshots[tabName] = await tabPanel.innerText();
+    }
+
+    await page.pause();
+    // Refresh page
+    await page.reload();
+
+    // Verify state
+    for (let i = 0; i < tabs.length; i++) {
+      const tabName = tabs[i];
+      await page.getByRole('tab', { name: tabName }).click();
+      const tabPanel = page.locator(`#simple-tabpanel-${i}`);
+      await expect(tabPanel).toBeVisible();
+      await page.waitForTimeout(500);
+      const currentContent = await tabPanel.innerText();
+      expect(currentContent).toBe(snapshots[tabName]);
+    }
+  });
 });
