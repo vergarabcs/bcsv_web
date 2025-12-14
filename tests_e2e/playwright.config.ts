@@ -23,7 +23,7 @@ export default defineConfig({
         headless: false,
         viewport: { width: 500, height: 900 }, // Hardcoded viewport size
         launchOptions: {
-          args: ['--remote-debugging-port=9222']
+          // args: ['--remote-debugging-port=9222']
         }
       },
     }

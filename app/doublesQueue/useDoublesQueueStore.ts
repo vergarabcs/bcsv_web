@@ -101,6 +101,11 @@ const createCourt = (name: string): Court => ({
 
 const today = () => new Date().toISOString().split('T')[0];
 
+const stripPlayerHistory = (player: Player): Player => ({
+  ...player,
+  ratingHistory: []
+});
+
 export const useDoublesQueueStore = create<DoublesQueueState>()(
   persist(
     (set, get) => ({
@@ -576,15 +581,60 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
       // Customize what gets persisted
       partialize: (state) => ({
         players: state.players,
-        games: state.games,
-        queueEntries: state.queueEntries,
-        nextMatches: state.nextMatches,
-        manualMatches: state.manualMatches,
-        courts: state.courts,
+        games: state.games.map(game => ({
+          ...game,
+          team1: {
+            ...game.team1,
+            player1: stripPlayerHistory(game.team1.player1),
+            player2: stripPlayerHistory(game.team1.player2)
+          },
+          team2: {
+            ...game.team2,
+            player1: stripPlayerHistory(game.team2.player1),
+            player2: stripPlayerHistory(game.team2.player2)
+          }
+        })),
+        queueEntries: state.queueEntries.map(entry => ({
+          ...entry,
+          player: stripPlayerHistory(entry.player)
+        })),
+        nextMatches: state.nextMatches.map(match => ({
+          ...match,
+          players: match.players.map(stripPlayerHistory) as [Player, Player, Player, Player],
+          teams: match.teams.map(t => ({
+            ...t,
+            player1: stripPlayerHistory(t.player1),
+            player2: stripPlayerHistory(t.player2)
+          })) as [Team, Team]
+        })),
+        manualMatches: state.manualMatches.map(match => ({
+          ...match,
+          players: match.players.map(stripPlayerHistory) as [Player, Player, Player, Player],
+          teams: match.teams.map(t => ({
+            ...t,
+            player1: stripPlayerHistory(t.player1),
+            player2: stripPlayerHistory(t.player2)
+          })) as [Team, Team]
+        })),
+        courts: state.courts.map(court => ({
+          ...court,
+          currentGame: court.currentGame ? {
+            ...court.currentGame,
+            team1: {
+              ...court.currentGame.team1,
+              player1: stripPlayerHistory(court.currentGame.team1.player1),
+              player2: stripPlayerHistory(court.currentGame.team1.player2)
+            },
+            team2: {
+              ...court.currentGame.team2,
+              player1: stripPlayerHistory(court.currentGame.team2.player1),
+              player2: stripPlayerHistory(court.currentGame.team2.player2)
+            }
+          } : undefined
+        })),
         settings: state.settings,
         partnershipHistory: state.partnershipHistory,
         currentSession: state.currentSession
-
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
