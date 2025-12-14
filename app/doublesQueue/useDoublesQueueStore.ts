@@ -35,6 +35,7 @@ interface DoublesQueueState {
   // Queue management
   queueEntries: QueueEntry[];
   nextMatches: MatchSuggestion[];
+  manualMatches: MatchSuggestion[];
   partnershipHistory: PartnershipHistory[];
   
   // Algorithms
@@ -65,6 +66,8 @@ interface DoublesQueueState {
   // Queue operations
   refreshQueue: () => void;
   generateNextMatches: () => void;
+  addManualMatch: (match: MatchSuggestion) => void;
+  removeManualMatch: (index: number) => void;
   
   // Settings
   updateSettings: (newSettings: Partial<AppSettings>) => void;
@@ -119,6 +122,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
       
       queueEntries: [],
       nextMatches: [],
+      manualMatches: [],
       partnershipHistory: [],
       
       ratingSystem: new RatingSystem(DEFAULT_SETTINGS),
@@ -150,7 +154,9 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
             status: PlayerStatus.INACTIVE,
             joinedQueueTime: undefined
           })),
-          queueEntries: []
+          queueEntries: [],
+          manualMatches: [],
+          nextMatches: []
         }));
       },
 
@@ -253,6 +259,18 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           startTime: new Date()
         };
 
+        // Check if it was a manual match and remove it
+        const state = get();
+        const manualMatchIndex = state.manualMatches.findIndex(m => 
+            m.players.length === match.players.length &&
+            m.players.every(p => match.players.some(mp => mp.id === p.id))
+        );
+        
+        let newManualMatches = state.manualMatches;
+        if (manualMatchIndex !== -1) {
+            newManualMatches = state.manualMatches.filter((_, i) => i !== manualMatchIndex);
+        }
+
         // Update court status
         set(state => ({
           courts: state.courts.map(court =>
@@ -261,6 +279,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
               : court
           ),
           games: [...state.games, game],
+          manualMatches: newManualMatches,
           // Update player statuses to playing
           players: state.players.map(player => {
             if (match.players.some(p => p.id === player.id)) {
@@ -458,17 +477,44 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         const state = get();
         const availableCourts = state.courts.filter(c => c.status === CourtStatus.AVAILABLE);
         
-        if (availableCourts.length > 0 && state.queueEntries.length >= 4) {
-          const nextMatches = state.queueManager.findMultipleMatches(
-            state.queueEntries,
-            availableCourts.length,
+        // Filter out players already in manual matches
+        const manualMatchPlayerIds = new Set(
+          state.manualMatches.flatMap(m => m.players.map(p => p.id))
+        );
+        
+        const availableQueueEntries = state.queueEntries.filter(
+          entry => !manualMatchPlayerIds.has(entry.player.id)
+        );
+
+        let nextMatches = [...state.manualMatches];
+        
+        const slotsNeeded = Math.max(0, availableCourts.length - state.manualMatches.length);
+        
+        if (availableQueueEntries.length >= 4 && slotsNeeded > 0) {
+          const autoMatches = state.queueManager.findMultipleMatches(
+            availableQueueEntries,
+            slotsNeeded,
             state.partnershipHistory
           );
           
-          set({ nextMatches });
-        } else {
-          set({ nextMatches: [] });
+          nextMatches = [...nextMatches, ...autoMatches];
         }
+        
+        set({ nextMatches });
+      },
+
+      addManualMatch: (match: MatchSuggestion) => {
+        set(state => ({
+          manualMatches: [...state.manualMatches, match]
+        }));
+        get().generateNextMatches();
+      },
+
+      removeManualMatch: (index: number) => {
+        set(state => ({
+          manualMatches: state.manualMatches.filter((_, i) => i !== index)
+        }));
+        get().generateNextMatches();
       },
 
       // Settings
@@ -514,6 +560,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           games: [],
           queueEntries: [],
           nextMatches: [],
+          manualMatches: [],
           partnershipHistory: [],
           currentSession: {
             date: today(),
@@ -532,6 +579,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         games: state.games,
         queueEntries: state.queueEntries,
         nextMatches: state.nextMatches,
+        manualMatches: state.manualMatches,
         courts: state.courts,
         settings: state.settings,
         partnershipHistory: state.partnershipHistory,

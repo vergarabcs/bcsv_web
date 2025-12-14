@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -21,10 +21,12 @@ import {
   PlayArrow as PlayIcon,
   Group as GroupIcon,
   Timer as TimerIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { PlayerStatus, CourtStatus, getRatingCategory, getRatingCategoryColor } from '../types';
+import ManualMatchDialog from './ManualMatchDialog';
 
 const Dashboard: React.FC = () => {
   const {
@@ -38,6 +40,8 @@ const Dashboard: React.FC = () => {
     completeGame,
     joinQueue
   } = useDoublesQueueStore();
+
+  const [manualMatchOpen, setManualMatchOpen] = useState(false);
 
   const activeCourts = courts.filter(c => c.status === CourtStatus.OCCUPIED);
   const availableCourts = courts.filter(c => c.status === CourtStatus.AVAILABLE);
@@ -183,13 +187,27 @@ const Dashboard: React.FC = () => {
       </Stack>
 
       {/* Next Matches */}
-      {nextMatches.length > 0 && (
-        <>
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            ⏭️ Next Matches ({nextMatches.length} ready)
-          </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, mt: 2 }}>
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          ⏭️ Next Matches ({nextMatches.length} ready)
+        </Typography>
+        <Button 
+          variant="outlined" 
+          size="small" 
+          startIcon={<AddIcon />}
+          onClick={() => setManualMatchOpen(true)}
+        >
+          Manual Match
+        </Button>
+      </Box>
+
+      {nextMatches.length === 0 && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+          No matches scheduled. Wait for players or create a manual match.
+        </Typography>
+      )}
           
-          {nextMatches.map((match, index) => (
+      {nextMatches.map((match, index) => (
             <Card key={index} sx={{ mb: 2 }} variant="outlined">
               <CardContent>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -248,8 +266,6 @@ const Dashboard: React.FC = () => {
               </CardContent>
             </Card>
           ))}
-        </>
-      )}
 
       {/* Current Queue */}
       {queueEntries.length > 0 && (
@@ -334,6 +350,11 @@ const Dashboard: React.FC = () => {
           </Typography>
         </Paper>
       )}
+
+      <ManualMatchDialog 
+        open={manualMatchOpen} 
+        onClose={() => setManualMatchOpen(false)} 
+      />
     </Box>
   );
 };
