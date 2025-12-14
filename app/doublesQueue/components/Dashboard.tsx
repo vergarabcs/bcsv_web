@@ -259,7 +259,7 @@ const Dashboard: React.FC = () => {
           </Typography>
           
           <List dense>
-            {queueEntries.slice(0, 8).map((entry, index) => {
+            {queueEntries.map((entry, index) => {
               const waitTime = entry.player.joinedQueueTime 
                 ? formatTime(entry.player.joinedQueueTime)
                 : '0m';
@@ -319,11 +319,7 @@ const Dashboard: React.FC = () => {
             })}
           </List>
           
-          {queueEntries.length > 8 && (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-              ... and {queueEntries.length - 8} more players waiting
-            </Typography>
-          )}
+          {/* Showing all players in queue */}
         </>
       )}
 
