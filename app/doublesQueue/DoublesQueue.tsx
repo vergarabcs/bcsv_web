@@ -207,24 +207,23 @@ const DoublesQueue: React.FC = () => {
         </TabPanel>
         <TabPanel value={tabValue} index={3}>
           <Players />
+          {/* Floating Action Button */}
+          <Fab 
+            color="primary" 
+            aria-label="add player"
+            onClick={() => setAddPlayerOpen(true)}
+            className={`${styles.hapticFeedback}`}
+            sx={{ 
+              position: 'fixed', 
+              bottom: 24, 
+              right: 24,
+              boxShadow: 4
+            }}
+          >
+            <AddIcon />
+          </Fab>
         </TabPanel>
       </Box>
-
-      {/* Floating Action Button */}
-      <Fab 
-        color="primary" 
-        aria-label="add player"
-        onClick={() => setAddPlayerOpen(true)}
-        className={`${styles.hapticFeedback}`}
-        sx={{ 
-          position: 'fixed', 
-          bottom: 24, 
-          right: 24,
-          boxShadow: 4
-        }}
-      >
-        <AddIcon />
-      </Fab>
 
       {/* Add Player Dialog */}
       <Dialog 
