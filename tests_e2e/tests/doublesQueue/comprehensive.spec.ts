@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-test('add players to doubles queue', async ({ page }) => {
+test('Comprehensive Test', async ({ page }) => {
+  test.setTimeout(120000);
   // Install the clock API to control time
   await page.clock.install();
   
@@ -51,6 +52,36 @@ test('add players to doubles queue', async ({ page }) => {
   await page.getByRole('tab', { name: 'Dashboard' }).click();
   // Simulate multiple games (about 3 hours worth)
   for (let gameRound = 0; gameRound < 10; gameRound++) {
+    
+    if (gameRound === 5) {
+      await test.step('Create Manual Match with low priority players', async () => {
+        await page.getByRole('button', { name: 'Manual Match' }).click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog).toBeVisible();
+
+        // Find player items (ListItemButton containing a checkbox)
+        const playerItems = dialog.getByRole('button').filter({ has: page.getByRole('checkbox') });
+        const count = await playerItems.count();
+        const selectedNames: string[] = [];
+
+        // Select last 4 players (likely not in auto-generated matches)
+        for (let i = count - 4; i < count; i++) {
+          const item = playerItems.nth(i);
+          await item.click();
+          const text = await item.locator('.MuiListItemText-primary').textContent();
+          if (text) selectedNames.push(text);
+        }
+
+        await dialog.getByRole('button', { name: 'Create Match' }).click();
+        await expect(dialog).toBeHidden();
+
+        // Assert the manual match is visible in Next Matches
+        for (const name of selectedNames) {
+          await expect(page.getByText(name).first()).toBeVisible();
+        }
+      });
+    }
+
     // Start available matches (buttons may appear/disappear dynamically)
     while (true) {
       const startButton = page.getByRole('button', { name: 'Start Next Match' }).first();
@@ -97,7 +128,6 @@ test('add players to doubles queue', async ({ page }) => {
       snapshots[tabName] = await tabPanel.innerText();
     }
 
-    await page.pause();
     // Refresh page
     await page.reload();
 
