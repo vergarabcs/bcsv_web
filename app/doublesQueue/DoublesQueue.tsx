@@ -68,6 +68,7 @@ function TabPanel(props: TabPanelProps) {
 const DoublesQueue: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [addPlayerOpen, setAddPlayerOpen] = useState(false);
+  const [endSessionDialogOpen, setEndSessionDialogOpen] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [newPlayerRating, setNewPlayerRating] = useState('1500');
 
@@ -99,10 +100,15 @@ const DoublesQueue: React.FC = () => {
 
   const handleSessionToggle = () => {
     if (currentSession.isActive) {
-      endSession();
+      setEndSessionDialogOpen(true);
     } else {
       initializeSession();
     }
+  };
+
+  const handleConfirmEndSession = () => {
+    endSession();
+    setEndSessionDialogOpen(false);
   };
 
   const activePlayers = players.filter(p => p.status !== PlayerStatus.INACTIVE);
@@ -263,6 +269,25 @@ const DoublesQueue: React.FC = () => {
             disabled={!newPlayerName.trim()}
           >
             Add Player
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* End Session Confirmation Dialog */}
+      <Dialog
+        open={endSessionDialogOpen}
+        onClose={() => setEndSessionDialogOpen(false)}
+      >
+        <DialogTitle>End Session?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to end the current session? This will clear the queue and active games.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEndSessionDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleConfirmEndSession} color="error" variant="contained">
+            End Session
           </Button>
         </DialogActions>
       </Dialog>

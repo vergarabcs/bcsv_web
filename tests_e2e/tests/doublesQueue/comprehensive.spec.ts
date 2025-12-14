@@ -142,4 +142,20 @@ test('Comprehensive Test', async ({ page }) => {
       expect(currentContent).toBe(snapshots[tabName]);
     }
   });
+
+  await test.step('End session', async () => {
+    // Click the End button in the header
+    await page.getByRole('button', { name: 'End', exact: true }).click();
+    
+    // Verify confirmation dialog appears
+    await expect(page.getByText('End Session?')).toBeVisible();
+    
+    // Confirm ending the session
+    await page.getByRole('button', { name: 'End Session' }).click();
+    
+    // Verify session is inactive (Start button should be visible)
+    await expect(page.getByRole('button', { name: 'Start', exact: true })).toBeVisible();
+  });
+
+  await page.pause()
 });
