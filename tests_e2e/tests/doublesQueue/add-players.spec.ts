@@ -61,8 +61,8 @@ test('add players to doubles queue', async ({ page }) => {
     // Simulate game duration (20 minutes per game)
     await page.clock.fastForward(20 * 60 * 1000);
     
-    // Record results
-    await page.getByRole('tab', { name: 'Results' }).click();
+    // Record results (now handled on Dashboard)
+    await page.getByRole('tab', { name: 'Dashboard' }).click();
     
     // Click all available win buttons (buttons may vanish after clicking)
     while (true) {

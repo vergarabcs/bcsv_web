@@ -23,8 +23,6 @@ import {
   Radio
 } from '@mui/material';
 import {
-  CheckCircle as WinIcon,
-  Cancel as LoseIcon,
   Timer as TimerIcon
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
@@ -48,8 +46,7 @@ const GameResults: React.FC = () => {
     courts,
     completeGame,
     cancelGame,
-    currentSession,
-    joinQueue
+    currentSession
   } = useDoublesQueueStore();
 
   const activeGames = games.filter(game => 
@@ -61,25 +58,7 @@ const GameResults: React.FC = () => {
     .sort((a, b) => (b.endTime?.getTime() || 0) - (a.endTime?.getTime() || 0))
     .slice(0, 10);
 
-  const handleCompleteGame = (gameId: string, team: 1 | 2) => {
-    const game = activeGames.find(g => g.id === gameId);
-    if (!game) return;
-
-    // Complete the game first
-    completeGame(gameId, team);
-    
-    // Automatically rejoin all players to the queue
-    // Add a small delay to ensure the game completion is processed first
-    setTimeout(() => {
-      joinQueue(game.team1.player1.id);
-      joinQueue(game.team1.player2.id);
-      joinQueue(game.team2.player1.id);
-      joinQueue(game.team2.player2.id);
-    }, 100);
-    
-    setSelectedGameId(null);
-    setWinningTeam(null);
-  };
+  
 
   const handleScoreEntry = () => {
     if (selectedGameId && winningTeam) {
@@ -218,26 +197,7 @@ const GameResults: React.FC = () => {
                     </Paper>
                   </Box>
                   
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handleCompleteGame(game.id, 1)}
-                      startIcon={<WinIcon />}
-                      fullWidth
-                    >
-                      Team 1 Wins
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      onClick={() => handleCompleteGame(game.id, 2)}
-                      startIcon={<WinIcon />}
-                      fullWidth
-                    >
-                      Team 2 Wins
-                    </Button>
-                  </Box>
+                  
                   
                   <Button
                     variant="outlined"

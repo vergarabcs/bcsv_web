@@ -34,7 +34,9 @@ const Dashboard: React.FC = () => {
     currentSession,
     players,
     startGame,
-    refreshQueue
+    refreshQueue,
+    completeGame,
+    joinQueue
   } = useDoublesQueueStore();
 
   const activeCourts = courts.filter(c => c.status === CourtStatus.OCCUPIED);
@@ -120,6 +122,47 @@ const Dashboard: React.FC = () => {
                   <Typography variant="caption" color="text.secondary">
                     Playing for {formatTime(court.currentGame.startTime)}
                   </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                          if (!court.currentGame) return;
+                          const game = court.currentGame;
+                          completeGame(game.id, 1);
+                          // rejoin players after completion
+                          setTimeout(() => {
+                            joinQueue(game.team1.player1.id);
+                            joinQueue(game.team1.player2.id);
+                            joinQueue(game.team2.player1.id);
+                            joinQueue(game.team2.player2.id);
+                          }, 100);
+                        }}
+                        fullWidth
+                      >
+                        Team 1 Wins
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => {
+                          if (!court.currentGame) return;
+                          const game = court.currentGame;
+                          completeGame(game.id, 2);
+                          setTimeout(() => {
+                            joinQueue(game.team1.player1.id);
+                            joinQueue(game.team1.player2.id);
+                            joinQueue(game.team2.player1.id);
+                            joinQueue(game.team2.player2.id);
+                          }, 100);
+                        }}
+                        fullWidth
+                      >
+                        Team 2 Wins
+                      </Button>
+                    </Box>
+                  </Box>
                 </Box>
               )}
               

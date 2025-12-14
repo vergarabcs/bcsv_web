@@ -561,6 +561,15 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
             ...partnership,
             lastPlayedTogether: new Date(partnership.lastPlayedTogether)
           }));
+          // Restore courts.currentGame date fields if present
+          state.courts = state.courts.map(court => ({
+            ...court,
+            currentGame: court.currentGame && court.currentGame.startTime ? {
+              ...court.currentGame,
+              startTime: new Date(court.currentGame.startTime),
+              endTime: court.currentGame.endTime ? new Date(court.currentGame.endTime) : undefined
+            } : undefined
+          }));
           state.queueEntries = state.queueEntries.map(entry => ({
             ...entry,
             player: {
