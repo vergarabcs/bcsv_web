@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "npm run printIp && next dev",
+    "start": "next start",
     "printIp": "node printIp.js",
     "build": "next build",
-    "dev": "next start",
+    "dev": "npm run printIp && next dev",
     "lint": "next lint",
     "backend": "npx ampx sandbox",
     "test": "jest '/Users/billcarlo.vergara/Projects/bcsv_web/app/hooks/__tests__/customAuthorization.test.ts'"
