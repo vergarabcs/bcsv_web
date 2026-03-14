@@ -1,21 +1,26 @@
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
-import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 
 const SPREADSHEET_ID = '1mPd-WUmyrwC5MEtBbADzyTmJJpOqr7MZPueloFUYyHo';
 const SHEET_RANGE = 'RawLogs!A:F';
-const SSM_PARAM_NAME = '/badminton/sheets-writer-key';
+const SSM_PARAM_NAME =
+  process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PARAM ??
+  '/amplify/shared/d2i0ep7cpx287/GOOGLE_SERVICE_ACCOUNT_KEY';
 
 let cachedSheets: ReturnType<typeof google.sheets> | null = null;
+const ssmClient = new SSMClient({});
 
 async function getSheetsClient(): Promise<ReturnType<typeof google.sheets>> {
   if (cachedSheets) return cachedSheets;
 
-  const ssm = new SSMClient({});
-  const { Parameter } = await ssm.send(
+  const { Parameter } = await ssmClient.send(
     new GetParameterCommand({ Name: SSM_PARAM_NAME, WithDecryption: true })
   );
-  if (!Parameter?.Value) throw new Error(`SSM parameter ${SSM_PARAM_NAME} not found`);
+
+  if (!Parameter?.Value) {
+    throw new Error(`SSM parameter not found or empty: ${SSM_PARAM_NAME}`);
+  }
 
   const credentials = JSON.parse(Parameter.Value);
   const auth = new google.auth.GoogleAuth({
