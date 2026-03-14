@@ -11,6 +11,7 @@ const ScheduleFinder = lazy(() => import("@/app/scheduleFinder/ScheduleFinder"))
 const ServerSideValidationApp = lazy(() => import("@/app/serverSideValidationApp/ServerSideValidationApp"));
 const BadmintonScore = lazy(() => import("@/app/badmintonScore/BadmintonScore"));
 const DoublesQueue = lazy(() => import("@/app/doublesQueue/DoublesQueue"));
+const GoogleSheetPoc = lazy(() => import("@/app/googleSheetPoc/GoogleSheetPoc").then(m => ({ default: m.GoogleSheetPoc })));
 
 const appList: AppMeta[] = [
   {
@@ -42,6 +43,12 @@ const appList: AppMeta[] = [
     title: 'Doubles Queue',
     description: 'Manage badminton doubles queue with rating system',
     component: DoublesQueue
+  },
+  {
+    id: 'googleSheetPoc',
+    title: 'Google Sheet POC',
+    description: 'Log a badminton match result directly into Google Sheets',
+    component: GoogleSheetPoc
   }
 ];
 
