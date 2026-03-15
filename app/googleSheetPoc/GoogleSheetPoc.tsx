@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import SendIcon from '@mui/icons-material/Send';
+import { ampClient } from '../lib/amplifyClient';
 
 interface FormState {
   team1p1: string;
@@ -57,25 +58,20 @@ export const GoogleSheetPoc = () => {
     setResult(null);
 
     try {
-      const res = await fetch('/api/sheet-entry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          date: new Date().toISOString(),
-        }),
+      const { data, errors } = await ampClient.mutations.logSheetEntry({
+        ...form,
+        date: new Date().toISOString(),
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
+      if (errors?.length || !data) {
+        setResult({ success: false, message: errors?.[0]?.message ?? 'Unknown error' });
+      } else {
         setResult({ success: true, message: `Row inserted into ${data.updatedRange}` });
         setForm(emptyForm);
-      } else {
-        setResult({ success: false, message: data.error ?? 'Unknown error' });
       }
-    } catch {
-      setResult({ success: false, message: 'Network error — could not reach the server' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Network error — could not reach the server';
+      setResult({ success: false, message });
     } finally {
       setLoading(false);
     }
