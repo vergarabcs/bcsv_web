@@ -14,7 +14,20 @@ async function getSheetsClient(): Promise<ReturnType<typeof google.sheets>> {
     throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_KEY environment variable');
   }
 
-  const credentials = JSON.parse(GOOGLE_SERVICE_ACCOUNT_KEY);
+  let credentials: { client_email?: string; private_key?: string };
+  try {
+    credentials = JSON.parse(GOOGLE_SERVICE_ACCOUNT_KEY);
+  } catch {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY is not valid JSON');
+  }
+
+  if (!credentials.client_email || !credentials.private_key) {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY is missing client_email or private_key');
+  }
+
+  // Some env inputs preserve escaped newlines; normalize for JWT signing.
+  credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+
   const auth = new google.auth.GoogleAuth({
     credentials,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
@@ -55,6 +68,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Sheet entry error:', error);
-    return NextResponse.json({ error: 'Failed to write to Google Sheet' }, { status: 500 });
+    const detail = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Failed to write to Google Sheet', detail }, { status: 500 });
   }
 }
