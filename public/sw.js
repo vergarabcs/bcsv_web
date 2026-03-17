@@ -1,5 +1,5 @@
 // This is the service worker for the Badminton Score PWA
-const CACHE_NAME = 'badminton-score-cache-v1';
+const CACHE_NAME = 'badminton-score-cache-v2';
 const urlsToCache = [
   '/',
   '/badmintonScore',
@@ -51,7 +51,37 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  const url = new URL(event.request.url);
+
+  // Never cache API responses.
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
   logEvent(`Fetch request for: ${event.request.url}`);
+
+  // For page/document requests, prefer fresh network content to avoid stale app bundles.
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, responseToCache))
+              .catch((error) => {
+                logEvent(`Error caching document response: ${error}`);
+              });
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cached = await caches.match(event.request);
+          return cached;
+        })
+    );
+    return;
+  }
   
   event.respondWith(
     caches.match(event.request)
@@ -77,7 +107,6 @@ self.addEventListener('fetch', (event) => {
             const responseToCache = response.clone();
 
             // Only cache same-origin requests to avoid issues
-            const url = new URL(event.request.url);
             const isSameOrigin = url.origin === self.location.origin;
 
             if (isSameOrigin) {
