@@ -1,5 +1,4 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
-import { logSheetEntryFunction } from "../functions/log-sheet-entry/resource";
 
 const schemaObj = {
   GameState: a.model({
@@ -29,26 +28,6 @@ const schemaObj = {
   ScheduleFinder: a.model({
     personRangeMap: a.string()
   }).authorization(allow => [allow.publicApiKey()]),
-
-  logSheetEntry: a
-    .mutation()
-    .arguments({
-      date: a.string(),
-      team1p1: a.string().required(),
-      team1p2: a.string().required(),
-      team2p1: a.string().required(),
-      team2p2: a.string().required(),
-      winner: a.string().required(),
-    })
-    .returns(
-      a.customType({
-        success: a.boolean().required(),
-        updatedRange: a.string(),
-        updatedRows: a.integer(),
-      })
-    )
-    .authorization(allow => [allow.publicApiKey()])
-    .handler(a.handler.function(logSheetEntryFunction))
 }
 
 const schema = a.schema(schemaObj);

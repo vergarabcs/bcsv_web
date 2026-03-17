@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import SendIcon from '@mui/icons-material/Send';
-import { ampClient } from '../lib/amplifyClient';
 
 interface FormState {
   team1p1: string;
@@ -53,31 +52,6 @@ export const GoogleSheetPoc = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setResult(null);
-
-    try {
-      const { data, errors } = await ampClient.mutations.logSheetEntry({
-        ...form,
-        date: new Date().toISOString(),
-      });
-
-      if (errors?.length || !data) {
-        setResult({ success: false, message: errors?.[0]?.message ?? 'Unknown error' });
-      } else {
-        setResult({ success: true, message: `Row inserted into ${data.updatedRange}` });
-        setForm(emptyForm);
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Network error — could not reach the server';
-      setResult({ success: false, message });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmitViaApi = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setResult(null);
@@ -205,15 +179,7 @@ export const GoogleSheetPoc = () => {
                 endIcon={loading ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
                 disabled={loading}
               >
-                {loading ? 'Submitting…' : 'Submit via Lambda'}
-              </Button>
-              <Button
-                onClick={handleSubmitViaApi}
-                variant="outlined"
-                endIcon={loading ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
-                disabled={loading}
-              >
-                {loading ? 'Submitting…' : 'Submit via API Route'}
+                {loading ? 'Submitting…' : 'Submit'}
               </Button>
             </Stack>
           </Stack>
