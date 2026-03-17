@@ -6,21 +6,16 @@ import {
   Typography,
   Paper,
   Button,
-  Card,
-  CardContent,
   Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   Fab,
   Tabs,
   Tab,
   Badge,
   Alert,
-  Stack
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -37,6 +32,7 @@ import Dashboard from './components/Dashboard';
 import QueueManager from './components/QueueManager';
 import GameResults from './components/GameResults';
 import Players from './components/Players';
+import AddPlayerDialog from './components/AddPlayerDialog';
 import styles from './DoublesQueue.module.css';
 
 interface TabPanelProps {
@@ -69,8 +65,6 @@ const DoublesQueue: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [addPlayerOpen, setAddPlayerOpen] = useState(false);
   const [endSessionDialogOpen, setEndSessionDialogOpen] = useState(false);
-  const [newPlayerName, setNewPlayerName] = useState('');
-  const [newPlayerRating, setNewPlayerRating] = useState('1500');
 
   const {
     players,
@@ -98,16 +92,6 @@ const DoublesQueue: React.FC = () => {
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
-  };
-
-  const handleAddPlayer = () => {
-    if (newPlayerName.trim()) {
-      const rating = parseInt(newPlayerRating) || 1500;
-      addPlayer(newPlayerName.trim(), rating);
-      setNewPlayerName('');
-      setNewPlayerRating('1500');
-      setAddPlayerOpen(false);
-    }
   };
 
   const handleSessionToggle = () => {
@@ -244,46 +228,12 @@ const DoublesQueue: React.FC = () => {
       </Box>
 
       {/* Add Player Dialog */}
-      <Dialog 
-        open={addPlayerOpen} 
+      <AddPlayerDialog
+        open={addPlayerOpen}
         onClose={() => setAddPlayerOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Add New Player</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Player Name"
-            fullWidth
-            variant="outlined"
-            value={newPlayerName}
-            onChange={(e) => setNewPlayerName(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            label="Initial Rating"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={newPlayerRating}
-            onChange={(e) => setNewPlayerRating(e.target.value)}
-            helperText="Default: 1500 (Range: 1000-3000)"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddPlayerOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleAddPlayer}
-            variant="contained"
-            disabled={!newPlayerName.trim()}
-          >
-            Add Player
-          </Button>
-        </DialogActions>
-      </Dialog>
+        players={players}
+        addPlayer={addPlayer}
+      />
 
       {/* End Session Confirmation Dialog */}
       <Dialog
