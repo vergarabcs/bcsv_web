@@ -84,6 +84,18 @@ const DoublesQueue: React.FC = () => {
     joinQueue
   } = useDoublesQueueStore();
 
+  useEffect(() => {
+    fetch('/api/players')
+      .then(res => res.json())
+      .then((data: { players?: string[] }) => {
+        if (Array.isArray(data.players)) {
+          data.players.forEach(name => addPlayer(name));
+        }
+      })
+      .catch(() => {/* silently ignore if sheet is unreachable */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };

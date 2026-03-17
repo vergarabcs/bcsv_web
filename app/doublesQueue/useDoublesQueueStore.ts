@@ -168,6 +168,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
       // Player management
       addPlayer: (name: string, initialRating: number = 1500) => {
+        const exists = get().players.some(p => p.name === name);
+        if (exists) return;
         const newPlayer = createPlayer(name, initialRating);
         set(state => ({
           players: [...state.players, newPlayer]
