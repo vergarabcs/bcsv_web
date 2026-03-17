@@ -77,6 +77,37 @@ export const GoogleSheetPoc = () => {
     }
   };
 
+  const handleSubmitViaApi = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const response = await fetch('/api/logSheetEntry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          date: new Date().toISOString(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setResult({ success: false, message: data.error ?? 'Unknown error' });
+      } else {
+        setResult({ success: true, message: `Row inserted into ${data.updatedRange}` });
+        setForm(emptyForm);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Network error — could not reach the server';
+      setResult({ success: false, message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const options = winnerOptions();
 
   return (
@@ -167,14 +198,24 @@ export const GoogleSheetPoc = () => {
               </Alert>
             )}
 
-            <Button
-              type="submit"
-              variant="contained"
-              endIcon={loading ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
-              disabled={loading}
-            >
-              {loading ? 'Submitting…' : 'Submit to Google Sheets'}
-            </Button>
+            <Stack direction="row" spacing={2}>
+              <Button
+                type="submit"
+                variant="contained"
+                endIcon={loading ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
+                disabled={loading}
+              >
+                {loading ? 'Submitting…' : 'Submit via Lambda'}
+              </Button>
+              <Button
+                onClick={handleSubmitViaApi}
+                variant="outlined"
+                endIcon={loading ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
+                disabled={loading}
+              >
+                {loading ? 'Submitting…' : 'Submit via API Route'}
+              </Button>
+            </Stack>
           </Stack>
         </form>
       </Paper>

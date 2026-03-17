@@ -1,5 +1,5 @@
 // This is the service worker for the Badminton Score PWA
-const CACHE_NAME = 'badminton-score-cache-v2';
+const CACHE_NAME = 'badminton-score-cache-v3';
 const urlsToCache = [
   '/',
   '/badmintonScore',
