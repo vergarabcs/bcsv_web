@@ -5,15 +5,42 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 
 type LogSheetEntryRequest = {
   date?: string;
+  gameNumber?: string;
   team1p1?: string;
   team1p2?: string;
   team2p1?: string;
   team2p2?: string;
   winner?: string;
+  entries?: LogSheetEntryRow[];
+};
+
+type LogSheetEntryRow = {
+  date?: string;
+  gameNumber?: string;
+  team1p1: string;
+  team1p2: string;
+  team2p1: string;
+  team2p2: string;
+  winner: string;
+};
+
+const normalizeWinnerForSheet = (entry: LogSheetEntryRow): string => {
+  const winner = entry.winner.trim();
+  const normalized = winner.toLowerCase().replace(/\s+/g, '');
+
+  if (normalized === 'team1' || normalized === '1') {
+    return `${entry.team1p1},${entry.team1p2}`;
+  }
+
+  if (normalized === 'team2' || normalized === '2') {
+    return `${entry.team2p1},${entry.team2p2}`;
+  }
+
+  return winner;
 };
 
 const SPREADSHEET_ID = '1mPd-WUmyrwC5MEtBbADzyTmJJpOqr7MZPueloFUYyHo';
-const SHEET_RANGE = 'RawLogs!A:F';
+const SHEET_RANGE = 'RawLogs!A:G';
 const DEFAULT_SSM_PARAM_NAME = '/amplify/shared/d2i0ep7cpx287/GOOGLE_SERVICE_ACCOUNT_KEY';
 const ssmClient = new SSMClient({});
 
@@ -107,11 +134,33 @@ const parseServiceAccountKey = (raw: string): ParsedKeyResult => {
 export async function POST(request: NextRequest) {
   try {
     const body: LogSheetEntryRequest = await request.json();
-    const { date, team1p1, team1p2, team2p1, team2p2, winner } = body;
 
-    if (!team1p1 || !team1p2 || !team2p1 || !team2p2 || !winner) {
+    const entries: LogSheetEntryRow[] = Array.isArray(body.entries)
+      ? body.entries
+      : [{
+          date: body.date,
+          gameNumber: body.gameNumber,
+          team1p1: body.team1p1 ?? '',
+          team1p2: body.team1p2 ?? '',
+          team2p1: body.team2p1 ?? '',
+          team2p2: body.team2p2 ?? '',
+          winner: body.winner ?? '',
+        }];
+
+    if (entries.length === 0) {
       return NextResponse.json(
-        { error: 'All player fields and winner are required' },
+        { error: 'At least one entry is required' },
+        { status: 400 }
+      );
+    }
+
+    const hasInvalidEntry = entries.some(
+      (entry) => !entry.team1p1 || !entry.team1p2 || !entry.team2p1 || !entry.team2p2 || !entry.winner
+    );
+
+    if (hasInvalidEntry) {
+      return NextResponse.json(
+        { error: 'Each entry must include team1p1, team1p2, team2p1, team2p2, and winner' },
         { status: 400 }
       );
     }
@@ -150,7 +199,15 @@ export async function POST(request: NextRequest) {
     });
 
     const sheets = google.sheets({ version: 'v4', auth });
-    const row = [date ?? new Date().toISOString(), team1p1, team1p2, team2p1, team2p2, winner];
+    const rows = entries.map((entry) => [
+      entry.date ?? new Date().toISOString(),
+      entry.gameNumber ?? '',
+      entry.team1p1,
+      entry.team1p2,
+      entry.team2p1,
+      entry.team2p2,
+      normalizeWinnerForSheet(entry),
+    ]);
 
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
@@ -159,12 +216,13 @@ export async function POST(request: NextRequest) {
       insertDataOption: 'INSERT_ROWS',
       requestBody: {
         majorDimension: 'ROWS',
-        values: [row],
+        values: rows,
       },
     });
 
     return NextResponse.json({
       success: true,
+      appendedEntries: rows.length,
       updatedRange: response.data.updates?.updatedRange ?? null,
       updatedRows: response.data.updates?.updatedRows ?? null,
     });

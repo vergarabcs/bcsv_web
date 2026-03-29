@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -13,6 +13,7 @@ import {
   IconButton,
   Chip,
   Fab,
+  InputAdornment,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -26,7 +27,8 @@ import {
   Remove as RemoveIcon,
   ArrowUpward as ArrowUpIcon,
   ArrowDownward as ArrowDownIcon,
-  PlayArrow as PlayIcon
+  PlayArrow as PlayIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { PlayerStatus, getRatingCategory, getRatingCategoryColor } from '../types';
@@ -42,8 +44,13 @@ const QueueManager: React.FC = () => {
     refreshQueue
   } = useDoublesQueueStore();
 
+  const [search, setSearch] = useState('');
+
   const inactivePlayers = players.filter(p => p.status === PlayerStatus.INACTIVE);
   const activePlayers = players.filter(p => p.status !== PlayerStatus.INACTIVE);
+  const filteredInactive = inactivePlayers.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleJoinQueue = (playerId: string) => {
     joinQueue(playerId);
@@ -285,10 +292,26 @@ const QueueManager: React.FC = () => {
           <Typography variant="h6" gutterBottom>
             😴 Inactive Players ({inactivePlayers.length} not playing)
           </Typography>
+
+          <TextField
+            size="small"
+            placeholder="Search players..."
+            fullWidth
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            sx={{ mb: 1 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              )
+            }}
+          />
           
           <Paper>
             <List>
-              {inactivePlayers.map((player) => {
+              {filteredInactive.map((player) => {
                 const category = getRatingCategory(player.rating);
                 
                 return (

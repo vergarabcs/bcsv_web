@@ -23,15 +23,29 @@ import {
   Radio
 } from '@mui/material';
 import {
+  Sync as SyncIcon,
   Timer as TimerIcon
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
-import { GameStatus, CourtStatus } from '../types';
+import { Game, GameStatus } from '../types';
+
+type SyncLogSheetEntry = {
+  date: string;
+  gameNumber: string;
+  team1p1: string;
+  team1p2: string;
+  team2p1: string;
+  team2p2: string;
+  winner: string;
+};
 
 const GameResults: React.FC = () => {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [winningTeam, setWinningTeam] = useState<'1' | '2' | null>(null);
   const [scoreDialogOpen, setScoreDialogOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncSuccess, setSyncSuccess] = useState<string | null>(null);
   const [scores, setScores] = useState({
     set1Team1: '',
     set1Team2: '',
@@ -46,6 +60,7 @@ const GameResults: React.FC = () => {
     courts,
     completeGame,
     cancelGame,
+    markGamesSynced,
     currentSession
   } = useDoublesQueueStore();
 
@@ -57,6 +72,8 @@ const GameResults: React.FC = () => {
     .filter(game => game.status === GameStatus.COMPLETED)
     .sort((a, b) => (b.endTime?.getTime() || 0) - (a.endTime?.getTime() || 0))
     .slice(0, 10);
+
+  const unsyncedRecentGames = recentGames.filter(game => !game.syncedToSheet);
 
   
 
@@ -115,6 +132,72 @@ const GameResults: React.FC = () => {
       hour: 'numeric',
       minute: '2-digit'
     }).format(date);
+  };
+
+  const mapGameToSheetRow = (game: Game, fallbackGameNumber: number): SyncLogSheetEntry | null => {
+    if (!game.winner) return null;
+
+    const winningTeam = game.winner === 1 ? game.team1 : game.team2;
+    const resolvedGameNumber = game.gameNumber ?? fallbackGameNumber;
+
+    return {
+      date: (game.endTime ?? game.startTime).toISOString(),
+      gameNumber: `Game ${resolvedGameNumber}`,
+      team1p1: game.team1.player1.name,
+      team1p2: game.team1.player2.name,
+      team2p1: game.team2.player1.name,
+      team2p2: game.team2.player2.name,
+      winner: `${winningTeam.player1.name},${winningTeam.player2.name}`
+    };
+  };
+
+  const handleSyncRecentResults = async () => {
+    const gamesToSync = unsyncedRecentGames.filter(game => game.winner);
+    if (gamesToSync.length === 0) {
+      setSyncSuccess('No unsynced completed games to sync.');
+      setSyncError(null);
+      return;
+    }
+
+    const gamesToSyncByTime = [...gamesToSync].sort(
+      (a, b) => (a.endTime?.getTime() || a.startTime.getTime()) - (b.endTime?.getTime() || b.startTime.getTime())
+    );
+
+    const rows = gamesToSyncByTime
+      .map((game, index) => mapGameToSheetRow(game, index + 1))
+      .filter((row): row is SyncLogSheetEntry => row !== null);
+
+    if (rows.length === 0) {
+      setSyncError('No valid completed game rows to sync.');
+      setSyncSuccess(null);
+      return;
+    }
+
+    setSyncing(true);
+    setSyncError(null);
+    setSyncSuccess(null);
+
+    try {
+      const response = await fetch('/api/logSheetEntry', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ entries: rows }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to sync results');
+      }
+
+      markGamesSynced(gamesToSync.map(game => game.id));
+      setSyncSuccess(`Synced ${rows.length} game result${rows.length === 1 ? '' : 's'} to Google Sheet.`);
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : 'Failed to sync results');
+    } finally {
+      setSyncing(false);
+    }
   };
 
   if (!currentSession.isActive) {
@@ -224,9 +307,32 @@ const GameResults: React.FC = () => {
       {/* Recent Games */}
       {recentGames.length > 0 && (
         <>
-          <Typography variant="h6" gutterBottom>
-            📊 Recent Results ({recentGames.length})
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
+              📊 Recent Results ({recentGames.length})
+            </Typography>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<SyncIcon />}
+              disabled={syncing || unsyncedRecentGames.length === 0}
+              onClick={handleSyncRecentResults}
+            >
+              {syncing ? 'Syncing...' : `Sync (${unsyncedRecentGames.length})`}
+            </Button>
+          </Box>
+
+          {syncError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {syncError}
+            </Alert>
+          )}
+
+          {syncSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {syncSuccess}
+            </Alert>
+          )}
           
           <List>
             {recentGames.map((game) => {
@@ -251,6 +357,12 @@ const GameResults: React.FC = () => {
                           label={`Team ${game.winner} Won`}
                           color="success"
                           size="small"
+                        />
+                        <Chip
+                          label={game.syncedToSheet ? 'Synced' : 'Unsynced'}
+                          color={game.syncedToSheet ? 'default' : 'warning'}
+                          size="small"
+                          sx={{ ml: 1 }}
                         />
                       </Box>
                     }

@@ -47,12 +47,15 @@ export enum CourtStatus {
 export interface Game {
   id: string;
   courtId: string;
+  gameNumber?: number;
   team1: Team;
   team2: Team;
   status: GameStatus;
   startTime: Date;
   endTime?: Date;
   winner?: 1 | 2;
+  syncedToSheet?: boolean;
+  syncedAt?: Date;
   score?: GameScore;
   ratingChanges?: RatingChange[];
 }

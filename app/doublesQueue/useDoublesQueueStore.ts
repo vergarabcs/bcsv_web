@@ -102,6 +102,36 @@ const createCourt = (name: string): Court => ({
 
 const today = () => new Date().toISOString().split('T')[0];
 
+const toGamesPlayedMap = (value: unknown): Map<string, number> => {
+  if (value instanceof Map) {
+    return new Map(value);
+  }
+
+  if (Array.isArray(value)) {
+    return new Map(
+      value
+        .filter(
+          (entry): entry is [string, number] =>
+            Array.isArray(entry) &&
+            entry.length >= 2 &&
+            typeof entry[0] === 'string' &&
+            typeof entry[1] === 'number'
+        )
+        .map(([playerId, gamesCount]) => [playerId, gamesCount])
+    );
+  }
+
+  if (value && typeof value === 'object') {
+    return new Map(
+      Object.entries(value)
+        .filter(([, gamesCount]) => typeof gamesCount === 'number')
+        .map(([playerId, gamesCount]) => [playerId, gamesCount])
+    );
+  }
+
+  return new Map();
+};
+
 const stripPlayerHistory = (player: Player): Player => ({
   ...player,
   ratingHistory: []
@@ -322,7 +352,10 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         const updatedGame: Game = {
           ...game,
           status: GameStatus.COMPLETED,
+          gameNumber: game.gameNumber ?? state.currentSession.totalGames + 1,
           winner: winningTeam,
+          syncedToSheet: false,
+          syncedAt: undefined,
           score,
           endTime,
           ratingChanges: []
@@ -412,7 +445,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         });
 
         // Update session games count
-        const updatedSessionGamesPlayed = new Map(state.currentSession.gamesPlayed);
+        const updatedSessionGamesPlayed = toGamesPlayedMap(state.currentSession.gamesPlayed);
         [game.team1.player1.id, game.team1.player2.id, game.team2.player1.id, game.team2.player2.id]
           .forEach(playerId => {
             updatedSessionGamesPlayed.set(playerId, (updatedSessionGamesPlayed.get(playerId) || 0) + 1);
@@ -436,6 +469,18 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         });
 
         get().refreshQueue();
+      },
+
+      markGamesSynced: (gameIds: string[]) => {
+        if (gameIds.length === 0) return;
+        const syncedAt = new Date();
+        set(state => ({
+          games: state.games.map(game => (
+            gameIds.includes(game.id)
+              ? { ...game, syncedToSheet: true, syncedAt }
+              : game
+          ))
+        }));
       },
 
       cancelGame: (gameId: string) => {
@@ -637,7 +682,10 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         })),
         settings: state.settings,
         partnershipHistory: state.partnershipHistory,
-        currentSession: state.currentSession
+        currentSession: {
+          ...state.currentSession,
+          gamesPlayed: Array.from(state.currentSession.gamesPlayed.entries())
+        }
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
@@ -683,6 +731,11 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
               }))
             }
           }));
+
+          state.currentSession = {
+            ...state.currentSession,
+            gamesPlayed: toGamesPlayedMap(state.currentSession?.gamesPlayed)
+          };
         }
       }
     }
