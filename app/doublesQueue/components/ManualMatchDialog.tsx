@@ -15,7 +15,7 @@ import {
   Paper
 } from '@mui/material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
-import { MatchSuggestion, MatchTeam, Player } from '../types';
+import { CourtStatus, MatchSuggestion, MatchTeam, Player } from '../types';
 
 interface ManualMatchDialogProps {
   open: boolean;
@@ -23,7 +23,15 @@ interface ManualMatchDialogProps {
 }
 
 const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) => {
-  const { queueEntries, players, addManualMatch, manualMatches, currentSession } = useDoublesQueueStore();
+  const {
+    queueEntries,
+    players,
+    courts,
+    addManualMatch,
+    startGame,
+    manualMatches,
+    currentSession
+  } = useDoublesQueueStore();
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
   const playersById = useMemo(
     () => new Map(players.map(player => [player.id, player])),
@@ -86,6 +94,11 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     [availableQueueEntries]
   );
 
+  const availableCourt = useMemo(
+    () => courts.find(court => court.status === CourtStatus.AVAILABLE),
+    [courts]
+  );
+
   const handleTogglePlayer = (playerId: string) => {
     if (selectedPlayerIds.includes(playerId)) {
       setSelectedPlayerIds(prev => prev.filter(id => id !== playerId));
@@ -96,14 +109,14 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     }
   };
 
-  const handleCreateMatch = () => {
-    if (selectedPlayerIds.length !== 4) return;
+  const buildMatchFromSelection = (): MatchSuggestion | null => {
+    if (selectedPlayerIds.length !== 4) return null;
 
     const selectedPlayers = selectedPlayerIds
       .map(id => playersById.get(id))
       .filter((p): p is Player => !!p);
 
-    if (selectedPlayers.length !== 4) return;
+    if (selectedPlayers.length !== 4) return null;
 
     const team1Players = [selectedPlayers[0], selectedPlayers[1]];
     const team2Players = [selectedPlayers[2], selectedPlayers[3]];
@@ -126,15 +139,31 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     // Calculate total priority (simplified)
     const totalPriority = 0; // We don't really care about priority for manual matches
 
-    const match: MatchSuggestion = {
+    return {
       playerIds: [team1.player1Id, team1.player2Id, team2.player1Id, team2.player2Id],
       teams: [team1, team2],
       balanceQuality,
       totalPriority,
       ratingDifference
     };
+  };
+
+  const handleCreateMatch = () => {
+    const match = buildMatchFromSelection();
+    if (!match) return;
 
     addManualMatch(match);
+    handleClose();
+  };
+
+  const handleCreateAndStartMatch = () => {
+    if (!availableCourt) return;
+
+    const match = buildMatchFromSelection();
+    if (!match) return;
+
+    addManualMatch(match);
+    startGame(availableCourt.id, match);
     handleClose();
   };
 
@@ -225,6 +254,14 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
+        <Button
+          onClick={handleCreateAndStartMatch}
+          variant="contained"
+          color="secondary"
+          disabled={selectedPlayerIds.length !== 4 || !availableCourt}
+        >
+          Create & Start
+        </Button>
         <Button 
           onClick={handleCreateMatch} 
           variant="contained" 
