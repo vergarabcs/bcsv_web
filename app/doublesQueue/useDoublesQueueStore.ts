@@ -63,6 +63,7 @@ interface DoublesQueueState {
   // Game management
   startGame: (courtId: string, match: MatchSuggestion) => Game;
   completeGame: (gameId: string, winningTeam: 1 | 2, score?: any) => void;
+  switchGameWinner: (gameId: string) => void;
   markGamesSynced: (gameIds: string[]) => void;
   cancelGame: (gameId: string) => void;
   
@@ -137,6 +138,112 @@ const stripPlayerHistory = (player: Player): Player => ({
   ...player,
   ratingHistory: []
 });
+
+const getBaselinePlayer = (player: Player): Player => {
+  const sortedHistory = [...player.ratingHistory].sort(
+    (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+  );
+  const completedGamesCount = sortedHistory.length;
+  const winsFromHistory = sortedHistory.filter(entry => entry.won).length;
+  const lossesFromHistory = completedGamesCount - winsFromHistory;
+
+  return {
+    ...player,
+    rating: sortedHistory[0]?.oldRating ?? player.rating,
+    gamesPlayed: Math.max(0, player.gamesPlayed - completedGamesCount),
+    wins: Math.max(0, player.wins - winsFromHistory),
+    losses: Math.max(0, player.losses - lossesFromHistory),
+    currentStreak: 0,
+    lastGameTime: undefined,
+    ratingHistory: []
+  };
+};
+
+const rebuildPlayersFromGames = (
+  players: Player[],
+  games: Game[],
+  ratingSystem: RatingSystem
+): Player[] => {
+  const playersById = new Map(
+    players.map(player => [player.id, getBaselinePlayer(player)])
+  );
+
+  const completedGames = [...games]
+    .filter((game): game is Game & { winner: 1 | 2 } => (
+      game.status === GameStatus.COMPLETED && (game.winner === 1 || game.winner === 2)
+    ))
+    .sort((a, b) => {
+      const aTime = a.endTime?.getTime() ?? a.startTime.getTime();
+      const bTime = b.endTime?.getTime() ?? b.startTime.getTime();
+      return aTime - bTime;
+    });
+
+  completedGames.forEach(game => {
+    const ratingChanges = ratingSystem.calculateGameRatings(game, game.winner);
+    const participantUpdates = [
+      {
+        playerId: game.team1.player1.id,
+        ratingChange: ratingChanges.team1Changes[0],
+        won: game.winner === 1,
+      },
+      {
+        playerId: game.team1.player2.id,
+        ratingChange: ratingChanges.team1Changes[1],
+        won: game.winner === 1,
+      },
+      {
+        playerId: game.team2.player1.id,
+        ratingChange: ratingChanges.team2Changes[0],
+        won: game.winner === 2,
+      },
+      {
+        playerId: game.team2.player2.id,
+        ratingChange: ratingChanges.team2Changes[1],
+        won: game.winner === 2,
+      }
+    ];
+
+    participantUpdates.forEach(({ playerId, ratingChange, won }) => {
+      const player = playersById.get(playerId);
+      if (!player) {
+        return;
+      }
+
+      const oldRating = player.rating;
+      const newRating = Math.max(1000, Math.min(3000, oldRating + ratingChange.ratingChange));
+      const nextStreak = won
+        ? (player.currentStreak >= 0 ? player.currentStreak + 1 : 1)
+        : (player.currentStreak <= 0 ? player.currentStreak - 1 : -1);
+      const completedAt = game.endTime ?? game.startTime;
+
+      playersById.set(playerId, {
+        ...player,
+        rating: newRating,
+        gamesPlayed: player.gamesPlayed + 1,
+        wins: won ? player.wins + 1 : player.wins,
+        losses: won ? player.losses : player.losses + 1,
+        currentStreak: nextStreak,
+        lastGameTime: completedAt,
+        ratingHistory: [
+          ...player.ratingHistory,
+          {
+            gameId: game.id,
+            oldRating,
+            newRating,
+            change: ratingChange.ratingChange,
+            timestamp: completedAt,
+            opponent1: '',
+            opponent2: '',
+            partner: '',
+            won,
+          }
+        ]
+      });
+    });
+  });
+
+  return players.map(player => playersById.get(player.id) ?? player);
+};
 
 const normalizePersistedQueueEntry = (entry: any): QueueEntry | null => {
   const playerId =
@@ -577,6 +684,36 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
               ? { ...court, status: CourtStatus.AVAILABLE, currentGame: undefined }
               : court
           )
+        });
+
+        get().refreshQueue();
+      },
+
+      switchGameWinner: (gameId: string) => {
+        const state = get();
+        const game = state.games.find(g => g.id === gameId);
+        if (!game || game.status !== GameStatus.COMPLETED || !game.winner) return;
+
+        const updatedGames = state.games.map(existingGame => (
+          existingGame.id === gameId
+            ? {
+                ...existingGame,
+                winner: existingGame.winner === 1 ? 2 : 1,
+                syncedToSheet: false,
+                syncedAt: undefined,
+              }
+            : existingGame
+        ));
+
+        const rebuiltPlayers = rebuildPlayersFromGames(
+          state.players,
+          updatedGames,
+          state.ratingSystem
+        );
+
+        set({
+          games: updatedGames,
+          players: rebuiltPlayers,
         });
 
         get().refreshQueue();

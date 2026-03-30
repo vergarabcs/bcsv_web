@@ -24,7 +24,8 @@ import {
 } from '@mui/material';
 import {
   Sync as SyncIcon,
-  Timer as TimerIcon
+  Timer as TimerIcon,
+  SwapHoriz as SwapHorizIcon
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { Game, GameStatus } from '../types';
@@ -60,6 +61,7 @@ const GameResults: React.FC = () => {
     courts,
     completeGame,
     cancelGame,
+    switchGameWinner,
     markGamesSynced,
     currentSession
   } = useDoublesQueueStore();
@@ -197,6 +199,12 @@ const GameResults: React.FC = () => {
     } finally {
       setSyncing(false);
     }
+  };
+
+  const handleSwitchWinner = (gameId: string) => {
+    switchGameWinner(gameId);
+    setSyncError(null);
+    setSyncSuccess('Winner updated. This game is marked unsynced until you sync again.');
   };
 
   if (!currentSession.isActive) {
@@ -378,6 +386,16 @@ const GameResults: React.FC = () => {
                             Score: {game.score.sets[0]?.team1Points}-{game.score.sets[0]?.team2Points}
                           </Box>
                         )}
+                        <Box component="span" sx={{ display: 'block', mt: 1 }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<SwapHorizIcon />}
+                            onClick={() => handleSwitchWinner(game.id)}
+                          >
+                            Switch Winner
+                          </Button>
+                        </Box>
                       </Box>
                     }
                   />
