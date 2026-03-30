@@ -8,6 +8,7 @@
     "printIp": "node printIp.js",
     "build": "next build",
     "dev": "npm run printIp && next dev",
+    "devLan": "node devLan.mjs",
     "lint": "next lint",
     "prepare": "husky",
     "prepush:main": "node scripts/prepush-build-main.mjs",
