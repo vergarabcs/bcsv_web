@@ -157,7 +157,7 @@ const DoublesQueue: React.FC = () => {
           justifyContent: 'space-between'
         }}>
           <Typography variant="h5" component="h1" fontWeight="bold">
-            🏸 Doubles Queue
+            DasQueue
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Chip 

@@ -70,8 +70,7 @@ const GameResults: React.FC = () => {
 
   const recentGames = games
     .filter(game => game.status === GameStatus.COMPLETED)
-    .sort((a, b) => (b.endTime?.getTime() || 0) - (a.endTime?.getTime() || 0))
-    .slice(0, 10);
+    .sort((a, b) => (b.endTime?.getTime() || 0) - (a.endTime?.getTime() || 0));
 
   const unsyncedRecentGames = recentGames.filter(game => !game.syncedToSheet);
 
