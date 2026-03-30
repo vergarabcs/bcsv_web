@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Box, Button, Typography } from '@mui/material';
-import { Court, CourtStatus } from '../types';
+import { Court } from '../types';
 
 interface BadmintonCardProps {
   court: Court;
@@ -16,14 +16,20 @@ const DIMENSIONS = {
   singlesWidth: 5.18,
   lineWidth: 0.04,
   // serviceDistance is distance from net to service area
-  serviceDistance: 1.98
+  serviceDistance: 1.98,
+  // longServiceLine is the distance between the back of the court and the back service boundary.
+  longServiceLine: 0.76
 }
 
-// Calculate percentages based on court dimensions
+// Calculate geometry from court dimensions
 const COURT_ASPECT = DIMENSIONS.length / DIMENSIONS.width;
-const NET_POSITION = 50; // Center
-const SERVICE_LINE_PCT = (DIMENSIONS.serviceDistance / (DIMENSIONS.length / 2)) * 100 / 2;
-const SINGLES_SIDELINE_PCT = ((DIMENSIONS.width - DIMENSIONS.singlesWidth) / 2) / DIMENSIONS.width * 100;
+const HALF_COURT = DIMENSIONS.length / 2;
+const MID_WIDTH = DIMENSIONS.width / 2;
+const SINGLES_MARGIN = (DIMENSIONS.width - DIMENSIONS.singlesWidth) / 2;
+const LEFT_SHORT_SERVICE_X = HALF_COURT - DIMENSIONS.serviceDistance;
+const RIGHT_SHORT_SERVICE_X = HALF_COURT + DIMENSIONS.serviceDistance;
+const LEFT_LONG_SERVICE_X = DIMENSIONS.longServiceLine;
+const RIGHT_LONG_SERVICE_X = DIMENSIONS.length - DIMENSIONS.longServiceLine;
 
 const BadmintonCard: React.FC<BadmintonCardProps> = ({ court, formatTime, onWin }) => {
   const game = court.currentGame;
@@ -55,70 +61,103 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({ court, formatTime, onWin 
         {court.name} • {game ? `Playing ${formatTime(game.startTime)}` : 'Available'}
       </Box>
 
-      {/* Badminton court lines - drawn on green surface */}
-      <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
-        {/* Outer boundary */}
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: `${(DIMENSIONS.serviceDistance / DIMENSIONS.length) * 50}% 0%`,
-            border: '2px solid rgba(255, 255, 255, 0.95)',
-            borderRadius: 0.5
-          }}
+      {/* SVG overlay for crisp, scalable court lines */}
+      <Box
+        component="svg"
+        viewBox={`0 0 ${DIMENSIONS.length} ${DIMENSIONS.width}`}
+        preserveAspectRatio="none"
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 1
+        }}
+      >
+        <rect
+          x={DIMENSIONS.lineWidth / 2}
+          y={DIMENSIONS.lineWidth / 2}
+          width={DIMENSIONS.length - DIMENSIONS.lineWidth}
+          height={DIMENSIONS.width - DIMENSIONS.lineWidth}
+          fill="none"
+          stroke="rgba(255, 255, 255, 0.95)"
+          strokeWidth={DIMENSIONS.lineWidth}
         />
-        {/* Center net line (vertical) */}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: '50%',
-            width: 1,
-            transform: 'translateX(-50%)',
-            bgcolor: 'rgba(255, 255, 255, 0.95)'
-          }}
+
+        <line
+          x1={HALF_COURT}
+          y1={0}
+          x2={HALF_COURT}
+          y2={DIMENSIONS.width}
+          stroke="rgba(255, 255, 255, 0.95)"
+          strokeWidth={DIMENSIONS.lineWidth}
         />
-        {/* Service lines (horizontal) */}
-        <Box
-          sx={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: `${50 - SERVICE_LINE_PCT}%`,
-            height: 1,
-            bgcolor: 'rgba(255, 255, 255, 0.8)'
-          }}
+
+        <line
+          x1={LEFT_SHORT_SERVICE_X}
+          y1={0}
+          x2={LEFT_SHORT_SERVICE_X}
+          y2={DIMENSIONS.width}
+          stroke="rgba(255, 255, 255, 0.8)"
+          strokeWidth={DIMENSIONS.lineWidth}
         />
-        <Box
-          sx={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: `${50 + SERVICE_LINE_PCT}%`,
-            height: 1,
-            bgcolor: 'rgba(255, 255, 255, 0.8)'
-          }}
+        <line
+          x1={RIGHT_SHORT_SERVICE_X}
+          y1={0}
+          x2={RIGHT_SHORT_SERVICE_X}
+          y2={DIMENSIONS.width}
+          stroke="rgba(255, 255, 255, 0.8)"
+          strokeWidth={DIMENSIONS.lineWidth}
         />
-        {/* Singles sidelines (vertical) */}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: `${SINGLES_SIDELINE_PCT}%`,
-            width: 1,
-            bgcolor: 'rgba(255, 255, 255, 0.6)'
-          }}
+
+        <line
+          x1={LEFT_LONG_SERVICE_X}
+          y1={0}
+          x2={LEFT_LONG_SERVICE_X}
+          y2={DIMENSIONS.width}
+          stroke="rgba(255, 255, 255, 0.8)"
+          strokeWidth={DIMENSIONS.lineWidth}
         />
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            right: `${SINGLES_SIDELINE_PCT}%`,
-            width: 1,
-            bgcolor: 'rgba(255, 255, 255, 0.6)'
-          }}
+        <line
+          x1={RIGHT_LONG_SERVICE_X}
+          y1={0}
+          x2={RIGHT_LONG_SERVICE_X}
+          y2={DIMENSIONS.width}
+          stroke="rgba(255, 255, 255, 0.8)"
+          strokeWidth={DIMENSIONS.lineWidth}
+        />
+
+        <line
+          x1={0}
+          y1={SINGLES_MARGIN}
+          x2={DIMENSIONS.length}
+          y2={SINGLES_MARGIN}
+          stroke="rgba(255, 255, 255, 0.6)"
+          strokeWidth={DIMENSIONS.lineWidth}
+        />
+        <line
+          x1={0}
+          y1={DIMENSIONS.width - SINGLES_MARGIN}
+          x2={DIMENSIONS.length}
+          y2={DIMENSIONS.width - SINGLES_MARGIN}
+          stroke="rgba(255, 255, 255, 0.6)"
+          strokeWidth={DIMENSIONS.lineWidth}
+        />
+
+        <line
+          x1={LEFT_SHORT_SERVICE_X}
+          y1={MID_WIDTH}
+          x2={0}
+          y2={MID_WIDTH}
+          stroke="rgba(255, 255, 255, 0.7)"
+          strokeWidth={DIMENSIONS.lineWidth}
+        />
+        <line
+          x1={RIGHT_SHORT_SERVICE_X}
+          y1={MID_WIDTH}
+          x2={DIMENSIONS.length}
+          y2={MID_WIDTH}
+          stroke="rgba(255, 255, 255, 0.7)"
+          strokeWidth={DIMENSIONS.lineWidth}
         />
       </Box>
 
@@ -132,6 +171,7 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({ court, formatTime, onWin 
             gridTemplateColumns: '1fr 1fr',
             gap: 1,
             height: '100%',
+            boxSizing: 'border-box',
             p: { xs: 1, sm: 1.5 }
           }}
         >
