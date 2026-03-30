@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import { SwapVert as SwapIcon } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
-import { Player, MatchSuggestion, Team } from '../types';
+import { MatchSuggestion, MatchTeam, Player } from '../types';
 
 interface ManualMatchDialogProps {
   open: boolean;
@@ -29,17 +29,27 @@ interface ManualMatchDialogProps {
 }
 
 const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) => {
-  const { queueEntries, addManualMatch, manualMatches } = useDoublesQueueStore();
+  const { queueEntries, players, addManualMatch, manualMatches } = useDoublesQueueStore();
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
   const [team1PlayerIds, setTeam1PlayerIds] = useState<string[]>([]);
+  const playersById = useMemo(
+    () => new Map(players.map(player => [player.id, player])),
+    [players]
+  );
 
   // Filter out players already in manual matches
   const availableQueueEntries = useMemo(() => {
     const manualMatchPlayerIds = new Set(
-      manualMatches.flatMap(m => m.players.map(p => p.id))
+      manualMatches.flatMap(match => match.playerIds)
     );
-    return queueEntries.filter(e => !manualMatchPlayerIds.has(e.player.id));
-  }, [queueEntries, manualMatches]);
+    return queueEntries
+      .filter(entry => !manualMatchPlayerIds.has(entry.playerId))
+      .map(entry => {
+        const player = playersById.get(entry.playerId);
+        return player ? { entry, player } : null;
+      })
+      .filter((item): item is { entry: typeof queueEntries[number]; player: Player } => !!item);
+  }, [manualMatches, playersById, queueEntries]);
 
   const sortedAvailableQueueEntries = useMemo(
     () =>
@@ -78,7 +88,7 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     if (selectedPlayerIds.length !== 4) return;
 
     const selectedPlayers = selectedPlayerIds
-      .map(id => availableQueueEntries.find(e => e.player.id === id)?.player)
+      .map(id => playersById.get(id))
       .filter((p): p is Player => !!p);
 
     if (selectedPlayers.length !== 4) return;
@@ -88,15 +98,15 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
 
     if (team1Players.length !== 2 || team2Players.length !== 2) return;
 
-    const team1: Team = {
-      player1: team1Players[0],
-      player2: team1Players[1],
+    const team1: MatchTeam = {
+      player1Id: team1Players[0].id,
+      player2Id: team1Players[1].id,
       averageRating: (team1Players[0].rating + team1Players[1].rating) / 2
     };
 
-    const team2: Team = {
-      player1: team2Players[0],
-      player2: team2Players[1],
+    const team2: MatchTeam = {
+      player1Id: team2Players[0].id,
+      player2Id: team2Players[1].id,
       averageRating: (team2Players[0].rating + team2Players[1].rating) / 2
     };
 
@@ -107,7 +117,7 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     const totalPriority = 0; // We don't really care about priority for manual matches
 
     const match: MatchSuggestion = {
-      players: [team1.player1, team1.player2, team2.player1, team2.player2],
+      playerIds: [team1.player1Id, team1.player2Id, team2.player1Id, team2.player2Id],
       teams: [team1, team2],
       balanceQuality,
       totalPriority,
@@ -125,7 +135,7 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
   };
 
   const selectedPlayers = selectedPlayerIds
-    .map(id => availableQueueEntries.find(e => e.player.id === id)?.player)
+    .map(id => playersById.get(id))
     .filter((p): p is Player => !!p);
 
   const team1Players = selectedPlayers.filter(p => team1PlayerIds.includes(p.id));

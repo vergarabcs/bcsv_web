@@ -7,6 +7,7 @@ import {
   Court, 
   QueueEntry,
   MatchSuggestion,
+  MatchTeam,
   SessionStats,
   AppSettings,
   PartnershipHistory,
@@ -76,7 +77,6 @@ interface DoublesQueueState {
   
   // Data management
   exportData: () => string;
-  importData: (data: string) => void;
   clearAllData: () => void;
 }
 
@@ -137,6 +137,94 @@ const stripPlayerHistory = (player: Player): Player => ({
   ...player,
   ratingHistory: []
 });
+
+const normalizePersistedQueueEntry = (entry: any): QueueEntry | null => {
+  const playerId =
+    typeof entry?.playerId === 'string'
+      ? entry.playerId
+      : typeof entry?.player?.id === 'string'
+        ? entry.player.id
+        : null;
+
+  if (!playerId) {
+    return null;
+  }
+
+  return {
+    playerId,
+    priority: typeof entry?.priority === 'number' ? entry.priority : 0,
+    waitTimeScore: typeof entry?.waitTimeScore === 'number' ? entry.waitTimeScore : 0,
+    balanceScore: typeof entry?.balanceScore === 'number' ? entry.balanceScore : 0
+  };
+};
+
+const normalizePersistedMatchTeam = (team: any): MatchTeam | null => {
+  const player1Id =
+    typeof team?.player1Id === 'string'
+      ? team.player1Id
+      : typeof team?.player1?.id === 'string'
+        ? team.player1.id
+        : null;
+  const player2Id =
+    typeof team?.player2Id === 'string'
+      ? team.player2Id
+      : typeof team?.player2?.id === 'string'
+        ? team.player2.id
+        : null;
+
+  if (!player1Id || !player2Id) {
+    return null;
+  }
+
+  return {
+    player1Id,
+    player2Id,
+    averageRating: typeof team?.averageRating === 'number' ? team.averageRating : 0
+  };
+};
+
+const normalizePersistedMatchSuggestion = (match: any): MatchSuggestion | null => {
+  const playerIds = Array.isArray(match?.playerIds)
+    ? match.playerIds.filter((playerId: unknown): playerId is string => typeof playerId === 'string')
+    : Array.isArray(match?.players)
+      ? match.players
+          .map((player: any) => (typeof player?.id === 'string' ? player.id : null))
+          .filter((playerId: string | null): playerId is string => !!playerId)
+      : [];
+
+  const teams = Array.isArray(match?.teams)
+    ? match.teams
+        .map(normalizePersistedMatchTeam)
+        .filter((team): team is MatchTeam => !!team)
+    : [];
+
+  if (playerIds.length !== 4 || teams.length !== 2) {
+    return null;
+  }
+
+  return {
+    playerIds: playerIds as [string, string, string, string],
+    teams: teams as [MatchTeam, MatchTeam],
+    balanceQuality: typeof match?.balanceQuality === 'number' ? match.balanceQuality : 0,
+    totalPriority: typeof match?.totalPriority === 'number' ? match.totalPriority : 0,
+    ratingDifference: typeof match?.ratingDifference === 'number' ? match.ratingDifference : 0
+  };
+};
+
+const resolveMatchTeam = (matchTeam: MatchTeam, playersById: Map<string, Player>): Team | null => {
+  const player1 = playersById.get(matchTeam.player1Id);
+  const player2 = playersById.get(matchTeam.player2Id);
+
+  if (!player1 || !player2) {
+    return null;
+  }
+
+  return {
+    player1,
+    player2,
+    averageRating: matchTeam.averageRating
+  };
+};
 
 export const useDoublesQueueStore = create<DoublesQueueState>()(
   persist(
@@ -209,6 +297,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
                   : player
               )
             }));
+            get().refreshQueue();
           }
           return;
         }
@@ -217,12 +306,13 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         set(state => ({
           players: [...state.players, newPlayer]
         }));
+        get().refreshQueue();
       },
 
       removePlayer: (playerId: string) => {
         set(state => ({
           players: state.players.filter(p => p.id !== playerId),
-          queueEntries: state.queueEntries.filter(entry => entry.player.id !== playerId)
+          queueEntries: state.queueEntries.filter(entry => entry.playerId !== playerId)
         }));
         get().refreshQueue();
       },
@@ -270,7 +360,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
                 }
               : player
           ),
-          queueEntries: state.queueEntries.filter(entry => entry.player.id !== playerId)
+          queueEntries: state.queueEntries.filter(entry => entry.playerId !== playerId)
         }));
         get().refreshQueue();
       },
@@ -301,11 +391,19 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
       // Game management
       startGame: (courtId: string, match: MatchSuggestion) => {
+        const playersById = new Map(get().players.map(player => [player.id, player]));
+        const team1 = resolveMatchTeam(match.teams[0], playersById);
+        const team2 = resolveMatchTeam(match.teams[1], playersById);
+
+        if (!team1 || !team2) {
+          throw new Error('Unable to resolve match players from current player state');
+        }
+
         const game: Game = {
           id: generateId(),
           courtId,
-          team1: match.teams[0],
-          team2: match.teams[1],
+          team1,
+          team2,
           status: GameStatus.IN_PROGRESS,
           startTime: new Date()
         };
@@ -313,8 +411,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         // Check if it was a manual match and remove it
         const state = get();
         const manualMatchIndex = state.manualMatches.findIndex(m => 
-            m.players.length === match.players.length &&
-            m.players.every(p => match.players.some(mp => mp.id === p.id))
+          m.playerIds.length === match.playerIds.length &&
+          m.playerIds.every(playerId => match.playerIds.includes(playerId))
         );
         
         let newManualMatches = state.manualMatches;
@@ -333,7 +431,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           manualMatches: newManualMatches,
           // Update player statuses to playing
           players: state.players.map(player => {
-            if (match.players.some(p => p.id === player.id)) {
+            if (match.playerIds.includes(player.id)) {
               return { 
                 ...player, 
                 status: PlayerStatus.PLAYING,
@@ -344,7 +442,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           }),
           // Remove players from queue
           queueEntries: state.queueEntries.filter(entry => 
-            !match.players.some(p => p.id === entry.player.id)
+            !match.playerIds.includes(entry.playerId)
           )
         }));
 
@@ -545,11 +643,11 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         
         // Filter out players already in manual matches
         const manualMatchPlayerIds = new Set(
-          state.manualMatches.flatMap(m => m.players.map(p => p.id))
+          state.manualMatches.flatMap(m => m.playerIds)
         );
         
         const availableQueueEntries = state.queueEntries.filter(
-          entry => !manualMatchPlayerIds.has(entry.player.id)
+          entry => !manualMatchPlayerIds.has(entry.playerId)
         );
 
         let nextMatches = [...state.manualMatches];
@@ -559,6 +657,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         if (availableQueueEntries.length >= 4 && slotsNeeded > 0) {
           const autoMatches = state.queueManager.findMultipleMatches(
             availableQueueEntries,
+            state.players,
             slotsNeeded,
             state.partnershipHistory
           );
@@ -605,21 +704,6 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         });
       },
 
-      importData: (data: string) => {
-        try {
-          const parsed = JSON.parse(data);
-          set({
-            players: parsed.players || [],
-            games: parsed.games || [],
-            settings: parsed.settings || DEFAULT_SETTINGS,
-            partnershipHistory: parsed.partnershipHistory || []
-          });
-          get().refreshQueue();
-        } catch (error) {
-          console.error('Failed to import data:', error);
-        }
-      },
-
       clearAllData: () => {
         set({
           players: [],
@@ -655,28 +739,9 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
             player2: stripPlayerHistory(game.team2.player2)
           }
         })),
-        queueEntries: state.queueEntries.map(entry => ({
-          ...entry,
-          player: stripPlayerHistory(entry.player)
-        })),
-        nextMatches: state.nextMatches.map(match => ({
-          ...match,
-          players: match.players.map(stripPlayerHistory) as [Player, Player, Player, Player],
-          teams: match.teams.map(t => ({
-            ...t,
-            player1: stripPlayerHistory(t.player1),
-            player2: stripPlayerHistory(t.player2)
-          })) as [Team, Team]
-        })),
-        manualMatches: state.manualMatches.map(match => ({
-          ...match,
-          players: match.players.map(stripPlayerHistory) as [Player, Player, Player, Player],
-          teams: match.teams.map(t => ({
-            ...t,
-            player1: stripPlayerHistory(t.player1),
-            player2: stripPlayerHistory(t.player2)
-          })) as [Team, Team]
-        })),
+        queueEntries: state.queueEntries,
+        nextMatches: state.nextMatches,
+        manualMatches: state.manualMatches,
         courts: state.courts.map(court => ({
           ...court,
           currentGame: court.currentGame ? {
@@ -732,18 +797,15 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
               endTime: court.currentGame.endTime ? new Date(court.currentGame.endTime) : undefined
             } : undefined
           }));
-          state.queueEntries = state.queueEntries.map(entry => ({
-            ...entry,
-            player: {
-              ...entry.player,
-              lastGameTime: entry.player.lastGameTime ? new Date(entry.player.lastGameTime) : undefined,
-              joinedQueueTime: entry.player.joinedQueueTime ? new Date(entry.player.joinedQueueTime) : undefined,
-              ratingHistory: entry.player.ratingHistory.map(ratingEntry => ({
-                ...ratingEntry,
-                timestamp: new Date(ratingEntry.timestamp)
-              }))
-            }
-          }));
+          state.queueEntries = state.queueEntries
+            .map(normalizePersistedQueueEntry)
+            .filter((entry): entry is QueueEntry => !!entry);
+          state.nextMatches = state.nextMatches
+            .map(normalizePersistedMatchSuggestion)
+            .filter((match): match is MatchSuggestion => !!match);
+          state.manualMatches = state.manualMatches
+            .map(normalizePersistedMatchSuggestion)
+            .filter((match): match is MatchSuggestion => !!match);
 
           state.currentSession = {
             ...state.currentSession,

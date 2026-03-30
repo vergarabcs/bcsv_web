@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -41,6 +41,60 @@ const Dashboard: React.FC = () => {
   } = useDoublesQueueStore();
 
   const [manualMatchOpen, setManualMatchOpen] = useState(false);
+  const playersById = useMemo(
+    () => new Map(players.map(player => [player.id, player])),
+    [players]
+  );
+  const resolvedNextMatches = useMemo(
+    () =>
+      nextMatches
+        .map(match => {
+          const team1Player1 = playersById.get(match.teams[0].player1Id);
+          const team1Player2 = playersById.get(match.teams[0].player2Id);
+          const team2Player1 = playersById.get(match.teams[1].player1Id);
+          const team2Player2 = playersById.get(match.teams[1].player2Id);
+
+          if (!team1Player1 || !team1Player2 || !team2Player1 || !team2Player2) {
+            return null;
+          }
+
+          return {
+            match,
+            teams: [
+              {
+                player1: team1Player1,
+                player2: team1Player2,
+                averageRating: match.teams[0].averageRating
+              },
+              {
+                player1: team2Player1,
+                player2: team2Player2,
+                averageRating: match.teams[1].averageRating
+              }
+            ] as const
+          };
+        })
+        .filter(
+          (item): item is {
+            match: typeof nextMatches[number];
+            teams: [
+              { player1: typeof players[number]; player2: typeof players[number]; averageRating: number },
+              { player1: typeof players[number]; player2: typeof players[number]; averageRating: number }
+            ];
+          } => !!item
+        ),
+    [nextMatches, playersById]
+  );
+  const resolvedQueueEntries = useMemo(
+    () =>
+      queueEntries
+        .map(entry => {
+          const player = playersById.get(entry.playerId);
+          return player ? { entry, player } : null;
+        })
+        .filter((item): item is { entry: typeof queueEntries[number]; player: typeof players[number] } => !!item),
+    [playersById, queueEntries]
+  );
 
   const availableCourts = courts.filter(c => c.status === CourtStatus.AVAILABLE);
 
@@ -130,7 +184,7 @@ const Dashboard: React.FC = () => {
       {/* Next Matches */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, mt: 2 }}>
         <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          ⏭️ Next Matches ({nextMatches.length} ready)
+          ⏭️ Next Matches ({resolvedNextMatches.length} ready)
         </Typography>
         <Button 
           variant="outlined" 
@@ -142,25 +196,25 @@ const Dashboard: React.FC = () => {
         </Button>
       </Box>
 
-      {nextMatches.length === 0 && (
+      {resolvedNextMatches.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
           No matches scheduled. Wait for players or create a manual match.
         </Typography>
       )}
           
-      {nextMatches.map((match, index) => (
+      {resolvedNextMatches.map(({ match, teams }, index) => (
             <Card key={index} sx={{ mb: 2 }} variant="outlined">
               <CardContent>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                   <Paper sx={{ p: 1, bgcolor: 'primary.light', color: 'primary.contrastText', flex: 1 }}>
                     <Typography variant="subtitle2" align="center">Team 1</Typography>
                     <Typography variant="body2" align="center">
-                      {match.teams[0].player1.name} ({match.teams[0].player1.rating})
+                      {teams[0].player1.name} ({teams[0].player1.rating})
                       <br />
-                      {match.teams[0].player2.name} ({match.teams[0].player2.rating})
+                      {teams[0].player2.name} ({teams[0].player2.rating})
                     </Typography>
                     <Typography variant="caption" align="center" display="block">
-                      Avg: {Math.round(match.teams[0].averageRating)}
+                      Avg: {Math.round(teams[0].averageRating)}
                     </Typography>
                   </Paper>
                   
@@ -171,12 +225,12 @@ const Dashboard: React.FC = () => {
                   <Paper sx={{ p: 1, bgcolor: 'secondary.light', color: 'secondary.contrastText', flex: 1 }}>
                     <Typography variant="subtitle2" align="center">Team 2</Typography>
                     <Typography variant="body2" align="center">
-                      {match.teams[1].player1.name} ({match.teams[1].player1.rating})
+                      {teams[1].player1.name} ({teams[1].player1.rating})
                       <br />
-                      {match.teams[1].player2.name} ({match.teams[1].player2.rating})
+                      {teams[1].player2.name} ({teams[1].player2.rating})
                     </Typography>
                     <Typography variant="caption" align="center" display="block">
-                      Avg: {Math.round(match.teams[1].averageRating)}
+                      Avg: {Math.round(teams[1].averageRating)}
                     </Typography>
                   </Paper>
                 </Box>
@@ -209,22 +263,22 @@ const Dashboard: React.FC = () => {
           ))}
 
       {/* Current Queue */}
-      {queueEntries.length > 0 && (
+      {resolvedQueueEntries.length > 0 && (
         <>
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            ⏳ Queue ({queueEntries.length} waiting)
+            ⏳ Queue ({resolvedQueueEntries.length} waiting)
           </Typography>
           
           <List dense>
-            {queueEntries.map((entry, index) => {
-              const waitTime = entry.player.joinedQueueTime 
-                ? formatTime(entry.player.joinedQueueTime)
+            {resolvedQueueEntries.map(({ entry, player }, index) => {
+              const waitTime = player.joinedQueueTime 
+                ? formatTime(player.joinedQueueTime)
                 : '0m';
-              const category = getRatingCategory(entry.player.rating);
+              const category = getRatingCategory(player.rating);
               
               return (
                 <ListItem
-                  key={entry.player.id}
+                  key={player.id}
                   sx={{
                     bgcolor: index < 4 ? 'action.selected' : 'background.paper',
                     borderRadius: 1,
@@ -238,7 +292,7 @@ const Dashboard: React.FC = () => {
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body2" fontWeight="bold">
-                          #{index + 1} {entry.player.name}
+                          #{index + 1} {player.name}
                         </Typography>
                         <Chip
                           label={category}
@@ -254,7 +308,7 @@ const Dashboard: React.FC = () => {
                     }
                     secondary={
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', pr: 8 }}>
-                        <span>Rating: {entry.player.rating}</span>
+                        <span>Rating: {player.rating}</span>
                         <span>Wait: {waitTime}</span>
                       </Box>
                     }
@@ -280,7 +334,7 @@ const Dashboard: React.FC = () => {
         </>
       )}
 
-      {queueEntries.length === 0 && (
+      {resolvedQueueEntries.length === 0 && (
         <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'grey.50' }}>
           <GroupIcon sx={{ fontSize: 48, color: 'grey.400', mb: 1 }} />
           <Typography variant="body1" color="text.secondary">

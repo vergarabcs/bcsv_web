@@ -66,6 +66,12 @@ export interface Team {
   averageRating: number;
 }
 
+export interface MatchTeam {
+  player1Id: string;
+  player2Id: string;
+  averageRating: number;
+}
+
 export interface GameScore {
   team1Sets: number;
   team2Sets: number;
@@ -84,16 +90,15 @@ export enum GameStatus {
 }
 
 export interface QueueEntry {
-  player: Player;
+  playerId: string;
   priority: number;
   waitTimeScore: number;
   balanceScore: number;
-  joinTime: Date;
 }
 
 export interface MatchSuggestion {
-  players: [Player, Player, Player, Player];
-  teams: [Team, Team];
+  playerIds: [string, string, string, string];
+  teams: [MatchTeam, MatchTeam];
   balanceQuality: number;
   totalPriority: number;
   ratingDifference: number;

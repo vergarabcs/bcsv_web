@@ -2,6 +2,7 @@ import {
   Player, 
   Game, 
   Team, 
+  MatchTeam,
   QueueEntry, 
   MatchSuggestion, 
   RatingCalculation, 
@@ -208,11 +209,10 @@ export class QueueManager {
                       (balanceScore * this.priorityConfig.balanceWeight);
 
       return {
-        player,
+        playerId: player.id,
         priority,
         waitTimeScore,
-        balanceScore,
-        joinTime: player.joinedQueueTime || new Date()
+        balanceScore
       };
     }).sort((a, b) => b.priority - a.priority);
   }
@@ -280,17 +280,34 @@ export class QueueManager {
     return combinations;
   }
 
+  private toMatchTeam(team: Team): MatchTeam {
+    return {
+      player1Id: team.player1.id,
+      player2Id: team.player2.id,
+      averageRating: team.averageRating
+    };
+  }
+
   /**
    * Find the best match from available players
    */
   findBestMatch(
     queueEntries: QueueEntry[], 
+    players: Player[],
     partnershipHistory: PartnershipHistory[] = []
   ): MatchSuggestion | null {
     if (queueEntries.length < 4) return null;
 
+    const playerById = new Map(players.map(player => [player.id, player]));
+
     // Take top 8-12 players by priority for consideration
-    const candidatePlayers = queueEntries.slice(0, Math.min(12, queueEntries.length)).map(entry => entry.player);
+    const candidatePlayers = queueEntries
+      .slice(0, Math.min(12, queueEntries.length))
+      .map(entry => playerById.get(entry.playerId))
+      .filter((player): player is Player => !!player);
+
+    if (candidatePlayers.length < 4) return null;
+
     const teamCombinations = this.generateTeamCombinations(candidatePlayers);
 
     let bestMatch: MatchSuggestion | null = null;
@@ -311,7 +328,7 @@ export class QueueManager {
       // Calculate total priority of all 4 players
       const totalPriority = [team1.player1, team1.player2, team2.player1, team2.player2]
         .reduce((sum, player) => {
-          const entry = queueEntries.find(e => e.player.id === player.id);
+          const entry = queueEntries.find(e => e.playerId === player.id);
           return sum + (entry?.priority || 0);
         }, 0);
 
@@ -328,8 +345,8 @@ export class QueueManager {
 
       if (hasEmergencyWait && !bestMatch) {
         bestMatch = {
-          players: [team1.player1, team1.player2, team2.player1, team2.player2],
-          teams: [team1, team2],
+          playerIds: [team1.player1.id, team1.player2.id, team2.player1.id, team2.player2.id],
+          teams: [this.toMatchTeam(team1), this.toMatchTeam(team2)],
           balanceQuality,
           totalPriority,
           ratingDifference
@@ -337,8 +354,8 @@ export class QueueManager {
       } else if (score > bestScore && ratingDifference <= this.settings.ratingBalanceTolerance) {
         bestScore = score;
         bestMatch = {
-          players: [team1.player1, team1.player2, team2.player1, team2.player2],
-          teams: [team1, team2],
+          playerIds: [team1.player1.id, team1.player2.id, team2.player1.id, team2.player2.id],
+          teams: [this.toMatchTeam(team1), this.toMatchTeam(team2)],
           balanceQuality,
           totalPriority,
           ratingDifference
@@ -354,6 +371,7 @@ export class QueueManager {
    */
   findMultipleMatches(
     queueEntries: QueueEntry[], 
+    players: Player[],
     courtCount: number, 
     partnershipHistory: PartnershipHistory[] = []
   ): MatchSuggestion[] {
@@ -361,14 +379,14 @@ export class QueueManager {
     let remainingPlayers = [...queueEntries];
 
     for (let court = 0; court < courtCount && remainingPlayers.length >= 4; court++) {
-      const match = this.findBestMatch(remainingPlayers, partnershipHistory);
+      const match = this.findBestMatch(remainingPlayers, players, partnershipHistory);
       
       if (match) {
         matches.push(match);
         
         // Remove selected players from remaining pool
         remainingPlayers = remainingPlayers.filter(entry => 
-          !match.players.some(player => player.id === entry.player.id)
+          !match.playerIds.includes(entry.playerId)
         );
       } else {
         break;

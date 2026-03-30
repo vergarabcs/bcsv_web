@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -41,19 +41,26 @@ const QueueManager: React.FC = () => {
     addPlayer,
     joinQueue,
     leaveQueue,
-    updatePlayerStatus,
-    refreshQueue
+    updatePlayerStatus
   } = useDoublesQueueStore();
 
   const [search, setSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
+  const playersById = useMemo(
+    () => new Map(players.map(player => [player.id, player])),
+    [players]
+  );
 
   const inactivePlayers = players.filter(p => p.status === PlayerStatus.INACTIVE);
   const activePlayers = players.filter(p => p.status !== PlayerStatus.INACTIVE);
-  const filteredQueueEntries = queueEntries.filter(entry =>
-    entry.player.name.toLowerCase().includes(normalizedSearch)
-  );
+  const filteredQueueEntries = queueEntries
+    .map(entry => {
+      const player = playersById.get(entry.playerId);
+      return player ? { entry, player } : null;
+    })
+    .filter((item): item is { entry: typeof queueEntries[number]; player: typeof players[number] } => !!item)
+    .filter(({ player }) => player.name.toLowerCase().includes(normalizedSearch));
   const filteredInactive = inactivePlayers.filter(p =>
     p.name.toLowerCase().includes(normalizedSearch)
   );
@@ -186,15 +193,15 @@ const QueueManager: React.FC = () => {
         </Typography>      {filteredQueueEntries.length > 0 ? (
         <Paper sx={{ mb: 3 }}>
           <List>
-            {filteredQueueEntries.map((entry, index) => {
-              const waitTime = entry.player.joinedQueueTime 
-                ? formatTime(entry.player.joinedQueueTime)
+            {filteredQueueEntries.map(({ entry: queueEntry, player }, index) => {
+              const waitTime = player.joinedQueueTime 
+                ? formatTime(player.joinedQueueTime)
                 : '0m';
-              const category = getRatingCategory(entry.player.rating);
+              const category = getRatingCategory(player.rating);
               
               return (
                 <ListItem
-                  key={entry.player.id}
+                  key={player.id}
                   divider={index < filteredQueueEntries.length - 1}
                   sx={{
                     bgcolor: index < 4 ? 'action.selected' : 'background.paper',
@@ -225,7 +232,7 @@ const QueueManager: React.FC = () => {
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body1" fontWeight="bold">
-                          {entry.player.name}
+                          {player.name}
                         </Typography>
                         <Chip
                           label={category}
@@ -242,10 +249,10 @@ const QueueManager: React.FC = () => {
                     secondary={
                       <Box component="span">
                         <Box component="span" sx={{ display: 'block', fontSize: '0.875rem' }}>
-                          Rating: {entry.player.rating} | Priority: {Math.round(entry.priority)}
+                          Rating: {player.rating} | Priority: {Math.round(queueEntry.priority)}
                         </Box>
                         <Box component="span" sx={{ display: 'block', fontSize: '0.75rem', color: 'text.secondary' }}>
-                          Wait time: {waitTime} | W/L: {entry.player.wins}/{entry.player.losses}
+                          Wait time: {waitTime} | W/L: {player.wins}/{player.losses}
                         </Box>
                       </Box>
                     }
@@ -255,7 +262,7 @@ const QueueManager: React.FC = () => {
                     <Button
                       variant="outlined"
                       size="small"
-                      onClick={() => handleLeaveQueue(entry.player.id)}
+                      onClick={() => handleLeaveQueue(player.id)}
                       startIcon={<RemoveIcon />}
                     >
                       Remove
