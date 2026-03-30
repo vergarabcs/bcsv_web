@@ -47,3 +47,5 @@ coverage
 .gitconfig
 
 certificates
+*storybook.log
+storybook-static

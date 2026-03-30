@@ -20,13 +20,13 @@ import {
 import {
   PlayArrow as PlayIcon,
   Group as GroupIcon,
-  Timer as TimerIcon,
   Refresh as RefreshIcon,
   Add as AddIcon
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
-import { PlayerStatus, CourtStatus, getRatingCategory, getRatingCategoryColor } from '../types';
+import { Court, CourtStatus, getRatingCategory, getRatingCategoryColor } from '../types';
 import ManualMatchDialog from './ManualMatchDialog';
+import BadmintonCard from './BadmintonCard';
 
 const Dashboard: React.FC = () => {
   const {
@@ -43,9 +43,7 @@ const Dashboard: React.FC = () => {
 
   const [manualMatchOpen, setManualMatchOpen] = useState(false);
 
-  const activeCourts = courts.filter(c => c.status === CourtStatus.OCCUPIED);
   const availableCourts = courts.filter(c => c.status === CourtStatus.AVAILABLE);
-  const playingPlayers = players.filter(p => p.status === PlayerStatus.PLAYING);
 
   const formatTime = (date: Date) => {
     const now = new Date();
@@ -63,6 +61,23 @@ const Dashboard: React.FC = () => {
     if (match) {
       startGame(courtId, match);
     }
+  };
+
+  const handleWin = (court: Court, winner: 1 | 2) => {
+    if (!court.currentGame) {
+      return;
+    }
+
+    const game = court.currentGame;
+    completeGame(game.id, winner);
+
+    // Rejoin all players to queue after completion is processed.
+    setTimeout(() => {
+      joinQueue(game.team1.player1.id);
+      joinQueue(game.team1.player2.id);
+      joinQueue(game.team2.player1.id);
+      joinQueue(game.team2.player2.id);
+    }, 100);
   };
 
   if (!currentSession.isActive) {
@@ -96,93 +111,12 @@ const Dashboard: React.FC = () => {
       
       <Stack spacing={2} sx={{ mb: 3 }}>
         {courts.map((court) => (
-          <Card 
+          <BadmintonCard
             key={court.id}
-            variant="outlined"
-            sx={{ 
-              borderColor: court.status === CourtStatus.OCCUPIED ? 'success.main' : 'grey.300',
-              bgcolor: court.status === CourtStatus.OCCUPIED ? 'success.light' : 'background.paper'
-            }}
-          >
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  {court.name}
-                </Typography>
-                <Chip 
-                  label={court.status}
-                  color={court.status === CourtStatus.OCCUPIED ? 'success' : 'default'}
-                  size="small"
-                />
-              </Box>
-              
-              {court.currentGame && (
-                <Box>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Team 1:</strong> {court.currentGame.team1.player1.name} & {court.currentGame.team1.player2.name}
-                    <br />
-                    <strong>Team 2:</strong> {court.currentGame.team2.player1.name} & {court.currentGame.team2.player2.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Playing for {formatTime(court.currentGame.startTime)}
-                  </Typography>
-                  <Box sx={{ mt: 1 }}>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => {
-                          if (!court.currentGame) return;
-                          const game = court.currentGame;
-                          completeGame(game.id, 1);
-                          // rejoin players after completion
-                          setTimeout(() => {
-                            joinQueue(game.team1.player1.id);
-                            joinQueue(game.team1.player2.id);
-                            joinQueue(game.team2.player1.id);
-                            joinQueue(game.team2.player2.id);
-                          }, 100);
-                        }}
-                        fullWidth
-                      >
-                        Team 1 Wins
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="secondary"
-                        onClick={() => {
-                          if (!court.currentGame) return;
-                          const game = court.currentGame;
-                          completeGame(game.id, 2);
-                          setTimeout(() => {
-                            joinQueue(game.team1.player1.id);
-                            joinQueue(game.team1.player2.id);
-                            joinQueue(game.team2.player1.id);
-                            joinQueue(game.team2.player2.id);
-                          }, 100);
-                        }}
-                        fullWidth
-                      >
-                        Team 2 Wins
-                      </Button>
-                    </Box>
-                  </Box>
-                </Box>
-              )}
-              
-              {court.status === CourtStatus.AVAILABLE && nextMatches.length > 0 && (
-                <Button
-                  variant="contained"
-                  size="small"
-                  startIcon={<PlayIcon />}
-                  onClick={() => handleStartMatch(court.id, 0)}
-                  fullWidth
-                >
-                  Start Next Match
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+            court={court}
+            formatTime={formatTime}
+            onWin={(winner) => handleWin(court, winner)}
+          />
         ))}
       </Stack>
 
