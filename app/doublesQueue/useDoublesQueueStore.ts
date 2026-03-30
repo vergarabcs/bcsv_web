@@ -62,6 +62,7 @@ interface DoublesQueueState {
   // Game management
   startGame: (courtId: string, match: MatchSuggestion) => Game;
   completeGame: (gameId: string, winningTeam: 1 | 2, score?: any) => void;
+  markGamesSynced: (gameIds: string[]) => void;
   cancelGame: (gameId: string) => void;
   
   // Queue operations
