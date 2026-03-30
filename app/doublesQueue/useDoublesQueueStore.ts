@@ -694,16 +694,20 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         const game = state.games.find(g => g.id === gameId);
         if (!game || game.status !== GameStatus.COMPLETED || !game.winner) return;
 
-        const updatedGames = state.games.map(existingGame => (
-          existingGame.id === gameId
-            ? {
-                ...existingGame,
-                winner: existingGame.winner === 1 ? 2 : 1,
-                syncedToSheet: false,
-                syncedAt: undefined,
-              }
-            : existingGame
-        ));
+        const updatedGames: Game[] = state.games.map(existingGame => {
+          if (existingGame.id !== gameId) {
+            return existingGame;
+          }
+
+          const nextWinner: 1 | 2 = existingGame.winner === 1 ? 2 : 1;
+
+          return {
+            ...existingGame,
+            winner: nextWinner,
+            syncedToSheet: false,
+            syncedAt: undefined,
+          };
+        });
 
         const rebuiltPlayers = rebuildPlayersFromGames(
           state.players,
