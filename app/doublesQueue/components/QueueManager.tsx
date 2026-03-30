@@ -38,6 +38,7 @@ const QueueManager: React.FC = () => {
     players,
     queueEntries,
     currentSession,
+    addPlayer,
     joinQueue,
     leaveQueue,
     updatePlayerStatus,
@@ -46,11 +47,19 @@ const QueueManager: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const normalizedSearch = search.trim().toLowerCase();
 
   const inactivePlayers = players.filter(p => p.status === PlayerStatus.INACTIVE);
   const activePlayers = players.filter(p => p.status !== PlayerStatus.INACTIVE);
+  const filteredQueueEntries = queueEntries.filter(entry =>
+    entry.player.name.toLowerCase().includes(normalizedSearch)
+  );
   const filteredInactive = inactivePlayers.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+    p.name.toLowerCase().includes(normalizedSearch)
+  );
+  const filteredActiveNonQueue = activePlayers.filter(player =>
+    player.status !== PlayerStatus.WAITING &&
+    player.name.toLowerCase().includes(normalizedSearch)
   );
 
   const handleJoinQueue = (playerId: string) => {
@@ -64,6 +73,32 @@ const QueueManager: React.FC = () => {
     requestAnimationFrame(() => {
       searchInputRef.current?.focus();
     });
+  };
+
+  const handleCreateAndCheckIn = () => {
+    const name = search.trim();
+    if (!name) {
+      return;
+    }
+
+    const existingPlayer = players.find(
+      player => player.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (existingPlayer) {
+      handleCheckIn(existingPlayer.id);
+      return;
+    }
+
+    addPlayer(name, 1500);
+
+    const createdPlayer = useDoublesQueueStore
+      .getState()
+      .players.find(player => player.name.toLowerCase() === name.toLowerCase());
+
+    if (createdPlayer) {
+      handleCheckIn(createdPlayer.id);
+    }
   };
 
   const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -118,13 +153,40 @@ const QueueManager: React.FC = () => {
         height: 'calc(100vh - 200px)', // Fixed height calculation
         maxHeight: 'calc(100vh - 200px)'
       }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+          <TextField
+            size="small"
+            placeholder="Search players..."
+            fullWidth
+            value={search}
+            inputRef={searchInputRef}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              )
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={handleCreateAndCheckIn}
+            startIcon={<AddIcon />}
+            disabled={!search.trim()}
+          >
+            New
+          </Button>
+        </Box>
+
         {/* Queue Status */}
         <Typography variant="h6" gutterBottom>
-          🎯 Current Queue ({queueEntries.length} players)
-        </Typography>      {queueEntries.length > 0 ? (
+          🎯 Current Queue ({filteredQueueEntries.length}/{queueEntries.length} players)
+        </Typography>      {filteredQueueEntries.length > 0 ? (
         <Paper sx={{ mb: 3 }}>
           <List>
-            {queueEntries.map((entry, index) => {
+            {filteredQueueEntries.map((entry, index) => {
               const waitTime = entry.player.joinedQueueTime 
                 ? formatTime(entry.player.joinedQueueTime)
                 : '0m';
@@ -133,7 +195,7 @@ const QueueManager: React.FC = () => {
               return (
                 <ListItem
                   key={entry.player.id}
-                  divider={index < queueEntries.length - 1}
+                  divider={index < filteredQueueEntries.length - 1}
                   sx={{
                     bgcolor: index < 4 ? 'action.selected' : 'background.paper',
                   }}
@@ -207,38 +269,66 @@ const QueueManager: React.FC = () => {
       ) : (
         <Paper sx={{ p: 3, mb: 3, textAlign: 'center', bgcolor: 'grey.50' }}>
           <Typography variant="body1" color="text.secondary">
-            No players in queue
+            {search.trim() ? 'No matching players in queue' : 'No players in queue'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Add players from the list below
+            {search.trim() ? 'Try a different name or create a new player.' : 'Add players from the list below'}
           </Typography>
         </Paper>
+      )}
+
+      {search.trim() && filteredActiveNonQueue.length > 0 && (
+        <>
+          <Typography variant="h6" gutterBottom>
+            ✅ Active Players ({filteredActiveNonQueue.length})
+          </Typography>
+
+          <Paper sx={{ mb: 3 }}>
+            <List>
+              {filteredActiveNonQueue.map((player, index) => {
+                const category = getRatingCategory(player.rating);
+
+                return (
+                  <ListItem key={player.id} divider={index < filteredActiveNonQueue.length - 1}>
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="body1" fontWeight="bold">
+                            {player.name}
+                          </Typography>
+                          <Chip
+                            label={category}
+                            size="small"
+                            sx={{
+                              bgcolor: getRatingCategoryColor(category),
+                              color: 'white',
+                              fontSize: '0.7rem',
+                              height: 20
+                            }}
+                          />
+                          <Chip
+                            label={player.status}
+                            size="small"
+                            color={player.status === PlayerStatus.PLAYING ? 'warning' : 'default'}
+                          />
+                        </Box>
+                      }
+                      secondary={`Rating: ${player.rating} | Games: ${player.gamesPlayed}`}
+                    />
+                  </ListItem>
+                );
+              })}
+            </List>
+          </Paper>
+        </>
       )}
 
       {/* Inactive Players */}
       {inactivePlayers.length > 0 && (
         <>
           <Typography variant="h6" gutterBottom>
-            😴 Inactive Players ({inactivePlayers.length} not playing)
+            😴 Inactive Players ({filteredInactive.length}/{inactivePlayers.length} not playing)
           </Typography>
-
-          <TextField
-            size="small"
-            placeholder="Search players..."
-            fullWidth
-            value={search}
-            inputRef={searchInputRef}
-            onChange={e => setSearch(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            sx={{ mb: 1 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              )
-            }}
-          />
           
           <Paper>
             <List>

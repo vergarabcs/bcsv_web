@@ -19,7 +19,7 @@ import {
   Divider,
   IconButton
 } from '@mui/material';
-import { SwapHoriz as SwapIcon } from '@mui/icons-material';
+import { SwapVert as SwapIcon } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { Player, MatchSuggestion, Team } from '../types';
 
@@ -40,6 +40,14 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     );
     return queueEntries.filter(e => !manualMatchPlayerIds.has(e.player.id));
   }, [queueEntries, manualMatches]);
+
+  const sortedAvailableQueueEntries = useMemo(
+    () =>
+      [...availableQueueEntries].sort((a, b) =>
+        a.player.name.localeCompare(b.player.name, undefined, { sensitivity: 'base' })
+      ),
+    [availableQueueEntries]
+  );
 
   const handleTogglePlayer = (playerId: string) => {
     if (selectedPlayerIds.includes(playerId)) {
@@ -134,7 +142,7 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
             </Typography>
             <Paper variant="outlined" sx={{ maxHeight: 400, overflow: 'auto' }}>
               <List dense>
-                {availableQueueEntries.map((entry) => (
+                {sortedAvailableQueueEntries.map((entry) => (
                   <ListItem
                     key={entry.player.id}
                     disablePadding

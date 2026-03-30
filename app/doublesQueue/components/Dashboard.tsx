@@ -14,8 +14,7 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
-  LinearProgress,
-  Stack
+  LinearProgress
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -109,16 +108,24 @@ const Dashboard: React.FC = () => {
         </IconButton>
       </Typography>
       
-      <Stack spacing={2} sx={{ mb: 3 }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 2
+        }}
+      >
         {courts.map((court) => (
           <BadmintonCard
             key={court.id}
             court={court}
             formatTime={formatTime}
             onWin={(winner) => handleWin(court, winner)}
+            orientation="vertical"
           />
         ))}
-      </Stack>
+      </Box>
 
       {/* Next Matches */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, mt: 2 }}>

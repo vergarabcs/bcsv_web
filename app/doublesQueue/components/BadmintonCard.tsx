@@ -66,11 +66,11 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({
           right: 0,
           p: 1,
           zIndex: 10,
-          fontSize: '0.75rem',
+          fontSize: '1.25rem',
           color: 'rgba(255, 255, 255, 0.8)'
         }}
       >
-        {court.name} • {game ? `Playing ${formatTime(game.startTime)}` : 'Available'}
+        {court.name} • {game ? `${formatTime(game.startTime)}` : 'Available'}
       </Box>
 
       {/* SVG overlay for crisp, scalable court lines */}
@@ -202,10 +202,10 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({
               <Typography variant="subtitle2" sx={{ mb: 0.5, fontSize: '0.85rem' }}>
                 Team 1
               </Typography>
-              <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+              <Typography variant="body2" sx={{ fontSize: '1.25rem', fontWeight: 'bold', WebkitTextStroke: '0.5px black' }}>
                 {game.team1.player1.name}
               </Typography>
-              <Typography variant="body2" sx={{ fontSize: '0.75rem', mb: 1 }}>
+              <Typography variant="body2" sx={{ fontSize: '1.25rem', fontWeight: 'bold', WebkitTextStroke: '0.5px black', mb: 1 }}>
                 {game.team1.player2.name}
               </Typography>
             </Box>
@@ -233,10 +233,10 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({
               <Typography variant="subtitle2" sx={{ mb: 0.5, fontSize: '0.85rem' }}>
                 Team 2
               </Typography>
-              <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+              <Typography variant="body2" sx={{ fontSize: '1.25rem', fontWeight: 'bold', WebkitTextStroke: '0.5px black' }}>
                 {game.team2.player1.name}
               </Typography>
-              <Typography variant="body2" sx={{ fontSize: '0.75rem', mb: 1 }}>
+              <Typography variant="body2" sx={{ fontSize: '1.25rem', fontWeight: 'bold', WebkitTextStroke: '0.5px black', mb: 1 }}>
                 {game.team2.player2.name}
               </Typography>
             </Box>
