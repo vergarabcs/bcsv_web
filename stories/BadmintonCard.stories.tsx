@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { fn } from 'storybook/test';
 import BadmintonCard from '../app/doublesQueue/components/BadmintonCard';
-import { CourtStatus, GameStatus } from '../app/doublesQueue/types';
+import { CourtStatus, GameStatus, PlayerStatus } from '../app/doublesQueue/types';
 
 const meta: Meta<typeof BadmintonCard> = {
   title: 'DoublesQueue/BadmintonCard',
@@ -50,7 +50,7 @@ export const Occupied: Story = {
             wins: 7,
             losses: 5,
             currentStreak: 2,
-            status: 'playing',
+            status: PlayerStatus.PLAYING,
             ratingHistory: [],
           },
           player2: {
@@ -61,7 +61,7 @@ export const Occupied: Story = {
             wins: 5,
             losses: 5,
             currentStreak: -1,
-            status: 'playing',
+            status: PlayerStatus.PLAYING,
             ratingHistory: [],
           },
         },
@@ -75,7 +75,7 @@ export const Occupied: Story = {
             wins: 8,
             losses: 6,
             currentStreak: 1,
-            status: 'playing',
+            status: PlayerStatus.PLAYING,
             ratingHistory: [],
           },
           player2: {
@@ -86,7 +86,7 @@ export const Occupied: Story = {
             wins: 6,
             losses: 5,
             currentStreak: 0,
-            status: 'playing',
+            status: PlayerStatus.PLAYING,
             ratingHistory: [],
           },
         },

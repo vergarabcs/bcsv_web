@@ -195,7 +195,7 @@ const normalizePersistedMatchSuggestion = (match: any): MatchSuggestion | null =
   const teams = Array.isArray(match?.teams)
     ? match.teams
         .map(normalizePersistedMatchTeam)
-        .filter((team): team is MatchTeam => !!team)
+        .filter((team: MatchTeam | null): team is MatchTeam => !!team)
     : [];
 
   if (playerIds.length !== 4 || teams.length !== 2) {
