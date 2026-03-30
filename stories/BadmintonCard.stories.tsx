@@ -22,6 +22,7 @@ const meta: Meta<typeof BadmintonCard> = {
       return `${mins}m`;
     },
     onWin: fn(),
+    orientation: 'horizontal',
   },
 };
 
@@ -101,5 +102,12 @@ export const Available: Story = {
       name: 'Court 2',
       status: CourtStatus.AVAILABLE,
     },
+  },
+};
+
+export const OccupiedVertical: Story = {
+  args: {
+    ...Occupied.args,
+    orientation: 'vertical',
   },
 };

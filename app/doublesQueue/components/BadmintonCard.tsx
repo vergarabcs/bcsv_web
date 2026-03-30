@@ -8,6 +8,7 @@ interface BadmintonCardProps {
   court: Court;
   formatTime: (date: Date) => string;
   onWin: (winner: 1 | 2) => void;
+  orientation?: 'horizontal' | 'vertical';
 }
 
 const DIMENSIONS = {
@@ -31,8 +32,19 @@ const RIGHT_SHORT_SERVICE_X = HALF_COURT + DIMENSIONS.serviceDistance;
 const LEFT_LONG_SERVICE_X = DIMENSIONS.longServiceLine;
 const RIGHT_LONG_SERVICE_X = DIMENSIONS.length - DIMENSIONS.longServiceLine;
 
-const BadmintonCard: React.FC<BadmintonCardProps> = ({ court, formatTime, onWin }) => {
+const BadmintonCard: React.FC<BadmintonCardProps> = ({
+  court,
+  formatTime,
+  onWin,
+  orientation = 'horizontal'
+}) => {
   const game = court.currentGame;
+  const isVertical = orientation === 'vertical';
+  const viewBoxWidth = isVertical ? DIMENSIONS.width : DIMENSIONS.length;
+  const viewBoxHeight = isVertical ? DIMENSIONS.length : DIMENSIONS.width;
+  const courtTransform = isVertical
+    ? `matrix(0 -1 1 0 0 ${DIMENSIONS.length})`
+    : undefined;
 
   return (
     <Box
@@ -40,7 +52,7 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({ court, formatTime, onWin 
         position: 'relative',
         bgcolor: '#3f9f46',
         borderRadius: 1.5,
-        aspectRatio: `${COURT_ASPECT} / 1`,
+        aspectRatio: `${isVertical ? 1 / COURT_ASPECT : COURT_ASPECT} / 1`,
         overflow: 'hidden',
         border: '1px solid rgba(0, 0, 0, 0.1)'
       }}
@@ -64,7 +76,7 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({ court, formatTime, onWin 
       {/* SVG overlay for crisp, scalable court lines */}
       <Box
         component="svg"
-        viewBox={`0 0 ${DIMENSIONS.length} ${DIMENSIONS.width}`}
+        viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
         preserveAspectRatio="none"
         sx={{
           position: 'absolute',
@@ -73,92 +85,94 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({ court, formatTime, onWin 
           zIndex: 1
         }}
       >
-        <rect
-          x={DIMENSIONS.lineWidth / 2}
-          y={DIMENSIONS.lineWidth / 2}
-          width={DIMENSIONS.length - DIMENSIONS.lineWidth}
-          height={DIMENSIONS.width - DIMENSIONS.lineWidth}
-          fill="none"
-          stroke="rgba(255, 255, 255, 0.95)"
-          strokeWidth={DIMENSIONS.lineWidth}
-        />
+        <g transform={courtTransform}>
+          <rect
+            x={DIMENSIONS.lineWidth / 2}
+            y={DIMENSIONS.lineWidth / 2}
+            width={DIMENSIONS.length - DIMENSIONS.lineWidth}
+            height={DIMENSIONS.width - DIMENSIONS.lineWidth}
+            fill="none"
+            stroke="rgba(255, 255, 255, 0.95)"
+            strokeWidth={DIMENSIONS.lineWidth}
+          />
 
-        <line
-          x1={HALF_COURT}
-          y1={0}
-          x2={HALF_COURT}
-          y2={DIMENSIONS.width}
-          stroke="rgba(255, 255, 255, 0.95)"
-          strokeWidth={DIMENSIONS.lineWidth}
-        />
+          <line
+            x1={HALF_COURT}
+            y1={0}
+            x2={HALF_COURT}
+            y2={DIMENSIONS.width}
+            stroke="rgba(255, 255, 255, 0.95)"
+            strokeWidth={DIMENSIONS.lineWidth}
+          />
 
-        <line
-          x1={LEFT_SHORT_SERVICE_X}
-          y1={0}
-          x2={LEFT_SHORT_SERVICE_X}
-          y2={DIMENSIONS.width}
-          stroke="rgba(255, 255, 255, 0.8)"
-          strokeWidth={DIMENSIONS.lineWidth}
-        />
-        <line
-          x1={RIGHT_SHORT_SERVICE_X}
-          y1={0}
-          x2={RIGHT_SHORT_SERVICE_X}
-          y2={DIMENSIONS.width}
-          stroke="rgba(255, 255, 255, 0.8)"
-          strokeWidth={DIMENSIONS.lineWidth}
-        />
+          <line
+            x1={LEFT_SHORT_SERVICE_X}
+            y1={0}
+            x2={LEFT_SHORT_SERVICE_X}
+            y2={DIMENSIONS.width}
+            stroke="rgba(255, 255, 255, 0.8)"
+            strokeWidth={DIMENSIONS.lineWidth}
+          />
+          <line
+            x1={RIGHT_SHORT_SERVICE_X}
+            y1={0}
+            x2={RIGHT_SHORT_SERVICE_X}
+            y2={DIMENSIONS.width}
+            stroke="rgba(255, 255, 255, 0.8)"
+            strokeWidth={DIMENSIONS.lineWidth}
+          />
 
-        <line
-          x1={LEFT_LONG_SERVICE_X}
-          y1={0}
-          x2={LEFT_LONG_SERVICE_X}
-          y2={DIMENSIONS.width}
-          stroke="rgba(255, 255, 255, 0.8)"
-          strokeWidth={DIMENSIONS.lineWidth}
-        />
-        <line
-          x1={RIGHT_LONG_SERVICE_X}
-          y1={0}
-          x2={RIGHT_LONG_SERVICE_X}
-          y2={DIMENSIONS.width}
-          stroke="rgba(255, 255, 255, 0.8)"
-          strokeWidth={DIMENSIONS.lineWidth}
-        />
+          <line
+            x1={LEFT_LONG_SERVICE_X}
+            y1={0}
+            x2={LEFT_LONG_SERVICE_X}
+            y2={DIMENSIONS.width}
+            stroke="rgba(255, 255, 255, 0.8)"
+            strokeWidth={DIMENSIONS.lineWidth}
+          />
+          <line
+            x1={RIGHT_LONG_SERVICE_X}
+            y1={0}
+            x2={RIGHT_LONG_SERVICE_X}
+            y2={DIMENSIONS.width}
+            stroke="rgba(255, 255, 255, 0.8)"
+            strokeWidth={DIMENSIONS.lineWidth}
+          />
 
-        <line
-          x1={0}
-          y1={SINGLES_MARGIN}
-          x2={DIMENSIONS.length}
-          y2={SINGLES_MARGIN}
-          stroke="rgba(255, 255, 255, 0.6)"
-          strokeWidth={DIMENSIONS.lineWidth}
-        />
-        <line
-          x1={0}
-          y1={DIMENSIONS.width - SINGLES_MARGIN}
-          x2={DIMENSIONS.length}
-          y2={DIMENSIONS.width - SINGLES_MARGIN}
-          stroke="rgba(255, 255, 255, 0.6)"
-          strokeWidth={DIMENSIONS.lineWidth}
-        />
+          <line
+            x1={0}
+            y1={SINGLES_MARGIN}
+            x2={DIMENSIONS.length}
+            y2={SINGLES_MARGIN}
+            stroke="rgba(255, 255, 255, 0.6)"
+            strokeWidth={DIMENSIONS.lineWidth}
+          />
+          <line
+            x1={0}
+            y1={DIMENSIONS.width - SINGLES_MARGIN}
+            x2={DIMENSIONS.length}
+            y2={DIMENSIONS.width - SINGLES_MARGIN}
+            stroke="rgba(255, 255, 255, 0.6)"
+            strokeWidth={DIMENSIONS.lineWidth}
+          />
 
-        <line
-          x1={LEFT_SHORT_SERVICE_X}
-          y1={MID_WIDTH}
-          x2={0}
-          y2={MID_WIDTH}
-          stroke="rgba(255, 255, 255, 0.7)"
-          strokeWidth={DIMENSIONS.lineWidth}
-        />
-        <line
-          x1={RIGHT_SHORT_SERVICE_X}
-          y1={MID_WIDTH}
-          x2={DIMENSIONS.length}
-          y2={MID_WIDTH}
-          stroke="rgba(255, 255, 255, 0.7)"
-          strokeWidth={DIMENSIONS.lineWidth}
-        />
+          <line
+            x1={LEFT_SHORT_SERVICE_X}
+            y1={MID_WIDTH}
+            x2={0}
+            y2={MID_WIDTH}
+            stroke="rgba(255, 255, 255, 0.7)"
+            strokeWidth={DIMENSIONS.lineWidth}
+          />
+          <line
+            x1={RIGHT_SHORT_SERVICE_X}
+            y1={MID_WIDTH}
+            x2={DIMENSIONS.length}
+            y2={MID_WIDTH}
+            stroke="rgba(255, 255, 255, 0.7)"
+            strokeWidth={DIMENSIONS.lineWidth}
+          />
+        </g>
       </Box>
 
       {/* Team info and controls - overlaid on court */}
@@ -168,7 +182,8 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({ court, formatTime, onWin 
             position: 'relative',
             zIndex: 2,
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: isVertical ? '1fr' : '1fr 1fr',
+            gridTemplateRows: isVertical ? '1fr 1fr' : '1fr',
             gap: 1,
             height: '100%',
             boxSizing: 'border-box',
