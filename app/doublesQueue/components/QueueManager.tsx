@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -45,6 +45,7 @@ const QueueManager: React.FC = () => {
   } = useDoublesQueueStore();
 
   const [search, setSearch] = useState('');
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const inactivePlayers = players.filter(p => p.status === PlayerStatus.INACTIVE);
   const activePlayers = players.filter(p => p.status !== PlayerStatus.INACTIVE);
@@ -54,6 +55,27 @@ const QueueManager: React.FC = () => {
 
   const handleJoinQueue = (playerId: string) => {
     joinQueue(playerId);
+  };
+
+  const handleCheckIn = (playerId: string) => {
+    joinQueue(playerId);
+    setSearch('');
+
+    requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+    });
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') {
+      return;
+    }
+
+    // Enter only checks in automatically when exactly one player matches.
+    if (filteredInactive.length === 1) {
+      event.preventDefault();
+      handleCheckIn(filteredInactive[0].id);
+    }
   };
 
   const handleLeaveQueue = (playerId: string) => {
@@ -193,99 +215,6 @@ const QueueManager: React.FC = () => {
         </Paper>
       )}
 
-      {/* Available Players */}
-      <Typography variant="h6" gutterBottom>
-        👥 Available Players ({activePlayers.length} active)
-      </Typography>
-
-      {activePlayers.length > 0 ? (
-        <Paper sx={{ mb: 3 }}>
-          <List>
-            {activePlayers.map((player) => {
-              const category = getRatingCategory(player.rating);
-              const isWaiting = player.status === PlayerStatus.WAITING;
-              const isPlaying = player.status === PlayerStatus.PLAYING;
-              
-              return (
-                <ListItem 
-                  key={player.id} 
-                  divider
-                  sx={{
-                    bgcolor: isPlaying ? 'success.light' : 
-                            isWaiting ? 'primary.light' : 'background.paper'
-                  }}
-                >
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body1" fontWeight="bold">
-                          {player.name}
-                        </Typography>
-                        <Chip
-                          label={category}
-                          size="small"
-                          sx={{
-                            bgcolor: getRatingCategoryColor(category),
-                            color: 'white',
-                            fontSize: '0.7rem',
-                            height: 20
-                          }}
-                        />
-                        <Chip
-                          label={player.status}
-                          size="small"
-                          color={
-                            isPlaying ? 'success' :
-                            isWaiting ? 'primary' : 'default'
-                          }
-                        />
-                      </Box>
-                    }
-                    secondary={
-                      <Box component="span">
-                        <Box component="span" sx={{ display: 'block', fontSize: '0.875rem' }}>
-                          Rating: {player.rating} | Games: {player.gamesPlayed} | W/L: {player.wins}/{player.losses}
-                        </Box>
-                        {player.currentStreak !== 0 && (
-                          <Box component="span" sx={{ display: 'block', fontSize: '0.75rem', color: player.currentStreak > 0 ? 'success.main' : 'error.main' }}>
-                            {player.currentStreak > 0 ? `${player.currentStreak} wins` : `${Math.abs(player.currentStreak)} losses`} streak
-                          </Box>
-                        )}
-                      </Box>
-                    }
-                  />
-                  
-                  <ListItemSecondaryAction>
-                    {!isPlaying && (
-                      <Button
-                        variant={isWaiting ? "outlined" : "contained"}
-                        size="small"
-                        onClick={() => isWaiting ? handleLeaveQueue(player.id) : handleJoinQueue(player.id)}
-                        startIcon={isWaiting ? <RemoveIcon /> : <AddIcon />}
-                      >
-                        {isWaiting ? 'Remove' : 'Add to Queue'}
-                      </Button>
-                    )}
-                    {isPlaying && (
-                      <Chip label="Playing" color="success" size="small" />
-                    )}
-                  </ListItemSecondaryAction>
-                </ListItem>
-              );
-            })}
-          </List>
-        </Paper>
-      ) : (
-        <Paper sx={{ p: 3, mb: 3, textAlign: 'center', bgcolor: 'grey.50' }}>
-          <Typography variant="body1" color="text.secondary">
-            No active players
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Players need to check in for the session first
-          </Typography>
-        </Paper>
-      )}
-
       {/* Inactive Players */}
       {inactivePlayers.length > 0 && (
         <>
@@ -298,7 +227,9 @@ const QueueManager: React.FC = () => {
             placeholder="Search players..."
             fullWidth
             value={search}
+            inputRef={searchInputRef}
             onChange={e => setSearch(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
             sx={{ mb: 1 }}
             InputProps={{
               startAdornment: (
@@ -341,7 +272,7 @@ const QueueManager: React.FC = () => {
                       <Button
                         variant="contained"
                         size="small"
-                        onClick={() => handleJoinQueue(player.id)}
+                        onClick={() => handleCheckIn(player.id)}
                         startIcon={<PlayIcon />}
                       >
                         Check In
