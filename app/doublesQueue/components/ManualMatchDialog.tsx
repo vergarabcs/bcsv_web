@@ -5,12 +5,13 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Typography,
-  Grid,
   Paper
 } from '@mui/material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
@@ -22,12 +23,25 @@ interface ManualMatchDialogProps {
 }
 
 const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) => {
-  const { queueEntries, players, addManualMatch, manualMatches } = useDoublesQueueStore();
+  const { queueEntries, players, addManualMatch, manualMatches, currentSession } = useDoublesQueueStore();
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
   const playersById = useMemo(
     () => new Map(players.map(player => [player.id, player])),
     [players]
   );
+
+  const formatElapsed = (dateValue?: Date) => {
+    if (!dateValue) return '-';
+
+    const elapsedMinutes = Math.max(0, Math.floor((Date.now() - new Date(dateValue).getTime()) / 60000));
+
+    if (elapsedMinutes < 1) return '<1m';
+    if (elapsedMinutes < 60) return `${elapsedMinutes}m`;
+
+    const hours = Math.floor(elapsedMinutes / 60);
+    const minutes = elapsedMinutes % 60;
+    return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+  };
 
   // Filter out players already in manual matches
   const availableQueueEntries = useMemo(() => {
@@ -38,10 +52,31 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
       .filter(entry => !manualMatchPlayerIds.has(entry.playerId))
       .map(entry => {
         const player = playersById.get(entry.playerId);
-        return player ? { entry, player } : null;
+        if (!player) {
+          return null;
+        }
+
+        const gamesInSession = currentSession.gamesPlayed.get(player.id) ?? 0;
+        const waitFrom = player.lastGameTime ?? player.joinedQueueTime;
+
+        return {
+          entry,
+          player,
+          gamesInSession,
+          waitLabel: formatElapsed(waitFrom)
+        };
       })
-      .filter((item): item is { entry: typeof queueEntries[number]; player: Player } => !!item);
-  }, [manualMatches, playersById, queueEntries]);
+      .filter(
+        (
+          item
+        ): item is {
+          entry: typeof queueEntries[number];
+          player: Player;
+          gamesInSession: number;
+          waitLabel: string;
+        } => !!item
+      );
+  }, [currentSession.gamesPlayed, manualMatches, playersById, queueEntries]);
 
   const sortedAvailableQueueEntries = useMemo(
     () =>
@@ -109,88 +144,84 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Create Manual Match</DialogTitle>
-      <DialogContent>
-        <Grid container spacing={2}>
-          <Grid size={12}>
-            <Typography variant="subtitle1" gutterBottom>
-              Select Players ({selectedPlayerIds.length}/4)
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-              First 2 selected = Team 1, next 2 selected = Team 2
-            </Typography>
-            <Paper variant="outlined" sx={{ maxHeight: { xs: 520, md: 640 }, overflow: 'auto', p: 0.5 }}>
-              <List
-                dense
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                  gap: 0.5,
-                  py: 0
-                }}
-              >
-                {sortedAvailableQueueEntries.map((entry) => (
-                  (() => {
-                    const selectedIndex = selectedPlayerIds.indexOf(entry.player.id);
-                    const isSelected = selectedIndex !== -1;
-                    const isTeam1 = selectedIndex >= 0 && selectedIndex < 2;
-                    const isTeam2 = selectedIndex >= 2;
+    <Dialog open={open} onClose={handleClose} fullScreen>
+      <DialogTitle>Manually Create Match</DialogTitle>
+      <DialogContent sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, pt: 0, pb: 1 }}>
+        <Typography variant="subtitle1" gutterBottom>
+          Select Players ({selectedPlayerIds.length}/4)
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+          First 2 selected = Team 1, next 2 selected = Team 2
+        </Typography>
+        <Paper variant="outlined" sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          <TableContainer sx={{ height: '100%' }}>
+            <Table stickyHeader size="small" sx={{ tableLayout: 'fixed' }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ width: '46%' }}>Name</TableCell>
+                  <TableCell sx={{ width: '16%' }} align="right">Rating</TableCell>
+                  <TableCell sx={{ width: '16%' }} align="right">Games</TableCell>
+                  <TableCell sx={{ width: '22%' }} align="right">Wait</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {sortedAvailableQueueEntries.map((entry) => {
+                  const selectedIndex = selectedPlayerIds.indexOf(entry.player.id);
+                  const isSelected = selectedIndex !== -1;
+                  const isTeam1 = selectedIndex >= 0 && selectedIndex < 2;
+                  const rowBg = isTeam1 ? 'primary.main' : 'secondary.main';
+                  const rowBgHover = isTeam1 ? 'primary.dark' : 'secondary.dark';
+                  const rowColor = isTeam1 ? 'primary.contrastText' : 'secondary.contrastText';
 
-                    return (
-                  <ListItem
-                    key={entry.player.id}
-                    disablePadding
-                    sx={{ width: '100%' }}
-                  >
-                    <ListItemButton
+                  return (
+                    <TableRow
+                      key={entry.player.id}
+                      hover
                       onClick={() => handleTogglePlayer(entry.player.id)}
-                      selected={isSelected}
-                      disabled={!isSelected && selectedPlayerIds.length >= 4}
                       sx={{
-                        borderRadius: 1,
-                        px: 1,
-                        py: 0.25,
-                        minHeight: 32,
-                        '&.Mui-selected': {
-                          bgcolor: isTeam1 ? 'primary.main' : isTeam2 ? 'secondary.main' : 'action.selected',
-                          color: isTeam1
-                            ? 'primary.contrastText'
-                            : isTeam2
-                              ? 'secondary.contrastText'
-                              : 'text.primary'
+                        cursor: 'pointer',
+                        '& > *': {
+                          py: 0.25,
+                          px: 1
                         },
-                        '&.Mui-selected:hover': {
-                          bgcolor: isTeam1 ? 'primary.dark' : isTeam2 ? 'secondary.dark' : 'action.hover'
-                        }
+                        ...(isSelected && {
+                          bgcolor: rowBg,
+                          '& > *': {
+                            color: rowColor,
+                            borderBottomColor: 'transparent'
+                          },
+                          '&:hover': {
+                            bgcolor: rowBgHover
+                          },
+                          '&.MuiTableRow-hover:hover': {
+                            bgcolor: rowBgHover
+                          }
+                        }),
+                        ...(!isSelected && selectedPlayerIds.length >= 4 && {
+                          opacity: 0.55
+                        })
                       }}
                     >
-                      <ListItemText 
-                        primary={`${entry.player.name} (${entry.player.rating})`}
-                        secondary={
-                          isTeam1
-                            ? 'Team 1'
-                            : isTeam2
-                              ? 'Team 2'
-                              : undefined
-                        }
-                        primaryTypographyProps={{ noWrap: true, variant: 'body2' }}
-                        secondaryTypographyProps={{ variant: 'caption' }}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                    );
-                  })()
-                ))}
+                      <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {entry.player.name}
+                      </TableCell>
+                      <TableCell align="right">{Math.round(entry.player.rating)}</TableCell>
+                      <TableCell align="right">{entry.gamesInSession}</TableCell>
+                      <TableCell align="right">{entry.waitLabel}</TableCell>
+                    </TableRow>
+                  );
+                })}
                 {availableQueueEntries.length === 0 && (
-                  <ListItem sx={{ gridColumn: '1 / -1' }}>
-                    <ListItemText primary="No available players in queue" />
-                  </ListItem>
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">
+                      No available players in queue
+                    </TableCell>
+                  </TableRow>
                 )}
-              </List>
-            </Paper>
-          </Grid>
-        </Grid>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
@@ -199,7 +230,7 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
           variant="contained" 
           disabled={selectedPlayerIds.length !== 4}
         >
-          Create Match
+          Create
         </Button>
       </DialogActions>
     </Dialog>
