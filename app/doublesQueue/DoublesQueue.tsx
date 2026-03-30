@@ -81,9 +81,9 @@ const DoublesQueue: React.FC = () => {
   useEffect(() => {
     fetch('/api/players')
       .then(res => res.json())
-      .then((data: { players?: string[] }) => {
+      .then((data: { players?: Array<{ name: string; rating: number }> }) => {
         if (Array.isArray(data.players)) {
-          data.players.forEach(name => addPlayer(name));
+          data.players.forEach(({ name, rating }) => addPlayer(name, rating));
         }
       })
       .catch(() => {/* silently ignore if sheet is unreachable */});

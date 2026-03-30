@@ -7,6 +7,8 @@ const REGISTRY_RANGE = 'Registry!A:Z';
 const DEFAULT_SSM_PARAM_NAME = '/amplify/shared/d2i0ep7cpx287/GOOGLE_SERVICE_ACCOUNT_KEY';
 const ssmClient = new SSMClient({});
 
+const DEFAULT_PLAYER_RATING = 1500;
+
 const getServiceAccountKey = async () => {
   const paramName = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PARAM ?? DEFAULT_SSM_PARAM_NAME;
   const response = await ssmClient.send(
@@ -47,6 +49,12 @@ const parseServiceAccountKey = (raw: string) => {
   throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY is not valid JSON (raw, JSON-string, or base64)');
 };
 
+const parseMmrRating = (value: unknown): number => {
+  const normalized = String(value ?? '').replace(/,/g, '').trim();
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : DEFAULT_PLAYER_RATING;
+};
+
 export async function GET() {
   try {
     const keyRaw = await getServiceAccountKey();
@@ -82,6 +90,9 @@ export async function GET() {
     const playerColIndex = headers.findIndex(
       (h) => h.toLowerCase() === 'player'
     );
+    const mmrColIndex = headers.findIndex(
+      (h) => h.toLowerCase() === 'mmr'
+    );
 
     if (playerColIndex === -1) {
       return NextResponse.json(
@@ -90,10 +101,21 @@ export async function GET() {
       );
     }
 
+    if (mmrColIndex === -1) {
+      return NextResponse.json(
+        { error: "Could not find 'MMR' column in Registry sheet" },
+        { status: 500 }
+      );
+    }
+
     const players = rows
       .slice(1)
-      .map((row: string[]) => String(row[playerColIndex] ?? '').trim())
-      .filter((name: string) => name.length > 0);
+      .map((row: string[]) => {
+        const name = String(row[playerColIndex] ?? '').trim();
+        const rating = parseMmrRating(row[mmrColIndex]);
+        return { name, rating };
+      })
+      .filter((player) => player.name.length > 0);
 
     return NextResponse.json({ players });
   } catch (error) {

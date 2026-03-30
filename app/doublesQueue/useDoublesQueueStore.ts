@@ -198,10 +198,22 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
       },
 
       // Player management
-      addPlayer: (name: string, initialRating: number = 1500) => {
-        const exists = get().players.some(p => p.name === name);
-        if (exists) return;
-        const newPlayer = createPlayer(name, initialRating);
+      addPlayer: (name: string, initialRating?: number) => {
+        const existingPlayer = get().players.find(p => p.name === name);
+        if (existingPlayer) {
+          if (typeof initialRating === 'number') {
+            set(state => ({
+              players: state.players.map(player =>
+                player.id === existingPlayer.id
+                  ? { ...player, rating: initialRating }
+                  : player
+              )
+            }));
+          }
+          return;
+        }
+
+        const newPlayer = createPlayer(name, initialRating ?? 1500);
         set(state => ({
           players: [...state.players, newPlayer]
         }));
