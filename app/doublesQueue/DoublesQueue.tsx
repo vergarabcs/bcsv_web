@@ -27,7 +27,7 @@ import {
   SportsTennis as CourtIcon
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from './useDoublesQueueStore';
-import { getRatingCategory, getRatingCategoryColor, PlayerStatus, CourtStatus } from './types';
+import { getRatingCategory, getRatingCategoryColor, PlayerStatus, CourtStatus, GameStatus } from './types';
 import Dashboard from './components/Dashboard';
 import QueueManager from './components/QueueManager';
 import GameResults from './components/GameResults';
@@ -35,6 +35,7 @@ import Players from './components/Players';
 import AddPlayerDialog from './components/AddPlayerDialog';
 import GlobalLoader from '../lib/components/GlobalLoader';
 import styles from './DoublesQueue.module.css';
+import SessionMenu from './components/SessionMenu';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -70,6 +71,7 @@ const DoublesQueue: React.FC = () => {
 
   const {
     players,
+    games,
     currentSession,
     queueEntries,
     nextMatches,
@@ -126,6 +128,8 @@ const DoublesQueue: React.FC = () => {
     }
   };
 
+  
+
   const handleConfirmEndSession = () => {
     endSession();
     setEndSessionDialogOpen(false);
@@ -134,6 +138,7 @@ const DoublesQueue: React.FC = () => {
   const activePlayers = players.filter(p => p.status !== PlayerStatus.INACTIVE);
   const waitingCount = queueEntries.length;
   const playingCount = players.filter(p => p.status === PlayerStatus.PLAYING).length;
+  const inProgressGames = games.filter(g => g.status === GameStatus.IN_PROGRESS).length;
 
   return (
     <>
@@ -165,15 +170,7 @@ const DoublesQueue: React.FC = () => {
               color={currentSession.isActive ? 'success' : 'default'}
               size="small"
             />
-            <Button
-              variant="contained"
-              color={currentSession.isActive ? 'error' : 'success'}
-              onClick={handleSessionToggle}
-              startIcon={currentSession.isActive ? <StopIcon /> : <PlayIcon />}
-              size="small"
-            >
-              {currentSession.isActive ? 'End' : 'Start'}
-            </Button>
+            <SessionMenu onRequestEndSession={() => setEndSessionDialogOpen(true)} />
           </Box>
         </Box>
 
