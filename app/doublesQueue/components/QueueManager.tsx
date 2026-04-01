@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { PlayerStatus, getRatingCategory, getRatingCategoryColor } from '../types';
+import { getMostRecentPlayerActivityTime } from '../storeHelpers';
 
 const QueueManager: React.FC = () => {
   const {
@@ -194,8 +195,9 @@ const QueueManager: React.FC = () => {
         <Paper sx={{ mb: 3 }}>
           <List>
             {filteredQueueEntries.map(({ entry: queueEntry, player }, index) => {
-              const waitTime = player.joinedQueueTime 
-                ? formatTime(player.joinedQueueTime)
+              const waitFrom = getMostRecentPlayerActivityTime(player);
+              const waitTime = waitFrom
+                ? formatTime(waitFrom)
                 : '0m';
               const category = getRatingCategory(player.rating);
               

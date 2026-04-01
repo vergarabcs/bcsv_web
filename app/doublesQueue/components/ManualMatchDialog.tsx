@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Button,
@@ -16,6 +15,7 @@ import {
 } from '@mui/material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { CourtStatus, MatchSuggestion, MatchTeam, Player } from '../types';
+import { getMostRecentPlayerActivityTime } from '../storeHelpers';
 
 interface ManualMatchDialogProps {
   open: boolean;
@@ -65,7 +65,7 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
         }
 
         const gamesInSession = currentSession.gamesPlayed.get(player.id) ?? 0;
-        const waitFrom = player.lastGameTime ?? player.joinedQueueTime;
+        const waitFrom = getMostRecentPlayerActivityTime(player);
 
         return {
           entry,

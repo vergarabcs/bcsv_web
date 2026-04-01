@@ -24,6 +24,7 @@ import {
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { Court, CourtStatus, getRatingCategory, getRatingCategoryColor } from '../types';
+import { getMostRecentPlayerActivityTime } from '../storeHelpers';
 import ManualMatchDialog from './ManualMatchDialog';
 import BadmintonCard from './BadmintonCard';
 
@@ -184,7 +185,7 @@ const Dashboard: React.FC = () => {
       {/* Next Matches */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, mt: 2 }}>
         <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          ⏭️ Next Matches ({resolvedNextMatches.length} ready)
+          ⏭️ Suggested Matches ({resolvedNextMatches.length} ready)
         </Typography>
         <Button 
           variant="outlined" 
@@ -271,8 +272,9 @@ const Dashboard: React.FC = () => {
           
           <List dense>
             {resolvedQueueEntries.map(({ entry, player }, index) => {
-              const waitTime = player.joinedQueueTime 
-                ? formatTime(player.joinedQueueTime)
+              const waitFrom = getMostRecentPlayerActivityTime(player);
+              const waitTime = waitFrom
+                ? formatTime(waitFrom)
                 : '0m';
               const category = getRatingCategory(player.rating);
               
