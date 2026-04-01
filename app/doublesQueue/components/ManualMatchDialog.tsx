@@ -14,6 +14,7 @@ import {
   Paper
 } from '@mui/material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
+import { useCurrentMinute } from '../hooks/useCurrentMinute';
 import { CourtStatus, MatchSuggestion, MatchTeam, Player } from '../types';
 import { getMostRecentPlayerActivityTime } from '../storeHelpers';
 
@@ -33,6 +34,7 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     currentSession
   } = useDoublesQueueStore();
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
+  const now = useCurrentMinute();
   const playersById = useMemo(
     () => new Map(players.map(player => [player.id, player])),
     [players]
@@ -41,7 +43,7 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
   const formatElapsed = (dateValue?: Date) => {
     if (!dateValue) return '-';
 
-    const elapsedMinutes = Math.max(0, Math.floor((Date.now() - new Date(dateValue).getTime()) / 60000));
+    const elapsedMinutes = Math.max(0, Math.floor((now.getTime() - new Date(dateValue).getTime()) / 60000));
 
     if (elapsedMinutes < 1) return '<1m';
     if (elapsedMinutes < 60) return `${elapsedMinutes}m`;
@@ -84,7 +86,7 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
           waitLabel: string;
         } => !!item
       );
-  }, [currentSession.gamesPlayed, manualMatches, playersById, queueEntries]);
+  }, [currentSession.gamesPlayed, manualMatches, now, playersById, queueEntries]);
 
   const sortedAvailableQueueEntries = useMemo(
     () =>

@@ -31,6 +31,7 @@ import {
   Search as SearchIcon
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
+import { useCurrentMinute } from '../hooks/useCurrentMinute';
 import { PlayerStatus, getRatingCategory, getRatingCategoryColor } from '../types';
 import { getMostRecentPlayerActivityTime } from '../storeHelpers';
 
@@ -46,6 +47,7 @@ const QueueManager: React.FC = () => {
   } = useDoublesQueueStore();
 
   const [search, setSearch] = useState('');
+  const now = useCurrentMinute();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
   const playersById = useMemo(
@@ -130,7 +132,6 @@ const QueueManager: React.FC = () => {
   };
 
   const formatTime = (date: Date) => {
-    const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
     

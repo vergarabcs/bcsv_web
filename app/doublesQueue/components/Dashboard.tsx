@@ -23,6 +23,7 @@ import {
   Add as AddIcon
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
+import { useCurrentMinute } from '../hooks/useCurrentMinute';
 import { Court, CourtStatus, getRatingCategory, getRatingCategoryColor } from '../types';
 import { getMostRecentPlayerActivityTime } from '../storeHelpers';
 import ManualMatchDialog from './ManualMatchDialog';
@@ -42,6 +43,7 @@ const Dashboard: React.FC = () => {
   } = useDoublesQueueStore();
 
   const [manualMatchOpen, setManualMatchOpen] = useState(false);
+  const now = useCurrentMinute();
   const playersById = useMemo(
     () => new Map(players.map(player => [player.id, player])),
     [players]
@@ -100,7 +102,6 @@ const Dashboard: React.FC = () => {
   const availableCourts = courts.filter(c => c.status === CourtStatus.AVAILABLE);
 
   const formatTime = (date: Date) => {
-    const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
     
