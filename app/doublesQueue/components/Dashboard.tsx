@@ -192,7 +192,7 @@ const Dashboard: React.FC = () => {
           startIcon={<AddIcon />}
           onClick={() => setManualMatchOpen(true)}
         >
-          Manual Match
+          Manual
         </Button>
       </Box>
 

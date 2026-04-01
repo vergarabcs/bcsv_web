@@ -205,19 +205,19 @@ const DoublesQueue: React.FC = () => {
           >
             <Tab 
               icon={<Badge badgeContent={waitingCount} color="primary"><CourtIcon /></Badge>} 
-              label="Dashboard" 
+              aria-label="Dashboard" 
             />
             <Tab 
               icon={<Badge badgeContent={activePlayers.length} color="secondary"><PeopleIcon /></Badge>} 
-              label="Queue" 
+              aria-label="Queue" 
             />
             <Tab 
               icon={<TrophyIcon />} 
-              label="Results" 
+              aria-label="Results" 
             />
             <Tab 
               icon={<SettingsIcon />} 
-              label="Players" 
+              aria-label="Players" 
             />
           </Tabs>
         </Paper>
