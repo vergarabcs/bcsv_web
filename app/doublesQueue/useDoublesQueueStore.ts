@@ -10,7 +10,6 @@ import {
   MatchTeam,
   SessionStats,
   AppSettings,
-  PartnershipHistory,
   PlayerStatus,
   GameStatus,
   CourtStatus,
@@ -24,12 +23,22 @@ import {
   today,
   toGamesPlayedMap,
   stripPlayerHistory,
+  derivePartnershipHistoryFromGames,
   normalizePersistedQueueEntry,
   normalizePersistedMatchTeam,
   normalizePersistedMatchSuggestion,
   resolveMatchTeam
 } from './storeHelpers';
 import { getInitialState } from './storeState';
+
+const MAX_GAMES_HISTORY = 100;
+
+const keepMostRecentGames = (games: Game[]): Game[] => {
+  if (games.length <= MAX_GAMES_HISTORY) {
+    return games;
+  }
+  return games.slice(-MAX_GAMES_HISTORY);
+};
 
 interface DoublesQueueState {
   // Core data
@@ -50,7 +59,6 @@ interface DoublesQueueState {
   queueEntries: QueueEntry[];
   nextMatches: MatchSuggestion[];
   manualMatches: MatchSuggestion[];
-  partnershipHistory: PartnershipHistory[];
   
   // Algorithms
   ratingSystem: RatingSystem;
@@ -272,7 +280,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
               ? { ...court, status: CourtStatus.OCCUPIED, currentGame: game }
               : court
           ),
-          games: [...state.games, game],
+          games: keepMostRecentGames([...state.games, game]),
           manualMatches: newManualMatches,
           // Update player statuses to playing
           players: state.players.map(player => {
@@ -360,33 +368,6 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           return player;
         });
 
-        // Update partnership history
-        const newPartnerships = [
-          { player1Id: game.team1.player1.id, player2Id: game.team1.player2.id },
-          { player1Id: game.team2.player1.id, player2Id: game.team2.player2.id }
-        ];
-
-        const updatedPartnershipHistory = [...state.partnershipHistory];
-        
-        newPartnerships.forEach(({ player1Id, player2Id }) => {
-          const existing = updatedPartnershipHistory.find(p =>
-            (p.player1Id === player1Id && p.player2Id === player2Id) ||
-            (p.player1Id === player2Id && p.player2Id === player1Id)
-          );
-
-          if (existing) {
-            existing.gameIds.push(gameId);
-            existing.lastPlayedTogether = endTime;
-          } else {
-            updatedPartnershipHistory.push({
-              player1Id,
-              player2Id,
-              gameIds: [gameId],
-              lastPlayedTogether: endTime
-            });
-          }
-        });
-
         // Update session games count
         const updatedSessionGamesPlayed = toGamesPlayedMap(state.currentSession.gamesPlayed);
         [game.team1.player1.id, game.team1.player2.id, game.team2.player1.id, game.team2.player2.id]
@@ -397,7 +378,6 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         set({
           games: state.games.map(g => g.id === gameId ? updatedGame : g),
           players: updatedPlayers,
-          partnershipHistory: updatedPartnershipHistory,
           currentSession: {
             ...state.currentSession,
             gamesPlayed: updatedSessionGamesPlayed,
@@ -486,10 +466,11 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
       // Queue operations
       refreshQueue: () => {
         const state = get();
+        const partnershipHistory = derivePartnershipHistoryFromGames(state.games);
         const queueEntries = state.queueManager.generateQueueEntries(
           state.players,
           state.currentSession.gamesPlayed,
-          state.partnershipHistory
+          partnershipHistory
         );
         
         set({ queueEntries });
@@ -498,6 +479,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
       generateNextMatches: () => {
         const state = get();
+        const partnershipHistory = derivePartnershipHistoryFromGames(state.games);
         const availableCourts = state.courts.filter(c => c.status === CourtStatus.AVAILABLE);
         
         // Filter out players already in manual matches
@@ -518,7 +500,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
             availableQueueEntries,
             state.players,
             slotsNeeded,
-            state.partnershipHistory
+            partnershipHistory
           );
           
           nextMatches = [...nextMatches, ...autoMatches];
@@ -553,7 +535,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
       // Data management
       exportData: () => {
-        const { players, games, settings, partnershipHistory } = get();
+        const { players, games, settings } = get();
+        const partnershipHistory = derivePartnershipHistoryFromGames(games);
         return JSON.stringify({
           players,
           games,
@@ -570,7 +553,6 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           queueEntries: [],
           nextMatches: [],
           manualMatches: [],
-          partnershipHistory: [],
           currentSession: {
             date: today(),
             isActive: false,
@@ -618,7 +600,6 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           } : undefined
         })),
         settings: state.settings,
-        partnershipHistory: state.partnershipHistory,
         currentSession: {
           ...state.currentSession,
           gamesPlayed: Array.from(state.currentSession.gamesPlayed.entries())
@@ -634,14 +615,11 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
               startTime: new Date(game.startTime),
               endTime: game.endTime ? new Date(game.endTime) : undefined
             }));
+          state.games = keepMostRecentGames(state.games);
           state.players = state.players.map(player => ({
             ...player,
             lastGameTime: player.lastGameTime ? new Date(player.lastGameTime) : undefined,
             joinedQueueTime: player.joinedQueueTime ? new Date(player.joinedQueueTime) : undefined
-          }));
-          state.partnershipHistory = state.partnershipHistory.map(partnership => ({
-            ...partnership,
-            lastPlayedTogether: new Date(partnership.lastPlayedTogether)
           }));
           // Restore courts.currentGame date fields if present
           state.courts = state.courts.map(court => ({

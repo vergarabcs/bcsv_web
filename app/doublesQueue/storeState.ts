@@ -28,7 +28,6 @@ export const getInitialState = () => ({
   queueEntries: [],
   nextMatches: [],
   manualMatches: [],
-  partnershipHistory: [],
   
   // Algorithms
   ratingSystem: new RatingSystem(DEFAULT_SETTINGS),

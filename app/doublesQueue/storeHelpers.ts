@@ -6,6 +6,7 @@ import {
   QueueEntry,
   MatchSuggestion,
   MatchTeam,
+  PartnershipHistory,
   PlayerStatus,
   GameStatus,
   CourtStatus,
@@ -77,6 +78,49 @@ export const getBaselinePlayer = (player: Player): Player => {
     currentStreak: 0,
     lastGameTime: undefined
   };
+};
+
+export const derivePartnershipHistoryFromGames = (games: Game[]): PartnershipHistory[] => {
+  const completedGames = games
+    .filter((game): game is Game & { team1: Team; team2: Team } => (
+      game.status === GameStatus.COMPLETED
+    ))
+    .sort((a, b) => {
+      const aTime = a.endTime?.getTime() ?? a.startTime.getTime();
+      const bTime = b.endTime?.getTime() ?? b.startTime.getTime();
+      return aTime - bTime;
+    });
+
+  const partnershipByKey = new Map<string, PartnershipHistory>();
+
+  completedGames.forEach(game => {
+    const completedAt = game.endTime ?? game.startTime;
+    const pairs: Array<[string, string]> = [
+      [game.team1.player1.id, game.team1.player2.id],
+      [game.team2.player1.id, game.team2.player2.id]
+    ];
+
+    pairs.forEach(([playerA, playerB]) => {
+      const [player1Id, player2Id] = [playerA, playerB].sort();
+      const key = `${player1Id}|${player2Id}`;
+      const existing = partnershipByKey.get(key);
+
+      if (existing) {
+        existing.gameIds.push(game.id);
+        existing.lastPlayedTogether = completedAt;
+        return;
+      }
+
+      partnershipByKey.set(key, {
+        player1Id,
+        player2Id,
+        gameIds: [game.id],
+        lastPlayedTogether: completedAt
+      });
+    });
+  });
+
+  return Array.from(partnershipByKey.values());
 };
 
 export const rebuildPlayersFromGames = (
