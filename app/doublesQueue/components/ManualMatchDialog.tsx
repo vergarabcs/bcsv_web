@@ -174,7 +174,6 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
 
   return (
     <Dialog open={open} onClose={handleClose} fullScreen>
-      <DialogTitle>Manually Create Match</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, pt: 0, pb: 1 }}>
         <Typography variant="subtitle1" gutterBottom>
           Select Players ({selectedPlayerIds.length}/4)
