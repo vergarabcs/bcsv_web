@@ -9,7 +9,6 @@ export interface Player {
   lastGameTime?: Date;
   joinedQueueTime?: Date;
   status: PlayerStatus;
-  ratingHistory: RatingChange[];
 }
 
 export interface RatingChange {

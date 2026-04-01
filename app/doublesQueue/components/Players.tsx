@@ -28,9 +28,6 @@ import {
   LinearProgress
 } from '@mui/material';
 import {
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
-  Remove as StableIcon,
   EmojiEvents as TrophyIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
@@ -93,25 +90,6 @@ const Players: React.FC = () => {
     return Math.round((player.wins / player.gamesPlayed) * 100);
   };
 
-  const getRatingTrend = (player: any) => {
-    if (player.ratingHistory.length < 2) return 'stable';
-    const recent = player.ratingHistory.slice(-5);
-    const oldRating = recent[0].oldRating;
-    const newRating = recent[recent.length - 1].newRating;
-    
-    if (newRating > oldRating + 20) return 'up';
-    if (newRating < oldRating - 20) return 'down';
-    return 'stable';
-  };
-
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case 'up': return <TrendingUpIcon color="success" />;
-      case 'down': return <TrendingDownIcon color="error" />;
-      default: return <StableIcon color="action" />;
-    }
-  };
-
   const selectedPlayerData = selectedPlayer ? players.find(p => p.id === selectedPlayer) : null;
 
   return (
@@ -165,13 +143,11 @@ const Players: React.FC = () => {
                   <TableCell>Player</TableCell>
                   <TableCell>Rating</TableCell>
                   <TableCell>Category</TableCell>
-                  <TableCell>Trend</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {playersByRating.map((player, index) => {
                   const category = getRatingCategory(player.rating);
-                  const trend = getRatingTrend(player);
                   
                   return (
                     <TableRow 
@@ -206,9 +182,6 @@ const Players: React.FC = () => {
                             fontSize: '0.7rem'
                           }}
                         />
-                      </TableCell>
-                      <TableCell>
-                        {getTrendIcon(trend)}
                       </TableCell>
                     </TableRow>
                   );
@@ -393,41 +366,6 @@ const Players: React.FC = () => {
               </Box>
 
               <Divider sx={{ my: 2 }} />
-
-              <Typography variant="h6" gutterBottom>Recent Rating Changes</Typography>
-              {selectedPlayerData.ratingHistory.length > 0 ? (
-                <List dense>
-                  {selectedPlayerData.ratingHistory.slice(-5).reverse().map((change, index) => (
-                    <ListItem key={index} divider>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography variant="body2">
-                              {change.won ? '🏆 Win' : '❌ Loss'}
-                            </Typography>
-                            <Chip
-                              label={`${change.change > 0 ? '+' : ''}${change.change}`}
-                              size="small"
-                              color={change.change > 0 ? 'success' : 'error'}
-                            />
-                          </Box>
-                        }
-                        secondary={
-                          <Box component="span" sx={{ fontSize: '0.75rem' }}>
-                            {change.oldRating} → {change.newRating}
-                            <br />
-                            vs {change.opponent1} & {change.opponent2}
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No games played yet
-                </Typography>
-              )}
             </Box>
           )}
         </DialogContent>

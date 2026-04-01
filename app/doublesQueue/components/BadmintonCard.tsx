@@ -216,6 +216,8 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({
               fullWidth
               size="small"
               sx={{ fontSize: '0.7rem' }}
+              data-testid={"win-team-1-" + court.name.replace(/\s+/g, '_')}
+              aria-label={"Win team 1 on " + court.name}
             >
               Win
             </Button>
@@ -247,6 +249,8 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({
               fullWidth
               size="small"
               sx={{ fontSize: '0.7rem' }}
+              data-testid={"win-team-2-" + court.name.replace(/\s+/g, '_')}
+              aria-label={"Win team 2 on " + court.name}
             >
               Win
             </Button>

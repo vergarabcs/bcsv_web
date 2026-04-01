@@ -24,8 +24,7 @@ export const createPlayer = (name: string, rating: number = 1500): Player => ({
   wins: 0,
   losses: 0,
   currentStreak: 0,
-  status: PlayerStatus.INACTIVE,
-  ratingHistory: []
+  status: PlayerStatus.INACTIVE
 });
 
 export const createCourt = (name: string): Court => ({
@@ -69,27 +68,14 @@ export const toGamesPlayedMap = (value: unknown): Map<string, number> => {
 };
 
 export const stripPlayerHistory = (player: Player): Player => ({
-  ...player,
-  ratingHistory: []
+  ...player
 });
 
 export const getBaselinePlayer = (player: Player): Player => {
-  const sortedHistory = [...player.ratingHistory].sort(
-    (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
-  );
-  const completedGamesCount = sortedHistory.length;
-  const winsFromHistory = sortedHistory.filter(entry => entry.won).length;
-  const lossesFromHistory = completedGamesCount - winsFromHistory;
-
   return {
     ...player,
-    rating: sortedHistory[0]?.oldRating ?? player.rating,
-    gamesPlayed: Math.max(0, player.gamesPlayed - completedGamesCount),
-    wins: Math.max(0, player.wins - winsFromHistory),
-    losses: Math.max(0, player.losses - lossesFromHistory),
     currentStreak: 0,
-    lastGameTime: undefined,
-    ratingHistory: []
+    lastGameTime: undefined
   };
 };
 
@@ -157,21 +143,7 @@ export const rebuildPlayersFromGames = (
         wins: won ? player.wins + 1 : player.wins,
         losses: won ? player.losses : player.losses + 1,
         currentStreak: nextStreak,
-        lastGameTime: completedAt,
-        ratingHistory: [
-          ...player.ratingHistory,
-          {
-            gameId: game.id,
-            oldRating,
-            newRating,
-            change: ratingChange.ratingChange,
-            timestamp: completedAt,
-            opponent1: '',
-            opponent2: '',
-            partner: '',
-            won,
-          }
-        ]
+        lastGameTime: completedAt
       });
     });
   });

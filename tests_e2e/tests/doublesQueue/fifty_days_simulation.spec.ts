@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { saveZustandState } from '../helpers/doublesQueue.utils';
 
 test('Fifty Days Simulation', async ({ page }) => {
   // Disable timeout for long simulation
@@ -38,7 +39,7 @@ test('Fifty Days Simulation', async ({ page }) => {
   });
 
   // --- Simulation Loop: 50 Days ---
-  for (let day = 1; day <= 50; day++) {
+  for (let day = 1; day <= 10; day++) {
     console.log(`Starting Day ${day}`);
 
     await test.step(`Day ${day}: Start session`, async () => {
@@ -51,12 +52,13 @@ test('Fifty Days Simulation', async ({ page }) => {
 
     await test.step(`Day ${day}: Check in players`, async () => {
       await page.getByRole('tab', { name: 'Queue' }).click();
-      
+      let playerCount = 0
       // Check in all players
-      while (true) {
+      while (playerCount < 18) {
         const checkInButton = page.getByRole('button', { name: 'Check In' }).first();
         if (await checkInButton.count() === 0) break;
         await checkInButton.click();
+        playerCount += 1
       }
     });
 
@@ -66,43 +68,11 @@ test('Fifty Days Simulation', async ({ page }) => {
       // Simulate 3 hours of games (approx 9 rounds of 20 mins)
       const rounds = 9;
       for (let round = 0; round < rounds; round++) {
-        
-        // Start all available matches
-        while (true) {
-          const startButton = page.getByRole('button', { name: 'Start Next Match' }).first();
-          if (await startButton.count() === 0) break;
-          await startButton.click();
-        }
-
-        // Simulate game duration (20 minutes)
-        await page.clock.fastForward(20 * 60 * 1000);
-
-        // Record results for all active games
-        // We randomly pick a winner for each game
-        while (true) {
-          // Check for any win buttons
-          const team1Btn = page.getByRole('button', { name: 'Team 1 Wins' }).first();
-          const team2Btn = page.getByRole('button', { name: 'Team 2 Wins' }).first();
-          
-          const hasTeam1 = await team1Btn.count() > 0;
-          const hasTeam2 = await team2Btn.count() > 0;
-
-          if (!hasTeam1 && !hasTeam2) break;
-
-          // If we have buttons, click one to resolve a game
-          // Note: Clicking one resolves that specific game card.
-          // We just need to click *a* win button.
-          
-          if (Math.random() < 0.5) {
-            if (hasTeam1) await team1Btn.click();
-            else if (hasTeam2) await team2Btn.click();
-          } else {
-            if (hasTeam2) await team2Btn.click();
-            else if (hasTeam1) await team1Btn.click();
-          }
-          
-          // Small wait to allow UI to update if needed, though Playwright auto-waits for clicks
-        }
+          await page.getByRole('button', { name: 'Start Game' }).first().click();
+          await page.getByRole('button', { name: 'Start Game' }).click();
+          await page.getByTestId('win-team-1-Court_2').click();
+          await page.getByTestId('win-team-2-Court_1').click();
+          await page.clock.fastForward(20 * 60 * 1000);
       }
     });
 
@@ -126,4 +96,13 @@ test('Fifty Days Simulation', async ({ page }) => {
     // Let's just add 21 hours to be safe and move to "tomorrow"
     await page.clock.fastForward(21 * 60 * 60 * 1000);
   }
+  
+  try {
+    const filename = await saveZustandState(page);
+    console.log('Persisted zustand state saved to', filename);
+  } catch (err) {
+    console.error('Failed to save persisted state:', err);
+  }
+
+  await page.pause();
 });

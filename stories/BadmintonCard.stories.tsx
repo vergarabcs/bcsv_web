@@ -51,7 +51,6 @@ export const Occupied: Story = {
             losses: 5,
             currentStreak: 2,
             status: PlayerStatus.PLAYING,
-            ratingHistory: [],
           },
           player2: {
             id: 'p2',
@@ -62,7 +61,6 @@ export const Occupied: Story = {
             losses: 5,
             currentStreak: -1,
             status: PlayerStatus.PLAYING,
-            ratingHistory: [],
           },
         },
         team2: {
@@ -76,7 +74,6 @@ export const Occupied: Story = {
             losses: 6,
             currentStreak: 1,
             status: PlayerStatus.PLAYING,
-            ratingHistory: [],
           },
           player2: {
             id: 'p4',
@@ -87,7 +84,6 @@ export const Occupied: Story = {
             losses: 5,
             currentStreak: 0,
             status: PlayerStatus.PLAYING,
-            ratingHistory: [],
           },
         },
       },

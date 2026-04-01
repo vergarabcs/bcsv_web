@@ -14,8 +14,7 @@ import {
   PlayerStatus,
   GameStatus,
   CourtStatus,
-  DEFAULT_SETTINGS,
-  RatingChange
+  DEFAULT_SETTINGS
 } from './types';
 import { RatingSystem, QueueManager } from './algorithms';
 import {
@@ -25,8 +24,6 @@ import {
   today,
   toGamesPlayedMap,
   stripPlayerHistory,
-  getBaselinePlayer,
-  rebuildPlayersFromGames,
   normalizePersistedQueueEntry,
   normalizePersistedMatchTeam,
   normalizePersistedMatchSuggestion,
@@ -349,18 +346,6 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
             const newStreak = won ? (player.currentStreak >= 0 ? player.currentStreak + 1 : 1) 
                                   : (player.currentStreak <= 0 ? player.currentStreak - 1 : -1);
 
-            const ratingHistoryEntry: RatingChange = {
-              gameId,
-              oldRating: player.rating,
-              newRating,
-              change: ratingChange.ratingChange,
-              timestamp: endTime,
-              opponent1: '', // Will be filled based on teams
-              opponent2: '',
-              partner: '',
-              won
-            };
-
             return {
               ...player,
               rating: Math.max(1000, Math.min(3000, newRating)),
@@ -369,8 +354,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
               losses: won ? player.losses : player.losses + 1,
               currentStreak: newStreak,
               status: PlayerStatus.RESTING,
-              lastGameTime: endTime,
-              ratingHistory: [...player.ratingHistory, ratingHistoryEntry]
+              lastGameTime: endTime
             };
           }
           return player;
@@ -450,15 +434,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           };
         });
 
-        const rebuiltPlayers = rebuildPlayersFromGames(
-          state.players,
-          updatedGames,
-          state.ratingSystem
-        );
-
         set({
           games: updatedGames,
-          players: rebuiltPlayers,
         });
 
         get().refreshQueue();
@@ -660,11 +637,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           state.players = state.players.map(player => ({
             ...player,
             lastGameTime: player.lastGameTime ? new Date(player.lastGameTime) : undefined,
-            joinedQueueTime: player.joinedQueueTime ? new Date(player.joinedQueueTime) : undefined,
-            ratingHistory: player.ratingHistory.map(entry => ({
-              ...entry,
-              timestamp: new Date(entry.timestamp)
-            }))
+            joinedQueueTime: player.joinedQueueTime ? new Date(player.joinedQueueTime) : undefined
           }));
           state.partnershipHistory = state.partnershipHistory.map(partnership => ({
             ...partnership,
