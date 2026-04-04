@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, useEffect } from "react";
 import { AppMeta } from "../../types";
-import { Box, Button, Card, CardActionArea, CardContent, CircularProgress, Grid, Paper, Typography } from "@mui/material";
+import { Box, Button, Card, CardActionArea, CardContent, CircularProgress, Grid, Typography } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
@@ -11,7 +11,6 @@ const ScheduleFinder = lazy(() => import("@/app/scheduleFinder/ScheduleFinder"))
 const ServerSideValidationApp = lazy(() => import("@/app/serverSideValidationApp/ServerSideValidationApp"));
 const BadmintonScore = lazy(() => import("@/app/badmintonScore/BadmintonScore"));
 const DoublesQueue = lazy(() => import("@/app/doublesQueue/DoublesQueue"));
-const GoogleSheetPoc = lazy(() => import("@/app/googleSheetPoc/GoogleSheetPoc").then(m => ({ default: m.GoogleSheetPoc })));
 
 const appList: AppMeta[] = [
   {
@@ -43,12 +42,6 @@ const appList: AppMeta[] = [
     title: 'Doubles Queue',
     description: 'Manage badminton doubles queue with rating system',
     component: DoublesQueue
-  },
-  {
-    id: 'googleSheetPoc',
-    title: 'Google Sheet POC',
-    description: 'Log a badminton match result directly into Google Sheets',
-    component: GoogleSheetPoc
   }
 ];
 
