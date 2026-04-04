@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
-import { MoreVert as MoreVertIcon, PlayArrow as PlayIcon, Stop as StopIcon } from '@mui/icons-material';
+import {
+  MoreVert as MoreVertIcon,
+  PlayArrow as PlayIcon,
+  Stop as StopIcon,
+  Undo as UndoIcon,
+} from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { GameStatus } from '../types';
 
@@ -9,7 +14,7 @@ interface SessionMenuProps {
 }
 
 const SessionMenu: React.FC<SessionMenuProps> = ({ onRequestEndSession }) => {
-  const { currentSession, games, initializeSession, endSession } = useDoublesQueueStore();
+  const { currentSession, games, initializeSession, endSession, undoLastAction, canUndo } = useDoublesQueueStore();
   const isActive = currentSession?.isActive;
   const inProgressGames = games.filter(g => g.status === GameStatus.IN_PROGRESS).length;
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -58,7 +63,16 @@ const SessionMenu: React.FC<SessionMenuProps> = ({ onRequestEndSession }) => {
           </MenuItem>
         )}
 
-        <MenuItem disabled>Undo (placeholder)</MenuItem>
+        <MenuItem
+          disabled={!canUndo}
+          onClick={() => {
+            if (!canUndo) return;
+            undoLastAction();
+            handleClose();
+          }}
+        >
+          <UndoIcon sx={{ mr: 1 }} /> Undo
+        </MenuItem>
       </Menu>
     </>
   );

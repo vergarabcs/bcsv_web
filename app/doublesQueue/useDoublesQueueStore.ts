@@ -32,6 +32,7 @@ import {
 import { getInitialState } from './storeState';
 
 const MAX_GAMES_HISTORY = 100;
+const MAX_UNDO_HISTORY = 20;
 
 const keepMostRecentGames = (games: Game[]): Game[] => {
   if (games.length <= MAX_GAMES_HISTORY) {
@@ -64,9 +65,14 @@ interface DoublesQueueState {
   ratingSystem: RatingSystem;
   queueManager: QueueManager;
 
+  // Undo history
+  undoStack: UndoSnapshot[];
+  canUndo: boolean;
+
   // Actions
   initializeSession: () => void;
   endSession: () => void;
+  undoLastAction: () => void;
   
   // Player management
   addPlayer: (name: string, initialRating?: number) => void;
@@ -101,6 +107,40 @@ interface DoublesQueueState {
   clearAllData: () => void;
 }
 
+interface UndoSnapshot {
+  players: Player[];
+  games: Game[];
+  courts: Court[];
+  settings: AppSettings;
+  currentSession: DoublesQueueState['currentSession'];
+  manualMatches: MatchSuggestion[];
+}
+
+const createUndoSnapshot = (state: DoublesQueueState): UndoSnapshot => structuredClone({
+  players: state.players,
+  games: state.games,
+  courts: state.courts,
+  settings: state.settings,
+  currentSession: state.currentSession,
+  manualMatches: state.manualMatches,
+});
+
+const pushUndoSnapshot = (undoStack: UndoSnapshot[], snapshot: UndoSnapshot): UndoSnapshot[] => {
+  const nextUndoStack = [...undoStack, snapshot];
+  if (nextUndoStack.length <= MAX_UNDO_HISTORY) {
+    return nextUndoStack;
+  }
+  return nextUndoStack.slice(nextUndoStack.length - MAX_UNDO_HISTORY);
+};
+
+const withUndoState = (state: DoublesQueueState) => {
+  const undoStack = pushUndoSnapshot(state.undoStack, createUndoSnapshot(state));
+  return {
+    undoStack,
+    canUndo: undoStack.length > 0,
+  };
+};
+
 export const useDoublesQueueStore = create<DoublesQueueState>()(
   persist(
     (set, get) => ({
@@ -110,6 +150,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
       initializeSession: () => {
         const currentDate = today();
         set(state => ({
+          ...withUndoState(state),
           currentSession: {
             date: currentDate,
             isActive: true,
@@ -122,6 +163,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
       endSession: () => {
         set(state => ({
+          ...withUndoState(state),
           currentSession: {
             ...state.currentSession,
             isActive: false
@@ -138,12 +180,38 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         }));
       },
 
+      undoLastAction: () => {
+        const state = get();
+        const snapshot = state.undoStack[state.undoStack.length - 1];
+        if (!snapshot) return;
+
+        const undoStack = state.undoStack.slice(0, -1);
+
+        set({
+          players: snapshot.players,
+          games: snapshot.games,
+          courts: snapshot.courts,
+          settings: snapshot.settings,
+          currentSession: snapshot.currentSession,
+          manualMatches: snapshot.manualMatches,
+          queueEntries: [],
+          nextMatches: [],
+          ratingSystem: new RatingSystem(snapshot.settings),
+          queueManager: new QueueManager(snapshot.settings),
+          undoStack,
+          canUndo: undoStack.length > 0,
+        });
+
+        get().refreshQueue();
+      },
+
       // Player management
       addPlayer: (name: string, initialRating?: number) => {
         const existingPlayer = get().players.find(p => p.name === name);
         if (existingPlayer) {
           if (typeof initialRating === 'number') {
             set(state => ({
+              ...withUndoState(state),
               players: state.players.map(player =>
                 player.id === existingPlayer.id
                   ? { ...player, rating: initialRating }
@@ -157,6 +225,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
         const newPlayer = createPlayer(name, initialRating ?? 1500);
         set(state => ({
+          ...withUndoState(state),
           players: [...state.players, newPlayer]
         }));
         get().refreshQueue();
@@ -164,6 +233,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
       removePlayer: (playerId: string) => {
         set(state => ({
+          ...withUndoState(state),
           players: state.players.filter(p => p.id !== playerId),
           queueEntries: state.queueEntries.filter(entry => entry.playerId !== playerId)
         }));
@@ -172,23 +242,29 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
       updatePlayerStatus: (playerId: string, status: PlayerStatus) => {
         set(state => ({
+          ...withUndoState(state),
           players: state.players.map(player =>
             player.id === playerId 
-              ? { ...player, status }
+              ? {
+                  ...player,
+                  status,
+                  joinedQueueTime: status === PlayerStatus.WAITING ? player.joinedQueueTime : undefined,
+                }
               : player
-          )
+          ),
+          queueEntries:
+            status === PlayerStatus.WAITING
+              ? state.queueEntries
+              : state.queueEntries.filter(entry => entry.playerId !== playerId),
         }));
-        
-        if (status !== PlayerStatus.WAITING) {
-          get().leaveQueue(playerId);
-        }
-        
+
         get().refreshQueue();
       },
 
       joinQueue: (playerId: string) => {
         const joinTime = new Date();
         set(state => ({
+          ...withUndoState(state),
           players: state.players.map(player =>
             player.id === playerId
               ? { 
@@ -204,6 +280,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
       leaveQueue: (playerId: string) => {
         set(state => ({
+          ...withUndoState(state),
           players: state.players.map(player =>
             player.id === playerId
               ? { 
@@ -222,18 +299,21 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
       addCourt: (name: string) => {
         const newCourt = createCourt(name);
         set(state => ({
+          ...withUndoState(state),
           courts: [...state.courts, newCourt]
         }));
       },
 
       removeCourt: (courtId: string) => {
         set(state => ({
+          ...withUndoState(state),
           courts: state.courts.filter(c => c.id !== courtId)
         }));
       },
 
       updateCourtStatus: (courtId: string, status: CourtStatus) => {
         set(state => ({
+          ...withUndoState(state),
           courts: state.courts.map(court =>
             court.id === courtId
               ? { ...court, status }
@@ -275,6 +355,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
         // Update court status
         set(state => ({
+          ...withUndoState(state),
           courts: state.courts.map(court =>
             court.id === courtId
               ? { ...court, status: CourtStatus.OCCUPIED, currentGame: game }
@@ -376,6 +457,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           });
 
         set({
+          ...withUndoState(state),
           games: state.games.map(g => g.id === gameId ? updatedGame : g),
           players: updatedPlayers,
           currentSession: {
@@ -415,6 +497,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         });
 
         set({
+          ...withUndoState(state),
           games: updatedGames,
         });
 
@@ -425,6 +508,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         if (gameIds.length === 0) return;
         const syncedAt = new Date();
         set(state => ({
+          ...withUndoState(state),
           games: state.games.map(game => (
             gameIds.includes(game.id)
               ? { ...game, syncedToSheet: true, syncedAt }
@@ -439,6 +523,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         if (!game) return;
 
         set({
+          ...withUndoState(state),
           games: state.games.map(g => 
             g.id === gameId 
               ? { ...g, status: GameStatus.CANCELLED }
@@ -511,6 +596,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
       addManualMatch: (match: MatchSuggestion) => {
         set(state => ({
+          ...withUndoState(state),
           manualMatches: [...state.manualMatches, match]
         }));
         get().generateNextMatches();
@@ -518,6 +604,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
       removeManualMatch: (index: number) => {
         set(state => ({
+          ...withUndoState(state),
           manualMatches: state.manualMatches.filter((_, i) => i !== index)
         }));
         get().generateNextMatches();
@@ -526,11 +613,12 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
       // Settings
       updateSettings: (newSettings: Partial<AppSettings>) => {
         const updatedSettings = { ...get().settings, ...newSettings };
-        set({
+        set(state => ({
+          ...withUndoState(state),
           settings: updatedSettings,
           ratingSystem: new RatingSystem(updatedSettings),
           queueManager: new QueueManager(updatedSettings)
-        });
+        }));
       },
 
       // Data management
@@ -547,7 +635,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
       },
 
       clearAllData: () => {
-        set({
+        set(state => ({
+          ...withUndoState(state),
           players: [],
           games: [],
           queueEntries: [],
@@ -559,7 +648,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
             gamesPlayed: new Map(),
             totalGames: 0
           }
-        });
+        }));
       }
     }),
     {

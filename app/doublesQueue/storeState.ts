@@ -32,4 +32,8 @@ export const getInitialState = () => ({
   // Algorithms
   ratingSystem: new RatingSystem(DEFAULT_SETTINGS),
   queueManager: new QueueManager(DEFAULT_SETTINGS),
+
+  // Undo history
+  undoStack: [],
+  canUndo: false,
 });
