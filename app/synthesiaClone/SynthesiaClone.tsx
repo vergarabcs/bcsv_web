@@ -19,10 +19,9 @@ import type { MidiNote, PianoKey, VisibleBar } from './types';
 
 const MIDI_LOW = 21;
 const MIDI_HIGH = 108;
-const WHITE_KEY_WIDTH = 28;
-const BLACK_KEY_WIDTH = 18;
+const BLACK_KEY_WIDTH_RATIO = 0.65;
 const KEYBOARD_HEIGHT = 92;
-const PIANO_ROLL_HEIGHT = 620;
+const MIN_PIANO_ROLL_HEIGHT = 320;
 const PIXELS_PER_SECOND = 140;
 const BAR_COLORS = ['#7dd3fc', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#22d3ee'];
 const BLACK_KEYS = new Set([1, 3, 6, 8, 10]);
@@ -48,6 +47,8 @@ const getNoteLabel = (midi: number) => {
 };
 
 export default function SynthesiaClone() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const scheduledTimeoutsRef = useRef<number[]>([]);
@@ -65,6 +66,7 @@ export default function SynthesiaClone() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState('');
   const [controlsOpen, setControlsOpen] = useState(false);
+  const [pianoRollHeight, setPianoRollHeight] = useState(MIN_PIANO_ROLL_HEIGHT);
 
   const stopScheduledAudio = useCallback(() => {
     scheduledTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
@@ -297,20 +299,27 @@ export default function SynthesiaClone() {
   }, [notes]);
 
   const keys = useMemo<PianoKey[]>(() => {
+    const whiteKeyCount = Array.from(
+      { length: visibleRange.end - visibleRange.start + 1 },
+      (_, index) => visibleRange.start + index
+    ).filter((midi) => !isBlackKey(midi)).length || 1;
+
+    const whiteKeyWidth = 100 / whiteKeyCount;
+    const blackKeyWidth = whiteKeyWidth * BLACK_KEY_WIDTH_RATIO;
     let whiteIndex = 0;
     const result: PianoKey[] = [];
 
     for (let midi = visibleRange.start; midi <= visibleRange.end; midi += 1) {
       const black = isBlackKey(midi);
       const left = black
-        ? Math.max(whiteIndex * WHITE_KEY_WIDTH - BLACK_KEY_WIDTH / 2, 0)
-        : whiteIndex * WHITE_KEY_WIDTH;
+        ? Math.max(whiteIndex * whiteKeyWidth - blackKeyWidth / 2, 0)
+        : whiteIndex * whiteKeyWidth;
 
       result.push({
         midi,
         isBlack: black,
         left,
-        width: black ? BLACK_KEY_WIDTH : WHITE_KEY_WIDTH,
+        width: black ? blackKeyWidth : whiteKeyWidth,
         label: getNoteLabel(midi),
       });
 
@@ -323,11 +332,6 @@ export default function SynthesiaClone() {
   }, [visibleRange.end, visibleRange.start]);
 
   const keyMap = useMemo(() => new Map(keys.map((key) => [key.midi, key])), [keys]);
-
-  const keyboardWidth = useMemo(() => {
-    const whiteKeyCount = keys.filter((key) => !key.isBlack).length;
-    return Math.max(whiteKeyCount * WHITE_KEY_WIDTH, 720);
-  }, [keys]);
 
   const hasNotes = notes.length > 0;
 
@@ -356,50 +360,83 @@ export default function SynthesiaClone() {
         const height = Math.max(note.duration * scaledPixelsPerSecond, 12);
         const bottom = KEYBOARD_HEIGHT + (note.time - currentTime) * scaledPixelsPerSecond;
 
-        if (bottom + height < KEYBOARD_HEIGHT || bottom > PIANO_ROLL_HEIGHT) {
+        if (bottom + height < KEYBOARD_HEIGHT || bottom > pianoRollHeight) {
           return null;
         }
 
+        const barWidth = Math.max(key.width * (key.isBlack ? 0.88 : 0.92), 0.35);
+
         return {
           id: note.id,
-          left: key.left + 1,
-          width: Math.max(key.width - 2, 8),
+          left: key.left + (key.width - barWidth) / 2,
+          width: barWidth,
           bottom,
           height,
           color: BAR_COLORS[note.track % BAR_COLORS.length],
         };
       })
       .filter((bar): bar is NonNullable<typeof bar> => Boolean(bar));
-  }, [currentTime, keyMap, notes, playbackRate]);
+  }, [currentTime, keyMap, notes, pianoRollHeight, playbackRate]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const containerEl = containerRef.current;
+    const headerEl = headerRef.current;
+
+    if (!containerEl || !headerEl) {
+      return;
+    }
+
+    const updatePianoRollHeight = () => {
+      const containerHeight = containerEl.clientHeight;
+      const headerHeight = headerEl.offsetHeight;
+      const computedStyles = window.getComputedStyle(containerEl);
+      const gap = Number.parseFloat(computedStyles.gap || '0') || 0;
+      const availableHeight = containerHeight - headerHeight - gap;
+
+      setPianoRollHeight(Math.max(MIN_PIANO_ROLL_HEIGHT, Math.floor(availableHeight)));
+    };
+
+    updatePianoRollHeight();
+
+    const resizeObserver = new ResizeObserver(() => updatePianoRollHeight());
+    resizeObserver.observe(containerEl);
+    resizeObserver.observe(headerEl);
+    window.addEventListener('resize', updatePianoRollHeight);
+
     return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updatePianoRollHeight);
       stopScheduledAudio();
       if (audioContextRef.current) {
         void audioContextRef.current.close();
       }
     };
-  }, [stopScheduledAudio]);
+  }, [error, stopScheduledAudio]);
 
   return (
-    <Box className={styles.synthesiaShell}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={1.5}
-        alignItems={{ xs: 'flex-start', md: 'center' }}
-        justifyContent="space-between"
-      >
-
-        <Button
-          variant="contained"
-          startIcon={<SettingsIcon />}
-          onClick={() => setControlsOpen(true)}
+    <Box ref={containerRef} className={styles.synthesiaShell} sx={{ height: 'calc(100dvh - 90px)', minHeight: 0 }}>
+      <Box ref={headerRef}>
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={1.5}
+          alignItems={{ xs: 'flex-start', md: 'center' }}
+          justifyContent="space-between"
         >
-          Controls & Settings
-        </Button>
-      </Stack>
+          <Button
+            variant="contained"
+            startIcon={<SettingsIcon />}
+            onClick={() => setControlsOpen(true)}
+          >
+            Controls & Settings
+          </Button>
+        </Stack>
 
-      {error ? <Alert severity="error">{error}</Alert> : null}
+        {error ? <Alert severity="error">{error}</Alert> : null}
+      </Box>
 
       <ControlsDialog
         open={controlsOpen}
@@ -426,8 +463,7 @@ export default function SynthesiaClone() {
 
       <PianoRoll
         hasNotes={hasNotes}
-        keyboardWidth={keyboardWidth}
-        pianoRollHeight={PIANO_ROLL_HEIGHT}
+        pianoRollHeight={pianoRollHeight}
         keys={keys}
         activeNoteSet={activeNoteSet}
         visibleBars={visibleBars}
