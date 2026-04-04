@@ -389,14 +389,6 @@ export default function SynthesiaClone() {
         alignItems={{ xs: 'flex-start', md: 'center' }}
         justifyContent="space-between"
       >
-        <Box>
-          <Typography variant="h4" gutterBottom>
-            MIDI Synthesia Clone
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Open the dialog for upload, playback, and timeline controls.
-          </Typography>
-        </Box>
 
         <Button
           variant="contained"
@@ -407,22 +399,7 @@ export default function SynthesiaClone() {
         </Button>
       </Stack>
 
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} useFlexGap flexWrap="wrap">
-        <Chip icon={<PianoIcon />} label={midiName || 'No MIDI loaded'} color={midiName ? 'primary' : 'default'} />
-        <Chip label={`${notes.length} notes`} variant="outlined" />
-        <Chip label={`${trackCount} tracks`} variant="outlined" />
-        <Chip label={`Length ${formatTime(duration)}`} variant="outlined" />
-        <Chip label={isPlaying ? 'Playing' : currentTime > 0 ? 'Paused' : 'Ready'} color={isPlaying ? 'success' : 'default'} variant="outlined" />
-        {tempo ? <Chip label={`${tempo} BPM`} variant="outlined" /> : null}
-      </Stack>
-
       {error ? <Alert severity="error">{error}</Alert> : null}
-
-      {!hasNotes && !error ? (
-        <Alert severity="info">
-          Upload a MIDI file from the controls dialog to start the falling-note view.
-        </Alert>
-      ) : null}
 
       <ControlsDialog
         open={controlsOpen}
