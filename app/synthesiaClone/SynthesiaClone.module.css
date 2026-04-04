@@ -1,11 +1,7 @@
 .synthesiaShell {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.controlsCard {
-  overflow: hidden;
+  gap: 12px;
 }
 
 .rollCard {
@@ -33,7 +29,6 @@
 
 .rollInner {
   position: relative;
-  height: 430px;
   min-width: 100%;
 }
 

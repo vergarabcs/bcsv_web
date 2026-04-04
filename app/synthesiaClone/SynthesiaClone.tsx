@@ -7,42 +7,22 @@ import {
   Box,
   Button,
   Chip,
-  Paper,
-  Slider,
   Stack,
   Typography,
 } from '@mui/material';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import PauseIcon from '@mui/icons-material/Pause';
-import StopIcon from '@mui/icons-material/Stop';
 import PianoIcon from '@mui/icons-material/Piano';
+import SettingsIcon from '@mui/icons-material/Settings';
 import styles from './SynthesiaClone.module.css';
-
-type MidiNote = {
-  id: string;
-  midi: number;
-  time: number;
-  duration: number;
-  velocity: number;
-  track: number;
-  name: string;
-};
-
-type PianoKey = {
-  midi: number;
-  isBlack: boolean;
-  left: number;
-  width: number;
-  label: string;
-};
+import { ControlsDialog } from './components/ControlsDialog';
+import { PianoRoll } from './components/PianoRoll';
+import type { MidiNote, PianoKey, VisibleBar } from './types';
 
 const MIDI_LOW = 21;
 const MIDI_HIGH = 108;
 const WHITE_KEY_WIDTH = 28;
 const BLACK_KEY_WIDTH = 18;
 const KEYBOARD_HEIGHT = 92;
-const PIANO_ROLL_HEIGHT = 430;
+const PIANO_ROLL_HEIGHT = 620;
 const PIXELS_PER_SECOND = 140;
 const BAR_COLORS = ['#7dd3fc', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#22d3ee'];
 const BLACK_KEYS = new Set([1, 3, 6, 8, 10]);
@@ -84,6 +64,7 @@ export default function SynthesiaClone() {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState('');
+  const [controlsOpen, setControlsOpen] = useState(false);
 
   const stopScheduledAudio = useCallback(() => {
     scheduledTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
@@ -348,6 +329,8 @@ export default function SynthesiaClone() {
     return Math.max(whiteKeyCount * WHITE_KEY_WIDTH, 720);
   }, [keys]);
 
+  const hasNotes = notes.length > 0;
+
   const activeNoteSet = useMemo(() => {
     const activeNotes = new Set<number>();
 
@@ -360,7 +343,7 @@ export default function SynthesiaClone() {
     return activeNotes;
   }, [currentTime, notes]);
 
-  const visibleBars = useMemo(() => {
+  const visibleBars = useMemo<VisibleBar[]>(() => {
     const scaledPixelsPerSecond = PIXELS_PER_SECOND * playbackRate;
 
     return notes
@@ -400,148 +383,78 @@ export default function SynthesiaClone() {
 
   return (
     <Box className={styles.synthesiaShell}>
-      <Box>
-        <Typography variant="h4" gutterBottom>
-          MIDI Synthesia Clone
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Upload a MIDI file to preview it with a falling-note piano roll and built-in synth playback.
-        </Typography>
-      </Box>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={1.5}
+        alignItems={{ xs: 'flex-start', md: 'center' }}
+        justifyContent="space-between"
+      >
+        <Box>
+          <Typography variant="h4" gutterBottom>
+            MIDI Synthesia Clone
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Open the dialog for upload, playback, and timeline controls.
+          </Typography>
+        </Box>
 
-      <Paper className={styles.controlsCard} sx={{ p: 2 }}>
-        <Stack spacing={2}>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', md: 'center' }}>
-            <Button component="label" variant="contained" startIcon={<UploadFileIcon />}>
-              Upload MIDI
-              <input hidden type="file" accept=".mid,.midi,audio/midi,audio/x-midi" onChange={handleFileUpload} />
-            </Button>
+        <Button
+          variant="contained"
+          startIcon={<SettingsIcon />}
+          onClick={() => setControlsOpen(true)}
+        >
+          Controls & Settings
+        </Button>
+      </Stack>
 
-            <Button
-              variant="outlined"
-              startIcon={isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-              onClick={() => {
-                if (isPlaying) {
-                  pausePlayback();
-                } else {
-                  void startPlayback(currentTime);
-                }
-              }}
-              disabled={!notes.length}
-            >
-              {isPlaying ? 'Pause' : currentTime > 0 ? 'Resume' : 'Play'}
-            </Button>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} useFlexGap flexWrap="wrap">
+        <Chip icon={<PianoIcon />} label={midiName || 'No MIDI loaded'} color={midiName ? 'primary' : 'default'} />
+        <Chip label={`${notes.length} notes`} variant="outlined" />
+        <Chip label={`${trackCount} tracks`} variant="outlined" />
+        <Chip label={`Length ${formatTime(duration)}`} variant="outlined" />
+        <Chip label={isPlaying ? 'Playing' : currentTime > 0 ? 'Paused' : 'Ready'} color={isPlaying ? 'success' : 'default'} variant="outlined" />
+        {tempo ? <Chip label={`${tempo} BPM`} variant="outlined" /> : null}
+      </Stack>
 
-            <Button
-              variant="outlined"
-              color="secondary"
-              startIcon={<StopIcon />}
-              onClick={() => stopPlayback()}
-              disabled={!notes.length}
-            >
-              Stop
-            </Button>
-          </Stack>
+      {error ? <Alert severity="error">{error}</Alert> : null}
 
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} flexWrap="wrap">
-            <Chip icon={<PianoIcon />} label={midiName || 'No MIDI loaded'} color={midiName ? 'primary' : 'default'} />
-            <Chip label={`${notes.length} notes`} variant="outlined" />
-            <Chip label={`${trackCount} tracks`} variant="outlined" />
-            <Chip label={`Length ${formatTime(duration)}`} variant="outlined" />
-            {tempo ? <Chip label={`${tempo} BPM`} variant="outlined" /> : null}
-          </Stack>
+      {!hasNotes && !error ? (
+        <Alert severity="info">
+          Upload a MIDI file from the controls dialog to start the falling-note view.
+        </Alert>
+      ) : null}
 
-          <Box>
-            <Typography variant="body2" gutterBottom>
-              Playback speed: {playbackRate.toFixed(2)}x
-            </Typography>
-            <Slider
-              min={0.5}
-              max={1.5}
-              step={0.05}
-              value={playbackRate}
-              onChange={(_event, value) => setPlaybackRate(Array.isArray(value) ? value[0] : value)}
-              disabled={isPlaying}
-              sx={{ maxWidth: 280 }}
-            />
-          </Box>
+      <ControlsDialog
+        open={controlsOpen}
+        onClose={() => setControlsOpen(false)}
+        onFileUpload={handleFileUpload}
+        isPlaying={isPlaying}
+        hasNotes={hasNotes}
+        currentTime={currentTime}
+        duration={duration}
+        playbackRate={playbackRate}
+        formatTime={formatTime}
+        onPlayPause={() => {
+          if (isPlaying) {
+            pausePlayback();
+          } else {
+            void startPlayback(currentTime);
+          }
+        }}
+        onStop={() => stopPlayback()}
+        onPlaybackRateChange={setPlaybackRate}
+        onSeek={handleSeek}
+        onSeekCommitted={handleSeekCommitted}
+      />
 
-          <Box className={styles.progressRow}>
-            <Typography variant="body2" className={styles.progressLabel}>
-              {formatTime(currentTime)}
-            </Typography>
-            <Slider
-              min={0}
-              max={duration || 1}
-              step={0.01}
-              value={Math.min(currentTime, duration || 0)}
-              onChange={handleSeek}
-              onChangeCommitted={handleSeekCommitted}
-              disabled={!notes.length}
-            />
-            <Typography variant="body2" className={styles.progressLabel}>
-              {formatTime(duration)}
-            </Typography>
-          </Box>
-
-          {error ? <Alert severity="error">{error}</Alert> : null}
-          {!notes.length && !error ? (
-            <Alert severity="info">
-              Try a simple piano MIDI first. The keyboard automatically zooms to the notes used in your file.
-            </Alert>
-          ) : null}
-        </Stack>
-      </Paper>
-
-      <Paper className={styles.rollCard} sx={{ p: 1.5 }}>
-        <div className={styles.rollViewport}>
-          <div className={styles.rollInner} style={{ width: keyboardWidth }}>
-            <div className={styles.laneOverlay} />
-            <div className={styles.nowLine} />
-
-            {notes.length ? (
-              visibleBars.map((bar) => (
-                <div
-                  key={bar.id}
-                  className={styles.noteBar}
-                  style={{
-                    left: bar.left,
-                    width: bar.width,
-                    bottom: bar.bottom,
-                    height: bar.height,
-                    background: bar.color,
-                  }}
-                />
-              ))
-            ) : (
-              <div className={styles.emptyState}>
-                <Typography variant="h6">Upload a MIDI file to begin</Typography>
-                <Typography variant="body2">You&apos;ll see falling notes here with a playable piano keyboard at the bottom.</Typography>
-              </div>
-            )}
-
-            <div className={styles.keyboard} style={{ width: keyboardWidth }}>
-              {keys.filter((key) => !key.isBlack).map((key) => (
-                <div
-                  key={key.midi}
-                  className={`${styles.whiteKey} ${activeNoteSet.has(key.midi) ? styles.whiteKeyActive : ''}`}
-                  style={{ left: key.left, width: key.width }}
-                >
-                  <span className={styles.keyLabel}>{key.label}</span>
-                </div>
-              ))}
-
-              {keys.filter((key) => key.isBlack).map((key) => (
-                <div
-                  key={key.midi}
-                  className={`${styles.blackKey} ${activeNoteSet.has(key.midi) ? styles.blackKeyActive : ''}`}
-                  style={{ left: key.left, width: key.width }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </Paper>
+      <PianoRoll
+        hasNotes={hasNotes}
+        keyboardWidth={keyboardWidth}
+        pianoRollHeight={PIANO_ROLL_HEIGHT}
+        keys={keys}
+        activeNoteSet={activeNoteSet}
+        visibleBars={visibleBars}
+      />
     </Box>
   );
 }
