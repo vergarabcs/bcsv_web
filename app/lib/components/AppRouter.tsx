@@ -11,6 +11,7 @@ const ScheduleFinder = lazy(() => import("@/app/scheduleFinder/ScheduleFinder"))
 const ServerSideValidationApp = lazy(() => import("@/app/serverSideValidationApp/ServerSideValidationApp"));
 const BadmintonScore = lazy(() => import("@/app/badmintonScore/BadmintonScore"));
 const DoublesQueue = lazy(() => import("@/app/doublesQueue/DoublesQueue"));
+const SynthesiaClone = lazy(() => import("@/app/synthesiaClone/SynthesiaClone"));
 
 const appList: AppMeta[] = [
   {
@@ -42,6 +43,12 @@ const appList: AppMeta[] = [
     title: 'Doubles Queue',
     description: 'Manage badminton doubles queue with rating system',
     component: DoublesQueue
+  },
+  {
+    id: 'synthesiaClone',
+    title: 'MIDI Synthesia',
+    description: 'Upload a MIDI file and watch falling notes over a piano keyboard',
+    component: SynthesiaClone
   }
 ];
 

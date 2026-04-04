@@ -1,0 +1,121 @@
+.synthesiaShell {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.controlsCard {
+  overflow: hidden;
+}
+
+.rollCard {
+  overflow: hidden;
+}
+
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progressLabel {
+  min-width: 52px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rollViewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(11, 18, 32, 0.96) 0%, rgba(20, 33, 61, 0.96) 100%);
+}
+
+.rollInner {
+  position: relative;
+  height: 430px;
+  min-width: 100%;
+}
+
+.laneOverlay {
+  position: absolute;
+  inset: 0 0 92px 0;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.nowLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 92px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
+  z-index: 4;
+}
+
+.noteBar {
+  position: absolute;
+  border-radius: 8px 8px 2px 2px;
+  opacity: 0.92;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.35);
+}
+
+.keyboard {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 92px;
+  border-top: 2px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(26, 36, 61, 0.98) 0%, rgba(15, 23, 42, 1) 100%);
+}
+
+.whiteKey {
+  position: absolute;
+  bottom: 0;
+  height: 92px;
+  border: 1px solid rgba(107, 114, 128, 0.55);
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
+  box-sizing: border-box;
+}
+
+.whiteKeyActive {
+  background: linear-gradient(180deg, #fef08a 0%, #facc15 100%);
+}
+
+.blackKey {
+  position: absolute;
+  bottom: 34px;
+  height: 58px;
+  border-radius: 0 0 6px 6px;
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.45);
+  z-index: 3;
+}
+
+.blackKeyActive {
+  background: linear-gradient(180deg, #22d3ee 0%, #0ea5e9 100%);
+}
+
+.keyLabel {
+  position: absolute;
+  inset: auto 0 6px 0;
+  font-size: 10px;
+  text-align: center;
+  color: #475569;
+  user-select: none;
+}
+
+.emptyState {
+  display: flex;
+  min-height: 250px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #cbd5e1;
+  text-align: center;
+  padding: 20px;
+}
