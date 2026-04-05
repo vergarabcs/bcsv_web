@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Paper, Typography } from '@mui/material';
 import styles from '../SynthesiaClone.module.css';
 import type { PianoKey, VisibleBar } from '../types';
@@ -19,10 +20,19 @@ export function PianoRoll({
   activeNoteSet,
   visibleBars,
 }: PianoRollProps) {
+  const whiteKeyCount = useMemo(() => keys.filter((key) => !key.isBlack).length || 1, [keys]);
+
   return (
     <Paper className={styles.rollCard} sx={{ p: { xs: '1px', sm: 1 }, flex: 1, display: 'flex', minHeight: 0, height: '100%' }}>
       <div className={styles.rollViewport} style={{ height: '100%' }}>
-        <div className={styles.rollInner} style={{ height: `${pianoRollHeight}px`, minHeight: `${pianoRollHeight}px` }}>
+        <div
+          className={styles.rollInner}
+          style={{
+            height: `${pianoRollHeight}px`,
+            minHeight: `${pianoRollHeight}px`,
+            ['--white-key-width' as '--white-key-width']: `${100 / whiteKeyCount}%`,
+          }}
+        >
           <div className={styles.laneOverlay} />
           <div className={styles.nowLine} />
 

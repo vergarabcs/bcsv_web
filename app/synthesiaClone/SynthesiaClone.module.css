@@ -46,7 +46,13 @@
 .laneOverlay {
   position: absolute;
   inset: 0 0 92px 0;
-  opacity: 0.45;
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(248, 250, 252, 0.1) 0,
+    rgba(248, 250, 252, 0.1) 1px,
+    transparent 1px,
+    transparent var(--white-key-width, 3.125%)
+  );
   pointer-events: none;
 }
 
