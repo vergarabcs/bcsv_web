@@ -23,6 +23,12 @@ node_modules
 .DS_Store
 *.pem
 
+# python
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+
 # debug
 npm-debug.log*
 yarn-debug.log*
