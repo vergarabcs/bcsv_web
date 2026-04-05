@@ -15,6 +15,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import styles from './SynthesiaClone.module.css';
 import { ControlsDialog } from './components/ControlsDialog';
 import { PianoRoll } from './components/PianoRoll';
+import { SYNTHESIA_AUDIO_CONFIG, SYNTHESIA_ROLL_CONFIG } from './config';
 import type { MidiNote, PianoKey, VisibleBar } from './types';
 
 const MIDI_LOW = 21;
@@ -155,20 +156,21 @@ export default function SynthesiaClone() {
         const oscillator = audioContext.createOscillator();
         const gain = audioContext.createGain();
         const playDuration = Math.max(remainingDuration / playbackRate, 0.05);
-        const peakVolume = 0.03 + note.velocity * 0.1;
+        const sustainedDuration = playDuration + SYNTHESIA_AUDIO_CONFIG.sustainSeconds;
+        const peakVolume = (0.03 + note.velocity * 0.1) * SYNTHESIA_AUDIO_CONFIG.volume;
 
         oscillator.type = note.track % 2 === 0 ? 'triangle' : 'sine';
         oscillator.frequency.setValueAtTime(midiToFrequency(note.midi), audioContext.currentTime);
 
         gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
         gain.gain.exponentialRampToValueAtTime(peakVolume, audioContext.currentTime + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + playDuration);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + sustainedDuration);
 
         oscillator.connect(gain);
         gain.connect(audioContext.destination);
 
         oscillator.start();
-        oscillator.stop(audioContext.currentTime + playDuration + 0.03);
+        oscillator.stop(audioContext.currentTime + sustainedDuration + 0.03);
 
         activeOscillatorsRef.current.push(oscillator);
         oscillator.onended = () => {
@@ -348,7 +350,7 @@ export default function SynthesiaClone() {
   }, [currentTime, notes]);
 
   const visibleBars = useMemo<VisibleBar[]>(() => {
-    const scaledPixelsPerSecond = PIXELS_PER_SECOND * playbackRate;
+    const scaledPixelsPerSecond = PIXELS_PER_SECOND * SYNTHESIA_ROLL_CONFIG.speed * playbackRate;
 
     return notes
       .map((note) => {
