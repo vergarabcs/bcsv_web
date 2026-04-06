@@ -3,8 +3,12 @@
 import type { ChangeEvent, ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import LibraryMusicIcon from '@mui/icons-material/LibraryMusic';
+import FastForwardIcon from '@mui/icons-material/FastForward';
+import FastRewindIcon from '@mui/icons-material/FastRewind';
 import MenuIcon from '@mui/icons-material/Menu';
+import PauseIcon from '@mui/icons-material/Pause';
 import PianoIcon from '@mui/icons-material/Piano';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SettingsIcon from '@mui/icons-material/Settings';
 import {
   Box,
@@ -372,9 +376,42 @@ export default function SynthesiaClone() {
             </Stack>
 
             {currentView === 'piano-roll' ? (
-              <IconButton aria-label="Open controls and settings" onClick={() => setControlsOpen(true)}>
-                <SettingsIcon />
-              </IconButton>
+              <Stack direction="row" spacing={0.5}>
+                <IconButton
+                  aria-label={`Rewind ${SYNTHESIA_PLAYBACK_CONFIG.seekStepSeconds} seconds`}
+                  onClick={() => {
+                    void handleJump(-SYNTHESIA_PLAYBACK_CONFIG.seekStepSeconds);
+                  }}
+                  disabled={!hasNotes || currentTime <= 0}
+                >
+                  <FastRewindIcon />
+                </IconButton>
+                <IconButton
+                  aria-label={isPlaying ? 'Pause playback' : currentTime > 0 ? 'Resume playback' : 'Start playback'}
+                  onClick={() => {
+                    if (isPlaying) {
+                      pausePlayback();
+                    } else {
+                      void startPlayback(currentTime);
+                    }
+                  }}
+                  disabled={!hasNotes}
+                >
+                  {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                </IconButton>
+                <IconButton
+                  aria-label={`Forward ${SYNTHESIA_PLAYBACK_CONFIG.seekStepSeconds} seconds`}
+                  onClick={() => {
+                    void handleJump(SYNTHESIA_PLAYBACK_CONFIG.seekStepSeconds);
+                  }}
+                  disabled={!hasNotes || currentTime >= duration}
+                >
+                  <FastForwardIcon />
+                </IconButton>
+                <IconButton aria-label="Open controls and settings" onClick={() => setControlsOpen(true)}>
+                  <SettingsIcon />
+                </IconButton>
+              </Stack>
             ) : null}
           </Stack>
         </Box>
