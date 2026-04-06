@@ -1,28 +1,50 @@
 'use client';
 
-import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Midi } from '@tonejs/midi';
+import type { ChangeEvent, ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import LibraryMusicIcon from '@mui/icons-material/LibraryMusic';
+import MenuIcon from '@mui/icons-material/Menu';
+import PianoIcon from '@mui/icons-material/Piano';
+import SettingsIcon from '@mui/icons-material/Settings';
 import {
   Alert,
   Box,
   Button,
   Chip,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Paper,
   Stack,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import PianoIcon from '@mui/icons-material/Piano';
-import SettingsIcon from '@mui/icons-material/Settings';
 import styles from './SynthesiaClone.module.css';
 import { ControlsDialog } from './components/ControlsDialog';
+import { MidiBrowser } from './components/MidiBrowser';
 import { PianoRoll } from './components/PianoRoll';
 import { SYNTHESIA_AUDIO_CONFIG, SYNTHESIA_ROLL_CONFIG } from './config';
 import type { MidiNote, PianoKey, VisibleBar } from './types';
+import { useSynthesiaStore, type SynthesiaView } from './useSynthesiaStore';
 
 type ToneModule = typeof import('tone');
 type ToneSampler = import('tone').Sampler;
 type ScheduledToneNote = { time: number; note: MidiNote };
 type TonePart = import('tone').Part<ScheduledToneNote>;
 
+type NavItem = {
+  view: SynthesiaView;
+  label: string;
+  caption: string;
+  icon: ReactNode;
+};
+
+const DRAWER_WIDTH = 280;
 const MIDI_LOW = 21;
 const MIDI_HIGH = 108;
 const BLACK_KEY_WIDTH_RATIO = 0.65;
@@ -32,9 +54,22 @@ const PIXELS_PER_SECOND = 140;
 const BAR_COLORS = ['#7dd3fc', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#22d3ee'];
 const BLACK_KEYS = new Set([1, 3, 6, 8, 10]);
 
-const isBlackKey = (midi: number) => BLACK_KEYS.has(midi % 12);
+const navItems: NavItem[] = [
+  {
+    view: 'browser',
+    label: 'MIDI browser & download',
+    caption: 'Convert, browse, and download stored MIDI files.',
+    icon: <LibraryMusicIcon />,
+  },
+  {
+    view: 'piano-roll',
+    label: 'Piano roll',
+    caption: 'Play the loaded MIDI with the falling-note keyboard.',
+    icon: <PianoIcon />,
+  },
+];
 
-const midiToFrequency = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12);
+const isBlackKey = (midi: number) => BLACK_KEYS.has(midi % 12);
 
 const formatTime = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) {
@@ -53,6 +88,8 @@ const getNoteLabel = (midi: number) => {
 };
 
 export default function SynthesiaClone() {
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const containerRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const toneRef = useRef<ToneModule | null>(null);
@@ -62,17 +99,24 @@ export default function SynthesiaClone() {
   const playStartWallClockRef = useRef(0);
   const playStartOffsetRef = useRef(0);
 
-  const [notes, setNotes] = useState<MidiNote[]>([]);
-  const [midiName, setMidiName] = useState('');
-  const [duration, setDuration] = useState(0);
-  const [trackCount, setTrackCount] = useState(0);
-  const [tempo, setTempo] = useState<number | null>(null);
+  const currentView = useSynthesiaStore((state) => state.currentView);
+  const setCurrentView = useSynthesiaStore((state) => state.setCurrentView);
+  const refreshStoredMidis = useSynthesiaStore((state) => state.refreshStoredMidis);
+  const saveUploadedMidiFile = useSynthesiaStore((state) => state.saveUploadedMidiFile);
+  const notes = useSynthesiaStore((state) => state.notes);
+  const midiName = useSynthesiaStore((state) => state.midiName);
+  const duration = useSynthesiaStore((state) => state.duration);
+  const trackCount = useSynthesiaStore((state) => state.trackCount);
+  const tempo = useSynthesiaStore((state) => state.tempo);
+  const error = useSynthesiaStore((state) => state.error);
+  const statusMessage = useSynthesiaStore((state) => state.statusMessage);
+
   const [playbackRate, setPlaybackRate] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [error, setError] = useState('');
   const [controlsOpen, setControlsOpen] = useState(false);
   const [pianoRollHeight, setPianoRollHeight] = useState(MIN_PIANO_ROLL_HEIGHT);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const stopScheduledAudio = useCallback(() => {
     if (animationFrameRef.current !== null) {
@@ -159,7 +203,6 @@ export default function SynthesiaClone() {
     const instrument = await ensureSampler();
 
     if (!instrument) {
-      setError('Unable to load the piano soundfont in this browser.');
       return false;
     }
 
@@ -170,7 +213,6 @@ export default function SynthesiaClone() {
 
     transport.stop();
     transport.cancel(0);
-
     partRef.current?.dispose();
 
     const startAt = Tone.now() + SYNTHESIA_AUDIO_CONFIG.lookAheadSeconds;
@@ -209,7 +251,6 @@ export default function SynthesiaClone() {
     }
 
     stopScheduledAudio();
-    setError('');
     playStartOffsetRef.current = startFrom;
     playStartWallClockRef.current = performance.now();
     setCurrentTime(startFrom);
@@ -239,50 +280,12 @@ export default function SynthesiaClone() {
       return;
     }
 
-    stopPlayback();
-    setError('');
-
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const midi = new Midi(arrayBuffer);
-      const parsedNotes = midi.tracks
-        .flatMap((track, trackIndex) =>
-          track.notes.map((note, noteIndex) => ({
-            id: `${trackIndex}-${noteIndex}`,
-            midi: note.midi,
-            time: note.time,
-            duration: note.duration,
-            velocity: note.velocity,
-            track: trackIndex,
-            name: note.name,
-          }))
-        )
-        .sort((left, right) => left.time - right.time || left.midi - right.midi);
-
-      if (!parsedNotes.length) {
-        throw new Error('No note data found');
-      }
-
-      const parsedDuration = Math.max(
-        midi.duration,
-        ...parsedNotes.map((note) => note.time + note.duration)
-      );
-
-      setMidiName(file.name);
-      setNotes(parsedNotes);
-      setDuration(parsedDuration);
-      setTrackCount(midi.tracks.length);
-      setTempo(midi.header.tempos[0] ? Math.round(midi.header.tempos[0].bpm) : null);
-      setCurrentTime(0);
-    } catch {
-      setNotes([]);
-      setMidiName('');
-      setDuration(0);
-      setTrackCount(0);
-      setTempo(null);
-      setCurrentTime(0);
-      setError('Unable to read that MIDI file. Please upload a standard .mid or .midi file.');
+    const saved = await saveUploadedMidiFile(file);
+    if (saved) {
+      setControlsOpen(false);
     }
+
+    event.target.value = '';
   };
 
   const handleSeek = (_event: Event, value: number | number[]) => {
@@ -353,7 +356,6 @@ export default function SynthesiaClone() {
   }, [visibleRange.end, visibleRange.start]);
 
   const keyMap = useMemo(() => new Map(keys.map((key) => [key.midi, key])), [keys]);
-
   const hasNotes = notes.length > 0;
 
   const activeNoteSet = useMemo(() => {
@@ -400,7 +402,23 @@ export default function SynthesiaClone() {
   }, [currentTime, keyMap, notes, pianoRollHeight, playbackRate]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    void refreshStoredMidis();
+  }, [refreshStoredMidis]);
+
+  useEffect(() => {
+    stopScheduledAudio();
+    setIsPlaying(false);
+    setCurrentTime(0);
+  }, [notes, stopScheduledAudio]);
+
+  useEffect(() => {
+    if (isDesktop) {
+      setMobileNavOpen(false);
+    }
+  }, [isDesktop]);
+
+  useEffect(() => {
+    if (currentView !== 'piano-roll' || typeof window === 'undefined') {
       return;
     }
 
@@ -431,6 +449,11 @@ export default function SynthesiaClone() {
     return () => {
       resizeObserver.disconnect();
       window.removeEventListener('resize', updatePianoRollHeight);
+    };
+  }, [currentView]);
+
+  useEffect(() => {
+    return () => {
       stopScheduledAudio();
       samplerRef.current?.dispose();
       samplerRef.current = null;
@@ -438,24 +461,129 @@ export default function SynthesiaClone() {
   }, [stopScheduledAudio]);
 
   return (
-    <Box ref={containerRef} className={styles.synthesiaShell} sx={{ height: 'calc(100dvh - 90px)', minHeight: 0 }}>
-      <Box ref={headerRef}>
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={1.5}
-          alignItems={{ xs: 'flex-start', md: 'center' }}
-          justifyContent="space-between"
-        >
-          <Button
-            variant="contained"
-            startIcon={<SettingsIcon />}
-            onClick={() => setControlsOpen(true)}
-          >
-            Controls & Settings
-          </Button>
+    <Box className={styles.synthesiaShell} sx={{ height: 'calc(100dvh - 90px)', minHeight: 0, flexDirection: 'row', gap: 0 }}>
+      <Drawer
+        variant={isDesktop ? 'permanent' : 'temporary'}
+        open={isDesktop ? true : mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: DRAWER_WIDTH,
+            height: '100%',
+            boxSizing: 'border-box',
+            position: 'relative',
+          },
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          <Typography variant="h6">Synthesia workspace</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Switch between preparing MIDI files and playing them in the piano roll.
+          </Typography>
+        </Box>
+
+        <Divider />
+
+        <List sx={{ px: 1, py: 1 }}>
+          {navItems.map((item) => (
+            <ListItemButton
+              key={item.view}
+              selected={currentView === item.view}
+              onClick={() => {
+                setCurrentView(item.view);
+                setMobileNavOpen(false);
+              }}
+              sx={{ borderRadius: 2, alignItems: 'flex-start', mb: 0.5 }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.label} secondary={item.caption} />
+            </ListItemButton>
+          ))}
+        </List>
+
+        <Divider />
+
+        <Box sx={{ p: 2, mt: 'auto' }}>
+          <Typography variant="subtitle2" gutterBottom>
+            Current MIDI
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {midiName || 'No MIDI loaded yet'}
+          </Typography>
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            {trackCount ? <Chip size="small" label={`${trackCount} track${trackCount === 1 ? '' : 's'}`} /> : null}
+            {duration ? <Chip size="small" label={formatTime(duration)} /> : null}
+            {tempo ? <Chip size="small" label={`${tempo} BPM`} /> : null}
+          </Stack>
+        </Box>
+      </Drawer>
+
+      <Box
+        ref={containerRef}
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1.5,
+          p: { xs: 1, md: 2 },
+          overflow: 'hidden',
+        }}
+      >
+        <Stack direction="row" spacing={1} alignItems="center">
+          {!isDesktop ? (
+            <IconButton aria-label="Open navigation" onClick={() => setMobileNavOpen(true)}>
+              <MenuIcon />
+            </IconButton>
+          ) : null}
+          <Typography variant="h5" fontWeight={700}>
+            {currentView === 'browser' ? 'MIDI browser & download' : 'Piano roll'}
+          </Typography>
         </Stack>
 
-        {error ? <Alert severity="error">{error}</Alert> : null}
+        {currentView === 'browser' ? (
+          <MidiBrowser
+            onOpenControls={() => setControlsOpen(true)}
+            formatTime={formatTime}
+          />
+        ) : (
+          <>
+            <Paper ref={headerRef} variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
+              <Stack
+                direction={{ xs: 'column', lg: 'row' }}
+                spacing={1.5}
+                alignItems={{ xs: 'flex-start', lg: 'center' }}
+                justifyContent="space-between"
+              >
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  <Chip icon={<PianoIcon />} label={midiName || 'No MIDI loaded yet'} variant={midiName ? 'filled' : 'outlined'} />
+                  {trackCount ? <Chip label={`${trackCount} track${trackCount === 1 ? '' : 's'}`} /> : null}
+                  {duration ? <Chip label={formatTime(duration)} /> : null}
+                  {tempo ? <Chip label={`${tempo} BPM`} /> : null}
+                </Stack>
+
+                <Button variant="contained" startIcon={<SettingsIcon />} onClick={() => setControlsOpen(true)}>
+                  Controls & Settings
+                </Button>
+              </Stack>
+
+              {error ? <Alert severity="error" sx={{ mt: 1.5 }}>{error}</Alert> : null}
+              {!error && statusMessage ? <Alert severity="success" sx={{ mt: 1.5 }}>{statusMessage}</Alert> : null}
+            </Paper>
+
+            <PianoRoll
+              hasNotes={hasNotes}
+              pianoRollHeight={pianoRollHeight}
+              keys={keys}
+              activeNoteSet={activeNoteSet}
+              visibleBars={visibleBars}
+            />
+          </>
+        )}
       </Box>
 
       <ControlsDialog
@@ -479,14 +607,6 @@ export default function SynthesiaClone() {
         onPlaybackRateChange={setPlaybackRate}
         onSeek={handleSeek}
         onSeekCommitted={handleSeekCommitted}
-      />
-
-      <PianoRoll
-        hasNotes={hasNotes}
-        pianoRollHeight={pianoRollHeight}
-        keys={keys}
-        activeNoteSet={activeNoteSet}
-        visibleBars={visibleBars}
       />
     </Box>
   );

@@ -103,11 +103,6 @@ def parse_args() -> argparse.Namespace:
         help="Tempo to encode in the resulting MIDI file",
     )
     parser.add_argument(
-        "--digital-piano",
-        action="store_true",
-        help="Use a cleaner preset for rendered or digital piano audio to reduce harmonic over-detection.",
-    )
-    parser.add_argument(
         "--no-melodia",
         action="store_true",
         help="Disable melodia post-processing. This can reduce extra notes on noisy audio.",
@@ -141,20 +136,19 @@ def require_ffmpeg() -> str:
 
 
 def apply_input_presets(args: argparse.Namespace) -> None:
-    if args.digital_piano:
-        if args.minimum_note_length_ms == 170.0:
-            args.minimum_note_length_ms = 210.0
-        if args.onset_threshold == 0.58:
-            args.onset_threshold = 0.68
-        if args.frame_threshold == 0.35:
-            args.frame_threshold = 0.40
-        if args.minimum_note_amplitude == 0.12:
-            args.minimum_note_amplitude = 0.16
-        if args.minimum_frequency is None:
-            args.minimum_frequency = 55.0
-        if args.maximum_frequency is None:
-            args.maximum_frequency = 1760.0
-        args.no_melodia = True
+    if args.minimum_note_length_ms == 170.0:
+        args.minimum_note_length_ms = 210.0
+    if args.onset_threshold == 0.58:
+        args.onset_threshold = 0.68
+    if args.frame_threshold == 0.35:
+        args.frame_threshold = 0.40
+    if args.minimum_note_amplitude == 0.12:
+        args.minimum_note_amplitude = 0.16
+    if args.minimum_frequency is None:
+        args.minimum_frequency = 55.0
+    if args.maximum_frequency is None:
+        args.maximum_frequency = 1760.0
+    args.no_melodia = True
 
 
 def validate_args(args: argparse.Namespace) -> None:
@@ -352,9 +346,7 @@ def main() -> int:
         if note_events_output_path is None and args.save_note_events is not None:
             note_events_output_path = build_default_note_events_path(midi_output_path)
 
-        print("Running piano transcription...")
-        if args.digital_piano:
-            print("Using digital piano preset for cleaner note detection...")
+        print("Running piano transcription with the piano preset...")
         note_count, filtered_out_count = transcribe_to_midi(
             trimmed_audio_path,
             midi_output_path,

@@ -53,7 +53,7 @@ export function ControlsDialog({
 }: ControlsDialogProps) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Playback controls</DialogTitle>
+      <DialogTitle>Playback & upload controls</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', md: 'center' }}>

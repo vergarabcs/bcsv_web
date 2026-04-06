@@ -50,9 +50,9 @@ export function PianoRoll({
             ))
           ) : (
             <div className={styles.emptyState}>
-              <Typography variant="h6">Upload a MIDI file to begin</Typography>
+              <Typography variant="h6">Load or convert a MIDI file to begin</Typography>
               <Typography variant="body2">
-                You&apos;ll see falling notes here with a playable piano keyboard at the bottom.
+                Upload a `.mid` file or convert a YouTube link, then play it here with the falling-note keyboard.
               </Typography>
             </div>
           )}
