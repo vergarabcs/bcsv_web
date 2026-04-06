@@ -69,3 +69,11 @@ a {
     color-scheme: dark;
   }
 }
+
+@media (pointer: coarse) {
+  html,
+  body {
+    /* Prevent pull-to-refresh on touch devices while preserving normal scroll. */
+    overscroll-behavior-y: contain;
+  }
+}
