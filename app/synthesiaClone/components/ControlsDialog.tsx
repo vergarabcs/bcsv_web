@@ -13,6 +13,8 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import FastForwardIcon from '@mui/icons-material/FastForward';
+import FastRewindIcon from '@mui/icons-material/FastRewind';
 import PianoIcon from '@mui/icons-material/Piano';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -32,9 +34,11 @@ type ControlsDialogProps = {
   duration: number;
   tempo: number | null;
   playbackRate: number;
+  seekStepSeconds: number;
   formatTime: (seconds: number) => string;
   onPlayPause: () => void;
   onStop: () => void;
+  onJump: (deltaSeconds: number) => void | Promise<void>;
   onPlaybackRateChange: (value: number) => void;
   onSeek: (event: Event, value: number | number[]) => void;
   onSeekCommitted: (event: Event | SyntheticEvent, value: number | number[]) => void | Promise<void>;
@@ -52,13 +56,17 @@ export function ControlsDialog({
   duration,
   tempo,
   playbackRate,
+  seekStepSeconds,
   formatTime,
   onPlayPause,
   onStop,
+  onJump,
   onPlaybackRateChange,
   onSeek,
   onSeekCommitted,
 }: ControlsDialogProps) {
+  const seekStepLabel = Number.isInteger(seekStepSeconds) ? seekStepSeconds.toString() : seekStepSeconds.toFixed(1);
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Playback & upload controls</DialogTitle>
@@ -96,6 +104,31 @@ export function ControlsDialog({
               disabled={!hasNotes}
             >
               Stop
+            </Button>
+          </Stack>
+
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Button
+              size="small"
+              variant="text"
+              startIcon={<FastRewindIcon />}
+              onClick={() => {
+                void onJump(-seekStepSeconds);
+              }}
+              disabled={!hasNotes || currentTime <= 0}
+            >
+              Back {seekStepLabel}s
+            </Button>
+            <Button
+              size="small"
+              variant="text"
+              endIcon={<FastForwardIcon />}
+              onClick={() => {
+                void onJump(seekStepSeconds);
+              }}
+              disabled={!hasNotes || currentTime >= duration}
+            >
+              Forward {seekStepLabel}s
             </Button>
           </Stack>
 

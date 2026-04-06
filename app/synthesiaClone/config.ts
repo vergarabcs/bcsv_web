@@ -43,6 +43,11 @@ export const SYNTHESIA_AUDIO_CONFIG = {
 	},
 } as const;
 
+export const SYNTHESIA_PLAYBACK_CONFIG = {
+	// Quick seek distance used by the rewind/forward controls.
+	seekStepSeconds: 5,
+} as const;
+
 export const SYNTHESIA_ROLL_CONFIG = {
 	// Visual-only speed multiplier for falling bars.
 	// Higher values make bars appear longer/faster without changing playback duration.
