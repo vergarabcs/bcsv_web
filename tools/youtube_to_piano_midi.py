@@ -69,7 +69,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--onset-threshold",
         type=float,
-        default=0.58,
+        default=0.25,
         help="Minimum onset confidence from 0 to 1. Higher values reduce false notes.",
     )
     parser.add_argument(

@@ -23,10 +23,11 @@ import { useSynthesiaStore } from '../useSynthesiaStore';
 
 type MidiBrowserProps = {
   onOpenControls: () => void;
+  onWarmUpAudio: () => Promise<boolean>;
   formatTime: (seconds: number) => string;
 };
 
-export function MidiBrowser({ onOpenControls, formatTime }: MidiBrowserProps) {
+export function MidiBrowser({ onOpenControls, onWarmUpAudio, formatTime }: MidiBrowserProps) {
   const currentView = useSynthesiaStore((state) => state.currentView);
   const setCurrentView = useSynthesiaStore((state) => state.setCurrentView);
   const youtubeUrl = useSynthesiaStore((state) => state.youtubeUrl);
@@ -179,7 +180,11 @@ export function MidiBrowser({ onOpenControls, formatTime }: MidiBrowserProps) {
                       size="small"
                       variant={isSelected ? 'contained' : 'outlined'}
                       startIcon={<PlayArrowIcon />}
-                      onClick={() => void loadStoredMidiRecord(record)}
+                      onClick={() => {
+                        // Prime Tone.js sample loading at load time to reduce first-play A/V drift.
+                        void onWarmUpAudio();
+                        void loadStoredMidiRecord(record);
+                      }}
                     >
                       Load
                     </Button>

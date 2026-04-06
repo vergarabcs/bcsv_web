@@ -18,6 +18,7 @@ type UseSynthesiaAudioPlayerResult = {
   setPlaybackRate: (value: number) => void;
   currentTime: number;
   isPlaying: boolean;
+  warmUpAudio: () => Promise<boolean>;
   startPlayback: (startFrom?: number) => Promise<void>;
   pausePlayback: () => void;
   stopPlayback: (resetToStart?: boolean) => void;
@@ -93,6 +94,11 @@ export function useSynthesiaAudioPlayer({ notes, duration }: UseSynthesiaAudioPl
       return null;
     }
   }, []);
+
+  const warmUpAudio = useCallback(async () => {
+    const instrument = await ensureSampler();
+    return Boolean(instrument);
+  }, [ensureSampler]);
 
   const tickPlayback = useCallback(() => {
     const elapsed = ((performance.now() - playStartWallClockRef.current) / 1000) * playbackRate;
@@ -236,6 +242,7 @@ export function useSynthesiaAudioPlayer({ notes, duration }: UseSynthesiaAudioPl
     setPlaybackRate,
     currentTime,
     isPlaying,
+    warmUpAudio,
     startPlayback,
     pausePlayback,
     stopPlayback,

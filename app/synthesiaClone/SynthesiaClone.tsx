@@ -105,6 +105,7 @@ export default function SynthesiaClone() {
     setPlaybackRate,
     currentTime,
     isPlaying,
+    warmUpAudio,
     startPlayback,
     pausePlayback,
     stopPlayback,
@@ -419,6 +420,7 @@ export default function SynthesiaClone() {
         {currentView === 'browser' ? (
           <MidiBrowser
             onOpenControls={() => setControlsOpen(true)}
+            onWarmUpAudio={warmUpAudio}
             formatTime={formatTime}
           />
         ) : (
