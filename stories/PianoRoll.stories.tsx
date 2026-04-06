@@ -1,63 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { PianoRoll } from '../app/synthesiaClone/components/PianoRoll';
-import type { PianoKey, VisibleBar } from '../app/synthesiaClone/types';
+import type { ReactNode } from 'react';
+import type { MidiNote } from '../app/synthesiaClone/types';
 
 type StoryFrameProps = {
-  children: React.ReactNode;
+  children: ReactNode;
   width?: number;
   height: number;
 };
 
-const BLACK_KEYS = new Set([1, 3, 6, 8, 10]);
-const BLACK_KEY_WIDTH_RATIO = 0.65;
-
-const isBlackKey = (midi: number) => BLACK_KEYS.has(midi % 12);
-
-const getNoteLabel = (midi: number) => {
-  const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  const octave = Math.floor(midi / 12) - 1;
-  return `${noteNames[midi % 12]}${octave}`;
-};
-
-const buildKeys = (start: number, end: number): PianoKey[] => {
-  const whiteKeyCount = Array.from({ length: end - start + 1 }, (_, index) => start + index).filter(
-    (midi) => !isBlackKey(midi)
-  ).length || 1;
-
-  const whiteKeyWidth = 100 / whiteKeyCount;
-  const blackKeyWidth = whiteKeyWidth * BLACK_KEY_WIDTH_RATIO;
-  let whiteIndex = 0;
-
-  return Array.from({ length: end - start + 1 }, (_, index) => start + index).map((midi) => {
-    const black = isBlackKey(midi);
-    const width = black ? blackKeyWidth : whiteKeyWidth;
-    const rawLeft = black
-      ? whiteIndex * whiteKeyWidth - blackKeyWidth / 2
-      : whiteIndex * whiteKeyWidth;
-    const left = Math.min(Math.max(rawLeft, 0), Math.max(100 - width, 0));
-
-    if (!black) {
-      whiteIndex += 1;
-    }
-
-    return {
-      midi,
-      isBlack: black,
-      left,
-      width: Math.max(Math.min(width, 100 - left), 0),
-      label: getNoteLabel(midi),
-    };
-  });
-};
-
-const keys = buildKeys(43, 84);
-
-const visibleBars: VisibleBar[] = [
-  { id: 'bar-1', left: 42.856, width: 2.288, bottom: 387.273, height: 35.1273, color: '#7dd3fc' },
-  { id: 'bar-2', left: 70.856, width: 2.288, bottom: 387.273, height: 52.1818, color: '#7dd3fc' },
-  { id: 'bar-3', left: 86.856, width: 2.288, bottom: 421.127, height: 44.2909, color: '#7dd3fc' },
-  { id: 'bar-4', left: 42.856, width: 2.288, bottom: 422.4, height: 87.0545, color: '#7dd3fc' },
-  { id: 'bar-5', left: 58.856, width: 2.288, bottom: 422.4, height: 140.509, color: '#7dd3fc' },
+const sampleNotes: MidiNote[] = [
+  { id: 'n-1', midi: 60, time: 0.0, duration: 0.45, velocity: 0.9, track: 0, name: 'C4' },
+  { id: 'n-2', midi: 64, time: 0.45, duration: 0.5, velocity: 0.8, track: 0, name: 'E4' },
+  { id: 'n-3', midi: 67, time: 0.95, duration: 0.55, velocity: 0.85, track: 0, name: 'G4' },
+  { id: 'n-4', midi: 72, time: 1.55, duration: 0.7, velocity: 0.88, track: 1, name: 'C5' },
+  { id: 'n-5', midi: 76, time: 2.1, duration: 0.8, velocity: 0.82, track: 1, name: 'E5' },
+  { id: 'n-6', midi: 79, time: 2.75, duration: 0.65, velocity: 0.86, track: 1, name: 'G5' },
 ];
 
 function StoryFrame({ children, width, height }: StoryFrameProps) {
@@ -92,21 +50,18 @@ const meta = {
     (Story, context) => <StoryFrame height={context.args.pianoRollHeight as number}><Story /></StoryFrame>,
   ],
   argTypes: {
-    activeNoteSet: {
-      control: false,
-    },
-    keys: {
-      control: false,
-    },
-    visibleBars: {
+    onSeekToTime: {
       control: false,
     },
   },
   args: {
     pianoRollHeight: 666,
-    keys,
-    activeNoteSet: new Set<number>([50]),
-    visibleBars,
+    notes: sampleNotes,
+    currentTime: 1.15,
+    duration: 3.9,
+    isPlaying: false,
+    playbackRate: 1,
+    onSeekToTime: async () => {},
   },
 } satisfies Meta<typeof PianoRoll>;
 
@@ -115,23 +70,19 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const RegressionReference: Story = {
-  args: {
-    hasNotes: true,
-  },
+  args: {},
 };
 
 export const EmptyState: Story = {
   args: {
-    hasNotes: false,
-    activeNoteSet: new Set<number>(),
-    visibleBars: [],
+    notes: [],
+    currentTime: 0,
+    duration: 0,
   },
 };
 
 export const MobileWidth: Story = {
-  args: {
-    hasNotes: true,
-  },
+  args: {},
   decorators: [
     (Story, context) => (
       <StoryFrame width={390} height={context.args.pianoRollHeight as number}>
