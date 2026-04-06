@@ -16,7 +16,7 @@ DEFAULT_FRAME_THRESHOLD = 0.35
 DEFAULT_MINIMUM_NOTE_AMPLITUDE = 0.12
 DEFAULT_MIDI_TEMPO = 120.0
 
-
+#todo: secure this lambda handler from public access before enabling public access.
 def sanitize_stem(value: str) -> str:
     stem = re.sub(r"[^A-Za-z0-9._-]+", "_", value).strip("._")
     return stem or "youtube_audio"
