@@ -7,9 +7,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import PianoIcon from '@mui/icons-material/Piano';
 import SettingsIcon from '@mui/icons-material/Settings';
 import {
-  Alert,
   Box,
-  Button,
   Chip,
   Divider,
   Drawer,
@@ -108,8 +106,6 @@ export default function SynthesiaClone() {
   const duration = useSynthesiaStore((state) => state.duration);
   const trackCount = useSynthesiaStore((state) => state.trackCount);
   const tempo = useSynthesiaStore((state) => state.tempo);
-  const error = useSynthesiaStore((state) => state.error);
-  const statusMessage = useSynthesiaStore((state) => state.statusMessage);
 
   const [playbackRate, setPlaybackRate] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
@@ -335,15 +331,17 @@ export default function SynthesiaClone() {
 
     for (let midi = visibleRange.start; midi <= visibleRange.end; midi += 1) {
       const black = isBlackKey(midi);
-      const left = black
-        ? Math.max(whiteIndex * whiteKeyWidth - blackKeyWidth / 2, 0)
+      const width = black ? blackKeyWidth : whiteKeyWidth;
+      const rawLeft = black
+        ? whiteIndex * whiteKeyWidth - blackKeyWidth / 2
         : whiteIndex * whiteKeyWidth;
+      const left = Math.min(Math.max(rawLeft, 0), Math.max(100 - width, 0));
 
       result.push({
         midi,
         isBlack: black,
         left,
-        width: black ? blackKeyWidth : whiteKeyWidth,
+        width: Math.max(Math.min(width, 100 - left), 0),
         label: getNoteLabel(midi),
       });
 
@@ -387,11 +385,15 @@ export default function SynthesiaClone() {
           return null;
         }
 
-        const barWidth = Math.max(key.width * (key.isBlack ? 0.88 : 0.92), 0.35);
+        const barWidth = Math.min(Math.max(key.width * (key.isBlack ? 0.88 : 0.92), 0.35), key.width);
+        const left = Math.min(
+          Math.max(key.left + (key.width - barWidth) / 2, 0),
+          Math.max(100 - barWidth, 0)
+        );
 
         return {
           id: note.id,
-          left: key.left + (key.width - barWidth) / 2,
+          left,
           width: barWidth,
           bottom,
           height,
@@ -529,20 +531,28 @@ export default function SynthesiaClone() {
           minHeight: 0,
           display: 'flex',
           flexDirection: 'column',
-          gap: 1.5,
-          p: { xs: 1, md: 2 },
+          gap: { xs: '1px', sm: 1.5 },
+          p: { xs: '1px', sm: 1, md: 2 },
           overflow: 'hidden',
         }}
       >
-        <Stack direction="row" spacing={1} alignItems="center">
-          {!isDesktop ? (
-            <IconButton aria-label="Open navigation" onClick={() => setMobileNavOpen(true)}>
-              <MenuIcon />
+        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+          <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
+            {!isDesktop ? (
+              <IconButton aria-label="Open navigation" onClick={() => setMobileNavOpen(true)}>
+                <MenuIcon />
+              </IconButton>
+            ) : null}
+            <Typography variant="h5" fontWeight={700}>
+              {currentView === 'browser' ? 'MIDI browser & download' : 'Piano roll'}
+            </Typography>
+          </Stack>
+
+          {currentView === 'piano-roll' ? (
+            <IconButton aria-label="Open controls and settings" onClick={() => setControlsOpen(true)}>
+              <SettingsIcon />
             </IconButton>
           ) : null}
-          <Typography variant="h5" fontWeight={700}>
-            {currentView === 'browser' ? 'MIDI browser & download' : 'Piano roll'}
-          </Typography>
         </Stack>
 
         {currentView === 'browser' ? (
@@ -553,26 +563,12 @@ export default function SynthesiaClone() {
         ) : (
           <>
             <Paper ref={headerRef} variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
-              <Stack
-                direction={{ xs: 'column', lg: 'row' }}
-                spacing={1.5}
-                alignItems={{ xs: 'flex-start', lg: 'center' }}
-                justifyContent="space-between"
-              >
-                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                  <Chip icon={<PianoIcon />} label={midiName || 'No MIDI loaded yet'} variant={midiName ? 'filled' : 'outlined'} />
-                  {trackCount ? <Chip label={`${trackCount} track${trackCount === 1 ? '' : 's'}`} /> : null}
-                  {duration ? <Chip label={formatTime(duration)} /> : null}
-                  {tempo ? <Chip label={`${tempo} BPM`} /> : null}
-                </Stack>
-
-                <Button variant="contained" startIcon={<SettingsIcon />} onClick={() => setControlsOpen(true)}>
-                  Controls & Settings
-                </Button>
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                <Chip icon={<PianoIcon />} label={midiName || 'No MIDI loaded yet'} variant={midiName ? 'filled' : 'outlined'} />
+                {trackCount ? <Chip label={`${trackCount} track${trackCount === 1 ? '' : 's'}`} /> : null}
+                {duration ? <Chip label={formatTime(duration)} /> : null}
+                {tempo ? <Chip label={`${tempo} BPM`} /> : null}
               </Stack>
-
-              {error ? <Alert severity="error" sx={{ mt: 1.5 }}>{error}</Alert> : null}
-              {!error && statusMessage ? <Alert severity="success" sx={{ mt: 1.5 }}>{statusMessage}</Alert> : null}
             </Paper>
 
             <PianoRoll
