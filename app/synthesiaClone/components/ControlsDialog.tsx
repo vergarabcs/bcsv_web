@@ -21,6 +21,10 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import StopIcon from '@mui/icons-material/Stop';
 import styles from '../SynthesiaClone.module.css';
+import {
+  SYNTHESIA_GAMEPAD_ACTIONS,
+  type SynthesiaGamepadAction,
+} from '../useSynthesiaGamepad';
 
 type ControlsDialogProps = {
   open: boolean;
@@ -42,6 +46,24 @@ type ControlsDialogProps = {
   onPlaybackRateChange: (value: number) => void;
   onSeek: (event: Event, value: number | number[]) => void;
   onSeekCommitted: (event: Event | SyntheticEvent, value: number | number[]) => void | Promise<void>;
+  gamepadMappings: Record<SynthesiaGamepadAction, number | null>;
+  isGamepadListening: boolean;
+  listeningGamepadAction: SynthesiaGamepadAction | null;
+  onStartGamepadMapping: (action: SynthesiaGamepadAction) => void;
+};
+
+const GAMEPAD_MAPPING_CONFIG: { action: SynthesiaGamepadAction; label: string }[] = [
+  { action: SYNTHESIA_GAMEPAD_ACTIONS.PLAY_PAUSE, label: 'Play / pause' },
+  { action: SYNTHESIA_GAMEPAD_ACTIONS.REWIND, label: 'Rewind' },
+  { action: SYNTHESIA_GAMEPAD_ACTIONS.FORWARD, label: 'Forward' },
+];
+
+const formatGamepadButton = (buttonIndex: number | null) => {
+  if (buttonIndex === null) {
+    return 'Not set';
+  }
+
+  return `Button ${buttonIndex}`;
 };
 
 export function ControlsDialog({
@@ -64,6 +86,10 @@ export function ControlsDialog({
   onPlaybackRateChange,
   onSeek,
   onSeekCommitted,
+  gamepadMappings,
+  isGamepadListening,
+  listeningGamepadAction,
+  onStartGamepadMapping,
 }: ControlsDialogProps) {
   const seekStepLabel = Number.isInteger(seekStepSeconds) ? seekStepSeconds.toString() : seekStepSeconds.toFixed(1);
 
@@ -131,6 +157,27 @@ export function ControlsDialog({
               Forward {seekStepLabel}s
             </Button>
           </Stack>
+
+          <Box>
+            <Typography variant="body2" gutterBottom>
+              Gamepad controls
+            </Typography>
+            <Stack spacing={1}>
+              {GAMEPAD_MAPPING_CONFIG.map(({ action, label }) => (
+                <Stack key={action} direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color={isGamepadListening && listeningGamepadAction === action ? 'secondary' : 'primary'}
+                    onClick={() => onStartGamepadMapping(action)}
+                  >
+                    {isGamepadListening && listeningGamepadAction === action ? 'Press a gamepad button...' : `Map ${label}`}
+                  </Button>
+                  <Chip size="small" label={formatGamepadButton(gamepadMappings[action])} />
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
 
           <Box>
             <Typography variant="body2" gutterBottom>

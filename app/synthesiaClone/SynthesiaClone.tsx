@@ -1,7 +1,7 @@
 'use client';
 
 import type { ChangeEvent, ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import LibraryMusicIcon from '@mui/icons-material/LibraryMusic';
 import FastForwardIcon from '@mui/icons-material/FastForward';
 import FastRewindIcon from '@mui/icons-material/FastRewind';
@@ -31,6 +31,11 @@ import { MidiBrowser } from './components/MidiBrowser';
 import { PianoRoll } from './components/PianoRoll';
 import { SYNTHESIA_PLAYBACK_CONFIG } from './config';
 import { useSynthesiaAudioPlayer } from './useSynthesiaAudioPlayer';
+import {
+  SYNTHESIA_GAMEPAD_ACTIONS,
+  useSynthesiaGamepad,
+  type SynthesiaGamepadAction,
+} from './useSynthesiaGamepad';
 import { useSynthesiaStore, type SynthesiaView } from './useSynthesiaStore';
 
 type NavItem = {
@@ -117,6 +122,52 @@ export default function SynthesiaClone() {
   };
 
   const hasNotes = notes.length > 0;
+
+  const handlePlayPause = useCallback(() => {
+    if (isPlaying) {
+      pausePlayback();
+      return;
+    }
+
+    void startPlayback(currentTime);
+  }, [currentTime, isPlaying, pausePlayback, startPlayback]);
+
+  const handleRewind = useCallback(() => {
+    void handleJump(-SYNTHESIA_PLAYBACK_CONFIG.seekStepSeconds);
+  }, [handleJump]);
+
+  const handleForward = useCallback(() => {
+    void handleJump(SYNTHESIA_PLAYBACK_CONFIG.seekStepSeconds);
+  }, [handleJump]);
+
+  const handleGamepadAction = useCallback((action: SynthesiaGamepadAction) => {
+    if (currentView !== 'piano-roll' || !hasNotes) {
+      return;
+    }
+
+    switch (action) {
+      case SYNTHESIA_GAMEPAD_ACTIONS.PLAY_PAUSE:
+        handlePlayPause();
+        break;
+      case SYNTHESIA_GAMEPAD_ACTIONS.REWIND:
+        if (currentTime > 0) {
+          handleRewind();
+        }
+        break;
+      case SYNTHESIA_GAMEPAD_ACTIONS.FORWARD:
+        if (currentTime < duration) {
+          handleForward();
+        }
+        break;
+    }
+  }, [currentTime, currentView, duration, handleForward, handlePlayPause, handleRewind, hasNotes]);
+
+  const {
+    mappings: gamepadMappings,
+    isListening: isGamepadListening,
+    listeningAction: listeningGamepadAction,
+    startListening: startGamepadMapping,
+  } = useSynthesiaGamepad({ onAction: handleGamepadAction });
 
   useEffect(() => {
     void refreshStoredMidis();
@@ -261,31 +312,21 @@ export default function SynthesiaClone() {
               <Stack direction="row" spacing={0.5}>
                 <IconButton
                   aria-label={`Rewind ${SYNTHESIA_PLAYBACK_CONFIG.seekStepSeconds} seconds`}
-                  onClick={() => {
-                    void handleJump(-SYNTHESIA_PLAYBACK_CONFIG.seekStepSeconds);
-                  }}
+                  onClick={handleRewind}
                   disabled={!hasNotes || currentTime <= 0}
                 >
                   <FastRewindIcon />
                 </IconButton>
                 <IconButton
                   aria-label={isPlaying ? 'Pause playback' : currentTime > 0 ? 'Resume playback' : 'Start playback'}
-                  onClick={() => {
-                    if (isPlaying) {
-                      pausePlayback();
-                    } else {
-                      void startPlayback(currentTime);
-                    }
-                  }}
+                  onClick={handlePlayPause}
                   disabled={!hasNotes}
                 >
                   {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
                 </IconButton>
                 <IconButton
                   aria-label={`Forward ${SYNTHESIA_PLAYBACK_CONFIG.seekStepSeconds} seconds`}
-                  onClick={() => {
-                    void handleJump(SYNTHESIA_PLAYBACK_CONFIG.seekStepSeconds);
-                  }}
+                  onClick={handleForward}
                   disabled={!hasNotes || currentTime >= duration}
                 >
                   <FastForwardIcon />
@@ -329,18 +370,16 @@ export default function SynthesiaClone() {
         playbackRate={playbackRate}
         seekStepSeconds={SYNTHESIA_PLAYBACK_CONFIG.seekStepSeconds}
         formatTime={formatTime}
-        onPlayPause={() => {
-          if (isPlaying) {
-            pausePlayback();
-          } else {
-            void startPlayback(currentTime);
-          }
-        }}
+        onPlayPause={handlePlayPause}
         onStop={() => stopPlayback()}
         onJump={handleJump}
         onPlaybackRateChange={setPlaybackRate}
         onSeek={handleSeek}
         onSeekCommitted={handleSeekCommitted}
+        gamepadMappings={gamepadMappings}
+        isGamepadListening={isGamepadListening}
+        listeningGamepadAction={listeningGamepadAction}
+        onStartGamepadMapping={startGamepadMapping}
       />
     </Box>
   );
