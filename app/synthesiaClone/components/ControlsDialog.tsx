@@ -4,6 +4,7 @@ import type { ChangeEvent, SyntheticEvent } from 'react';
 import {
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -12,6 +13,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import PianoIcon from '@mui/icons-material/Piano';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -24,8 +26,11 @@ type ControlsDialogProps = {
   onFileUpload: (event: ChangeEvent<HTMLInputElement>) => void | Promise<void>;
   isPlaying: boolean;
   hasNotes: boolean;
+  midiName: string;
+  trackCount: number;
   currentTime: number;
   duration: number;
+  tempo: number | null;
   playbackRate: number;
   formatTime: (seconds: number) => string;
   onPlayPause: () => void;
@@ -41,8 +46,11 @@ export function ControlsDialog({
   onFileUpload,
   isPlaying,
   hasNotes,
+  midiName,
+  trackCount,
   currentTime,
   duration,
+  tempo,
   playbackRate,
   formatTime,
   onPlayPause,
@@ -56,6 +64,15 @@ export function ControlsDialog({
       <DialogTitle>Playback & upload controls</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2} sx={{ pt: 1 }}>
+          {(midiName || trackCount || duration || tempo) ? (
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              <Chip icon={<PianoIcon />} label={midiName || 'No MIDI loaded yet'} variant={midiName ? 'filled' : 'outlined'} />
+              {trackCount ? <Chip label={`${trackCount} track${trackCount === 1 ? '' : 's'}`} /> : null}
+              {duration ? <Chip label={formatTime(duration)} /> : null}
+              {tempo ? <Chip label={`${tempo} BPM`} /> : null}
+            </Stack>
+          ) : null}
+
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', md: 'center' }}>
             <Button component="label" variant="contained" startIcon={<UploadFileIcon />}>
               Upload MIDI

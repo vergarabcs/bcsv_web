@@ -16,7 +16,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Paper,
   Stack,
   Typography,
   useMediaQuery,
@@ -536,24 +535,33 @@ export default function SynthesiaClone() {
           overflow: 'hidden',
         }}
       >
-        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-          <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
-            {!isDesktop ? (
-              <IconButton aria-label="Open navigation" onClick={() => setMobileNavOpen(true)}>
-                <MenuIcon />
+        <Box
+          ref={headerRef}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: { xs: '1px', sm: 1.5 },
+          }}
+        >
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+            <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
+              {!isDesktop ? (
+                <IconButton aria-label="Open navigation" onClick={() => setMobileNavOpen(true)}>
+                  <MenuIcon />
+                </IconButton>
+              ) : null}
+              <Typography variant="h5" fontWeight={700}>
+                {currentView === 'browser' ? 'MIDI browser & download' : 'Piano roll'}
+              </Typography>
+            </Stack>
+
+            {currentView === 'piano-roll' ? (
+              <IconButton aria-label="Open controls and settings" onClick={() => setControlsOpen(true)}>
+                <SettingsIcon />
               </IconButton>
             ) : null}
-            <Typography variant="h5" fontWeight={700}>
-              {currentView === 'browser' ? 'MIDI browser & download' : 'Piano roll'}
-            </Typography>
           </Stack>
-
-          {currentView === 'piano-roll' ? (
-            <IconButton aria-label="Open controls and settings" onClick={() => setControlsOpen(true)}>
-              <SettingsIcon />
-            </IconButton>
-          ) : null}
-        </Stack>
+        </Box>
 
         {currentView === 'browser' ? (
           <MidiBrowser
@@ -561,24 +569,13 @@ export default function SynthesiaClone() {
             formatTime={formatTime}
           />
         ) : (
-          <>
-            <Paper ref={headerRef} variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip icon={<PianoIcon />} label={midiName || 'No MIDI loaded yet'} variant={midiName ? 'filled' : 'outlined'} />
-                {trackCount ? <Chip label={`${trackCount} track${trackCount === 1 ? '' : 's'}`} /> : null}
-                {duration ? <Chip label={formatTime(duration)} /> : null}
-                {tempo ? <Chip label={`${tempo} BPM`} /> : null}
-              </Stack>
-            </Paper>
-
-            <PianoRoll
-              hasNotes={hasNotes}
-              pianoRollHeight={pianoRollHeight}
-              keys={keys}
-              activeNoteSet={activeNoteSet}
-              visibleBars={visibleBars}
-            />
-          </>
+          <PianoRoll
+            hasNotes={hasNotes}
+            pianoRollHeight={pianoRollHeight}
+            keys={keys}
+            activeNoteSet={activeNoteSet}
+            visibleBars={visibleBars}
+          />
         )}
       </Box>
 
@@ -588,8 +585,11 @@ export default function SynthesiaClone() {
         onFileUpload={handleFileUpload}
         isPlaying={isPlaying}
         hasNotes={hasNotes}
+        midiName={midiName}
+        trackCount={trackCount}
         currentTime={currentTime}
         duration={duration}
+        tempo={tempo}
         playbackRate={playbackRate}
         formatTime={formatTime}
         onPlayPause={() => {
