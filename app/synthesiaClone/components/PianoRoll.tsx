@@ -312,7 +312,10 @@ export function PianoRoll({
   } as React.CSSProperties;
 
   return (
-    <Paper className={styles.rollCard} sx={{ p: { xs: '1px', sm: 1 }, flex: 1, display: 'flex', minHeight: 0, height: '100%' }}>
+    <Paper
+      className={styles.rollCard}
+      sx={{ px: { xs: '1px', sm: 1 }, py: '1px', flex: 1, display: 'flex', minHeight: 0, height: '100%' }}
+    >
       <div className={styles.rollViewport} style={{ height: '100%' }}>
         <div className={styles.rollInner} style={rollInnerStyle}>
           <div className={styles.laneOverlay} />
