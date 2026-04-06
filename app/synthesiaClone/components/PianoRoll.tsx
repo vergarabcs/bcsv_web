@@ -1,25 +1,220 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Paper, Typography } from '@mui/material';
 import styles from '../SynthesiaClone.module.css';
-import type { PianoKey, VisibleBar } from '../types';
+import { SYNTHESIA_ROLL_CONFIG } from '../config';
+import type { MidiNote, PianoKey, VisibleBar } from '../types';
 
 type PianoRollProps = {
-  hasNotes: boolean;
   pianoRollHeight: number;
-  keys: PianoKey[];
-  activeNoteSet: Set<number>;
-  visibleBars: VisibleBar[];
+  notes: MidiNote[];
+  currentTime: number;
+  isPlaying: boolean;
+  playbackRate: number;
+};
+
+const MIDI_LOW = 21;
+const MIDI_HIGH = 108;
+const BLACK_KEY_WIDTH_RATIO = 0.65;
+const KEYBOARD_HEIGHT = 92;
+const PIXELS_PER_SECOND = 140;
+const BAR_COLORS = ['#7dd3fc', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#22d3ee'];
+const BLACK_KEYS = new Set([1, 3, 6, 8, 10]);
+const SEEK_VISUAL_ANIMATION_MS = 220;
+const SEEK_VISUAL_MIN_DELTA_SECONDS = 0.18;
+
+const isBlackKey = (midi: number) => BLACK_KEYS.has(midi % 12);
+
+const getNoteLabel = (midi: number) => {
+  const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const octave = Math.floor(midi / 12) - 1;
+  return `${noteNames[midi % 12]}${octave}`;
 };
 
 export function PianoRoll({
-  hasNotes,
   pianoRollHeight,
-  keys,
-  activeNoteSet,
-  visibleBars,
+  notes,
+  currentTime,
+  isPlaying,
+  playbackRate,
 }: PianoRollProps) {
+  const visualAnimationFrameRef = useRef<number | null>(null);
+  const [visualCurrentTime, setVisualCurrentTime] = useState(0);
+  const visualCurrentTimeRef = useRef(0);
+  const hasNotes = notes.length > 0;
+
+  const stopVisualPlayheadAnimation = useCallback(() => {
+    if (visualAnimationFrameRef.current !== null) {
+      window.cancelAnimationFrame(visualAnimationFrameRef.current);
+      visualAnimationFrameRef.current = null;
+    }
+  }, []);
+
+  const rollCurrentTime = isPlaying ? currentTime : visualCurrentTime;
+
+  const visibleRange = useMemo(() => {
+    if (!notes.length) {
+      return { start: 48, end: 72 };
+    }
+
+    const minMidi = Math.min(...notes.map((note) => note.midi));
+    const maxMidi = Math.max(...notes.map((note) => note.midi));
+
+    let start = Math.max(MIDI_LOW, minMidi - 2);
+    let end = Math.min(MIDI_HIGH, maxMidi + 2);
+
+    if (end - start < 18) {
+      const midpoint = Math.round((start + end) / 2);
+      start = Math.max(MIDI_LOW, midpoint - 10);
+      end = Math.min(MIDI_HIGH, midpoint + 10);
+    }
+
+    return { start, end };
+  }, [notes]);
+
+  const keys = useMemo<PianoKey[]>(() => {
+    const whiteKeyCount = Array.from(
+      { length: visibleRange.end - visibleRange.start + 1 },
+      (_, index) => visibleRange.start + index
+    ).filter((midi) => !isBlackKey(midi)).length || 1;
+
+    const whiteKeyWidth = 100 / whiteKeyCount;
+    const blackKeyWidth = whiteKeyWidth * BLACK_KEY_WIDTH_RATIO;
+    let whiteIndex = 0;
+    const result: PianoKey[] = [];
+
+    for (let midi = visibleRange.start; midi <= visibleRange.end; midi += 1) {
+      const black = isBlackKey(midi);
+      const width = black ? blackKeyWidth : whiteKeyWidth;
+      const rawLeft = black
+        ? whiteIndex * whiteKeyWidth - blackKeyWidth / 2
+        : whiteIndex * whiteKeyWidth;
+      const left = Math.min(Math.max(rawLeft, 0), Math.max(100 - width, 0));
+
+      result.push({
+        midi,
+        isBlack: black,
+        left,
+        width: Math.max(Math.min(width, 100 - left), 0),
+        label: getNoteLabel(midi),
+      });
+
+      if (!black) {
+        whiteIndex += 1;
+      }
+    }
+
+    return result;
+  }, [visibleRange.end, visibleRange.start]);
+
+  const keyMap = useMemo(() => new Map(keys.map((key) => [key.midi, key])), [keys]);
+
+  const activeNoteSet = useMemo(() => {
+    const activeNotes = new Set<number>();
+
+    notes.forEach((note) => {
+      if (rollCurrentTime >= note.time && rollCurrentTime <= note.time + note.duration) {
+        activeNotes.add(note.midi);
+      }
+    });
+
+    return activeNotes;
+  }, [notes, rollCurrentTime]);
+
+  const visibleBars = useMemo<VisibleBar[]>(() => {
+    const scaledPixelsPerSecond = PIXELS_PER_SECOND * SYNTHESIA_ROLL_CONFIG.speed * playbackRate;
+
+    return notes
+      .map((note) => {
+        const key = keyMap.get(note.midi);
+        if (!key) {
+          return null;
+        }
+
+        const height = Math.max(note.duration * scaledPixelsPerSecond, 12);
+        const bottom = KEYBOARD_HEIGHT + (note.time - rollCurrentTime) * scaledPixelsPerSecond;
+
+        if (bottom + height < KEYBOARD_HEIGHT || bottom > pianoRollHeight) {
+          return null;
+        }
+
+        const barWidth = Math.min(Math.max(key.width * (key.isBlack ? 0.88 : 0.92), 0.35), key.width);
+        const left = Math.min(
+          Math.max(key.left + (key.width - barWidth) / 2, 0),
+          Math.max(100 - barWidth, 0)
+        );
+
+        return {
+          id: note.id,
+          left,
+          width: barWidth,
+          bottom,
+          height,
+          color: BAR_COLORS[note.track % BAR_COLORS.length],
+        };
+      })
+      .filter((bar): bar is NonNullable<typeof bar> => Boolean(bar));
+  }, [keyMap, notes, pianoRollHeight, playbackRate, rollCurrentTime]);
+
+  useEffect(() => {
+    visualCurrentTimeRef.current = visualCurrentTime;
+  }, [visualCurrentTime]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (isPlaying) {
+      stopVisualPlayheadAnimation();
+      visualCurrentTimeRef.current = currentTime;
+      return;
+    }
+
+    const from = visualCurrentTimeRef.current;
+    const delta = Math.abs(currentTime - from);
+    const shouldAnimate = delta >= SEEK_VISUAL_MIN_DELTA_SECONDS;
+
+    if (!shouldAnimate) {
+      stopVisualPlayheadAnimation();
+      visualCurrentTimeRef.current = currentTime;
+      setVisualCurrentTime(currentTime);
+      return;
+    }
+
+    stopVisualPlayheadAnimation();
+    const startTime = performance.now();
+
+    const animate = (timestamp: number) => {
+      const progress = Math.min((timestamp - startTime) / SEEK_VISUAL_ANIMATION_MS, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const nextValue = from + (currentTime - from) * easedProgress;
+
+      visualCurrentTimeRef.current = nextValue;
+      setVisualCurrentTime(nextValue);
+
+      if (progress < 1) {
+        visualAnimationFrameRef.current = window.requestAnimationFrame(animate);
+        return;
+      }
+
+      visualAnimationFrameRef.current = null;
+    };
+
+    visualAnimationFrameRef.current = window.requestAnimationFrame(animate);
+
+    return () => {
+      stopVisualPlayheadAnimation();
+    };
+  }, [currentTime, isPlaying, stopVisualPlayheadAnimation]);
+
+  useEffect(() => {
+    return () => {
+      stopVisualPlayheadAnimation();
+    };
+  }, [stopVisualPlayheadAnimation]);
+
   const whiteKeyCount = useMemo(() => keys.filter((key) => !key.isBlack).length || 1, [keys]);
   const rollInnerStyle = {
     height: `${pianoRollHeight}px`,

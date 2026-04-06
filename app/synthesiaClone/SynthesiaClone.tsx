@@ -1,7 +1,7 @@
 'use client';
 
 import type { ChangeEvent, ReactNode } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import LibraryMusicIcon from '@mui/icons-material/LibraryMusic';
 import FastForwardIcon from '@mui/icons-material/FastForward';
 import FastRewindIcon from '@mui/icons-material/FastRewind';
@@ -29,8 +29,7 @@ import styles from './SynthesiaClone.module.css';
 import { ControlsDialog } from './components/ControlsDialog';
 import { MidiBrowser } from './components/MidiBrowser';
 import { PianoRoll } from './components/PianoRoll';
-import { SYNTHESIA_PLAYBACK_CONFIG, SYNTHESIA_ROLL_CONFIG } from './config';
-import type { PianoKey, VisibleBar } from './types';
+import { SYNTHESIA_PLAYBACK_CONFIG } from './config';
 import { useSynthesiaAudioPlayer } from './useSynthesiaAudioPlayer';
 import { useSynthesiaStore, type SynthesiaView } from './useSynthesiaStore';
 
@@ -42,14 +41,7 @@ type NavItem = {
 };
 
 const DRAWER_WIDTH = 280;
-const MIDI_LOW = 21;
-const MIDI_HIGH = 108;
-const BLACK_KEY_WIDTH_RATIO = 0.65;
-const KEYBOARD_HEIGHT = 92;
 const MIN_PIANO_ROLL_HEIGHT = 320;
-const PIXELS_PER_SECOND = 140;
-const BAR_COLORS = ['#7dd3fc', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#22d3ee'];
-const BLACK_KEYS = new Set([1, 3, 6, 8, 10]);
 
 const navItems: NavItem[] = [
   {
@@ -66,8 +58,6 @@ const navItems: NavItem[] = [
   },
 ];
 
-const isBlackKey = (midi: number) => BLACK_KEYS.has(midi % 12);
-
 const formatTime = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) {
     return '0:00';
@@ -76,12 +66,6 @@ const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
-};
-
-const getNoteLabel = (midi: number) => {
-  const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  const octave = Math.floor(midi / 12) - 1;
-  return `${noteNames[midi % 12]}${octave}`;
 };
 
 export default function SynthesiaClone() {
@@ -132,110 +116,7 @@ export default function SynthesiaClone() {
     event.target.value = '';
   };
 
-  const visibleRange = useMemo(() => {
-    if (!notes.length) {
-      return { start: 48, end: 72 };
-    }
-
-    const minMidi = Math.min(...notes.map((note) => note.midi));
-    const maxMidi = Math.max(...notes.map((note) => note.midi));
-
-    let start = Math.max(MIDI_LOW, minMidi - 2);
-    let end = Math.min(MIDI_HIGH, maxMidi + 2);
-
-    if (end - start < 18) {
-      const midpoint = Math.round((start + end) / 2);
-      start = Math.max(MIDI_LOW, midpoint - 10);
-      end = Math.min(MIDI_HIGH, midpoint + 10);
-    }
-
-    return { start, end };
-  }, [notes]);
-
-  const keys = useMemo<PianoKey[]>(() => {
-    const whiteKeyCount = Array.from(
-      { length: visibleRange.end - visibleRange.start + 1 },
-      (_, index) => visibleRange.start + index
-    ).filter((midi) => !isBlackKey(midi)).length || 1;
-
-    const whiteKeyWidth = 100 / whiteKeyCount;
-    const blackKeyWidth = whiteKeyWidth * BLACK_KEY_WIDTH_RATIO;
-    let whiteIndex = 0;
-    const result: PianoKey[] = [];
-
-    for (let midi = visibleRange.start; midi <= visibleRange.end; midi += 1) {
-      const black = isBlackKey(midi);
-      const width = black ? blackKeyWidth : whiteKeyWidth;
-      const rawLeft = black
-        ? whiteIndex * whiteKeyWidth - blackKeyWidth / 2
-        : whiteIndex * whiteKeyWidth;
-      const left = Math.min(Math.max(rawLeft, 0), Math.max(100 - width, 0));
-
-      result.push({
-        midi,
-        isBlack: black,
-        left,
-        width: Math.max(Math.min(width, 100 - left), 0),
-        label: getNoteLabel(midi),
-      });
-
-      if (!black) {
-        whiteIndex += 1;
-      }
-    }
-
-    return result;
-  }, [visibleRange.end, visibleRange.start]);
-
-  const keyMap = useMemo(() => new Map(keys.map((key) => [key.midi, key])), [keys]);
   const hasNotes = notes.length > 0;
-
-  const activeNoteSet = useMemo(() => {
-    const activeNotes = new Set<number>();
-
-    notes.forEach((note) => {
-      if (currentTime >= note.time && currentTime <= note.time + note.duration) {
-        activeNotes.add(note.midi);
-      }
-    });
-
-    return activeNotes;
-  }, [currentTime, notes]);
-
-  const visibleBars = useMemo<VisibleBar[]>(() => {
-    const scaledPixelsPerSecond = PIXELS_PER_SECOND * SYNTHESIA_ROLL_CONFIG.speed * playbackRate;
-
-    return notes
-      .map((note) => {
-        const key = keyMap.get(note.midi);
-        if (!key) {
-          return null;
-        }
-
-        const height = Math.max(note.duration * scaledPixelsPerSecond, 12);
-        const bottom = KEYBOARD_HEIGHT + (note.time - currentTime) * scaledPixelsPerSecond;
-
-        if (bottom + height < KEYBOARD_HEIGHT || bottom > pianoRollHeight) {
-          return null;
-        }
-
-        const barWidth = Math.min(Math.max(key.width * (key.isBlack ? 0.88 : 0.92), 0.35), key.width);
-        const left = Math.min(
-          Math.max(key.left + (key.width - barWidth) / 2, 0),
-          Math.max(100 - barWidth, 0)
-        );
-
-        return {
-          id: note.id,
-          left,
-          width: barWidth,
-          bottom,
-          height,
-          color: BAR_COLORS[note.track % BAR_COLORS.length],
-        };
-      })
-      .filter((bar): bar is NonNullable<typeof bar> => Boolean(bar));
-  }, [currentTime, keyMap, notes, pianoRollHeight, playbackRate]);
 
   useEffect(() => {
     void refreshStoredMidis();
@@ -425,11 +306,11 @@ export default function SynthesiaClone() {
           />
         ) : (
           <PianoRoll
-            hasNotes={hasNotes}
             pianoRollHeight={pianoRollHeight}
-            keys={keys}
-            activeNoteSet={activeNoteSet}
-            visibleBars={visibleBars}
+            notes={notes}
+            currentTime={currentTime}
+            isPlaying={isPlaying}
+            playbackRate={playbackRate}
           />
         )}
       </Box>
