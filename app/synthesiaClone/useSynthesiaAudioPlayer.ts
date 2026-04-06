@@ -25,6 +25,7 @@ type UseSynthesiaAudioPlayerResult = {
   handleSeek: (_event: Event, value: number | number[]) => void;
   handleSeekCommitted: (_event: Event | SyntheticEvent, value: number | number[]) => Promise<void>;
   handleJump: (deltaSeconds: number) => Promise<void>;
+  seekToTime: (nextValue: number) => Promise<void>;
 };
 
 export function useSynthesiaAudioPlayer({ notes, duration }: UseSynthesiaAudioPlayerArgs): UseSynthesiaAudioPlayerResult {
@@ -249,5 +250,6 @@ export function useSynthesiaAudioPlayer({ notes, duration }: UseSynthesiaAudioPl
     handleSeek,
     handleSeekCommitted,
     handleJump,
+    seekToTime,
   };
 }

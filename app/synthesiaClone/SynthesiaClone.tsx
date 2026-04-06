@@ -101,6 +101,7 @@ export default function SynthesiaClone() {
     handleSeek,
     handleSeekCommitted,
     handleJump,
+    seekToTime,
   } = useSynthesiaAudioPlayer({ notes, duration });
 
   const [controlsOpen, setControlsOpen] = useState(false);
@@ -350,8 +351,10 @@ export default function SynthesiaClone() {
             pianoRollHeight={pianoRollHeight}
             notes={notes}
             currentTime={currentTime}
+            duration={duration}
             isPlaying={isPlaying}
             playbackRate={playbackRate}
+            onSeekToTime={seekToTime}
           />
         )}
       </Box>

@@ -10,8 +10,10 @@ type PianoRollProps = {
   pianoRollHeight: number;
   notes: MidiNote[];
   currentTime: number;
+  duration: number;
   isPlaying: boolean;
   playbackRate: number;
+  onSeekToTime: (nextTime: number) => void | Promise<void>;
 };
 
 const MIDI_LOW = 21;
@@ -36,13 +38,93 @@ export function PianoRoll({
   pianoRollHeight,
   notes,
   currentTime,
+  duration,
   isPlaying,
   playbackRate,
+  onSeekToTime,
 }: PianoRollProps) {
   const visualAnimationFrameRef = useRef<number | null>(null);
+  const scrubAnimationFrameRef = useRef<number | null>(null);
+  const activePointerIdRef = useRef<number | null>(null);
+  const dragAnchorYRef = useRef(0);
+  const dragAnchorTimeRef = useRef(0);
+  const currentTimeRef = useRef(0);
+  const pendingSeekTimeRef = useRef<number | null>(null);
   const [visualCurrentTime, setVisualCurrentTime] = useState(0);
   const visualCurrentTimeRef = useRef(0);
   const hasNotes = notes.length > 0;
+  const scaledPixelsPerSecond = PIXELS_PER_SECOND * SYNTHESIA_ROLL_CONFIG.speed * playbackRate;
+
+  const clampTime = useCallback((nextTime: number) => {
+    return Math.min(Math.max(nextTime, 0), duration);
+  }, [duration]);
+
+  const flushPendingSeek = useCallback(() => {
+    scrubAnimationFrameRef.current = null;
+
+    const pendingSeek = pendingSeekTimeRef.current;
+    if (pendingSeek === null) {
+      return;
+    }
+
+    pendingSeekTimeRef.current = null;
+    currentTimeRef.current = pendingSeek;
+    void onSeekToTime(pendingSeek);
+  }, [onSeekToTime]);
+
+  const scheduleSeek = useCallback((nextTime: number) => {
+    pendingSeekTimeRef.current = clampTime(nextTime);
+
+    if (scrubAnimationFrameRef.current !== null) {
+      return;
+    }
+
+    scrubAnimationFrameRef.current = window.requestAnimationFrame(flushPendingSeek);
+  }, [clampTime, flushPendingSeek]);
+
+  const handleWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
+    if (!hasNotes) {
+      return;
+    }
+
+    event.preventDefault();
+    const dominantDelta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+    const deltaSeconds = dominantDelta / scaledPixelsPerSecond;
+    scheduleSeek(currentTimeRef.current + deltaSeconds);
+  }, [hasNotes, scaledPixelsPerSecond, scheduleSeek]);
+
+  const handlePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (!hasNotes) {
+      return;
+    }
+
+    activePointerIdRef.current = event.pointerId;
+    dragAnchorYRef.current = event.clientY;
+    dragAnchorTimeRef.current = currentTimeRef.current;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, [hasNotes]);
+
+  const handlePointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    event.preventDefault();
+    const deltaPixels = event.clientY - dragAnchorYRef.current;
+    const deltaSeconds = deltaPixels / scaledPixelsPerSecond;
+    scheduleSeek(dragAnchorTimeRef.current + deltaSeconds);
+  }, [scaledPixelsPerSecond, scheduleSeek]);
+
+  const clearPointerTracking = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    activePointerIdRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
 
   const stopVisualPlayheadAnimation = useCallback(() => {
     if (visualAnimationFrameRef.current !== null) {
@@ -123,8 +205,6 @@ export function PianoRoll({
   }, [notes, rollCurrentTime]);
 
   const visibleBars = useMemo<VisibleBar[]>(() => {
-    const scaledPixelsPerSecond = PIXELS_PER_SECOND * SYNTHESIA_ROLL_CONFIG.speed * playbackRate;
-
     return notes
       .map((note) => {
         const key = keyMap.get(note.midi);
@@ -160,6 +240,10 @@ export function PianoRoll({
   useEffect(() => {
     visualCurrentTimeRef.current = visualCurrentTime;
   }, [visualCurrentTime]);
+
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -212,6 +296,11 @@ export function PianoRoll({
   useEffect(() => {
     return () => {
       stopVisualPlayheadAnimation();
+
+      if (scrubAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(scrubAnimationFrameRef.current);
+        scrubAnimationFrameRef.current = null;
+      }
     };
   }, [stopVisualPlayheadAnimation]);
 
@@ -227,6 +316,15 @@ export function PianoRoll({
       <div className={styles.rollViewport} style={{ height: '100%' }}>
         <div className={styles.rollInner} style={rollInnerStyle}>
           <div className={styles.laneOverlay} />
+          <div
+            className={styles.scrubSurface}
+            onWheel={handleWheel}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={clearPointerTracking}
+            onPointerCancel={clearPointerTracking}
+            onLostPointerCapture={clearPointerTracking}
+          />
           <div className={styles.nowLine} />
 
           {hasNotes ? (
