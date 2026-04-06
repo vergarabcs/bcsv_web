@@ -183,7 +183,7 @@ const linuxIp = getFirstExternalIpv4();
 const windowsNetwork = wsl ? getWindowsNetworkTargets() : null;
 const windowsLanIp = windowsNetwork?.preferredIp || null;
 const publicIp = windowsLanIp || linuxIp;
-const url = `http://${publicIp}:${port}/doublesQueue`;
+const url = `http://${publicIp}:${port}/synthesiaClone`;
 
 let forwardingReady = !wsl;
 if (wsl) {

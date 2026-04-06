@@ -18,6 +18,11 @@ import { PianoRoll } from './components/PianoRoll';
 import { SYNTHESIA_AUDIO_CONFIG, SYNTHESIA_ROLL_CONFIG } from './config';
 import type { MidiNote, PianoKey, VisibleBar } from './types';
 
+type ToneModule = typeof import('tone');
+type ToneSampler = import('tone').Sampler;
+type ScheduledToneNote = { time: number; note: MidiNote };
+type TonePart = import('tone').Part<ScheduledToneNote>;
+
 const MIDI_LOW = 21;
 const MIDI_HIGH = 108;
 const BLACK_KEY_WIDTH_RATIO = 0.65;
@@ -50,10 +55,10 @@ const getNoteLabel = (midi: number) => {
 export default function SynthesiaClone() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const toneRef = useRef<ToneModule | null>(null);
+  const samplerRef = useRef<ToneSampler | null>(null);
+  const partRef = useRef<TonePart | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const scheduledTimeoutsRef = useRef<number[]>([]);
-  const activeOscillatorsRef = useRef<OscillatorNode[]>([]);
   const playStartWallClockRef = useRef(0);
   const playStartOffsetRef = useRef(0);
 
@@ -70,44 +75,59 @@ export default function SynthesiaClone() {
   const [pianoRollHeight, setPianoRollHeight] = useState(MIN_PIANO_ROLL_HEIGHT);
 
   const stopScheduledAudio = useCallback(() => {
-    scheduledTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
-    scheduledTimeoutsRef.current = [];
-
-    activeOscillatorsRef.current.forEach((oscillator) => {
-      try {
-        oscillator.stop();
-      } catch {
-        // Ignore oscillators that have already ended.
-      }
-    });
-    activeOscillatorsRef.current = [];
-
     if (animationFrameRef.current !== null) {
       window.cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
+
+    partRef.current?.dispose();
+    partRef.current = null;
+
+    samplerRef.current?.releaseAll();
+
+    const tone = toneRef.current;
+    if (tone) {
+      const transport = tone.getTransport();
+      transport.stop();
+      transport.cancel(0);
+    }
   }, []);
 
-  const ensureAudioContext = useCallback(async () => {
+  const ensureSampler = useCallback(async () => {
     if (typeof window === 'undefined') {
       return null;
     }
 
-    if (!audioContextRef.current) {
-      const AudioContextCtor = window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    try {
+      if (!toneRef.current) {
+        toneRef.current = await import('tone');
+      }
 
-      if (!AudioContextCtor) {
+      const Tone = toneRef.current;
+      await Tone.start();
+
+      if (!samplerRef.current) {
+        const sampler = new Tone.Sampler({
+          urls: SYNTHESIA_AUDIO_CONFIG.sampleUrls,
+          baseUrl: SYNTHESIA_AUDIO_CONFIG.sampleBaseUrl,
+          release: SYNTHESIA_AUDIO_CONFIG.releaseSeconds,
+        }).toDestination();
+
+        sampler.volume.value = SYNTHESIA_AUDIO_CONFIG.volumeDb;
+        samplerRef.current = sampler;
+        await Tone.loaded();
+      }
+
+      const sampler = samplerRef.current;
+      if (!sampler) {
         return null;
       }
 
-      audioContextRef.current = new AudioContextCtor();
+      return { Tone, sampler };
+    } catch (samplerError) {
+      console.error('Failed to initialize Synthesia piano sampler.', samplerError);
+      return null;
     }
-
-    if (audioContextRef.current.state === 'suspended') {
-      await audioContextRef.current.resume();
-    }
-
-    return audioContextRef.current;
   }, []);
 
   const stopPlayback = useCallback((resetToStart = true) => {
@@ -136,53 +156,52 @@ export default function SynthesiaClone() {
   }, [duration, playbackRate, stopScheduledAudio]);
 
   const scheduleAudioFrom = useCallback(async (startFrom: number) => {
-    const audioContext = await ensureAudioContext();
+    const instrument = await ensureSampler();
 
-    if (!audioContext) {
-      setError('This browser does not support Web Audio playback.');
+    if (!instrument) {
+      setError('Unable to load the piano soundfont in this browser.');
       return false;
     }
 
-    notes.forEach((note) => {
-      const noteEnd = note.time + note.duration;
-      if (noteEnd <= startFrom) {
-        return;
-      }
+    const { Tone, sampler } = instrument;
+    const overlappingNotes = notes.filter((note) => note.time < startFrom && note.time + note.duration > startFrom);
+    const futureNotes = notes.filter((note) => note.time >= startFrom);
+    const transport = Tone.getTransport();
 
-      const startsIn = Math.max(note.time - startFrom, 0);
-      const remainingDuration = Math.max(noteEnd - Math.max(startFrom, note.time), 0.05);
+    transport.stop();
+    transport.cancel(0);
 
-      const timeoutId = window.setTimeout(() => {
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        const playDuration = Math.max(remainingDuration / playbackRate, 0.05);
-        const sustainedDuration = playDuration + SYNTHESIA_AUDIO_CONFIG.sustainSeconds;
-        const peakVolume = (0.03 + note.velocity * 0.1) * SYNTHESIA_AUDIO_CONFIG.volume;
+    partRef.current?.dispose();
 
-        oscillator.type = note.track % 2 === 0 ? 'triangle' : 'sine';
-        oscillator.frequency.setValueAtTime(midiToFrequency(note.midi), audioContext.currentTime);
+    const startAt = Tone.now() + SYNTHESIA_AUDIO_CONFIG.lookAheadSeconds;
 
-        gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(peakVolume, audioContext.currentTime + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + sustainedDuration);
+    overlappingNotes.forEach((note) => {
+      const remainingDuration = Math.max((note.time + note.duration - startFrom) / playbackRate, 0.05);
+      const velocity = Math.min(1, Math.max(0.12, note.velocity * SYNTHESIA_AUDIO_CONFIG.velocityMultiplier));
 
-        oscillator.connect(gain);
-        gain.connect(audioContext.destination);
-
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + sustainedDuration + 0.03);
-
-        activeOscillatorsRef.current.push(oscillator);
-        oscillator.onended = () => {
-          activeOscillatorsRef.current = activeOscillatorsRef.current.filter((active) => active !== oscillator);
-        };
-      }, (startsIn * 1000) / playbackRate);
-
-      scheduledTimeoutsRef.current.push(timeoutId);
+      sampler.triggerAttackRelease(note.name, remainingDuration, startAt, velocity);
     });
 
+    if (futureNotes.length) {
+      const part = new Tone.Part<ScheduledToneNote>((time, event) => {
+        const { note } = event;
+        const velocity = Math.min(1, Math.max(0.12, note.velocity * SYNTHESIA_AUDIO_CONFIG.velocityMultiplier));
+
+        sampler.triggerAttackRelease(note.name, Math.max(note.duration / playbackRate, 0.05), time, velocity);
+      }, futureNotes.map((note) => ({
+        time: Math.max((note.time - startFrom) / playbackRate, 0),
+        note,
+      })));
+
+      part.start(0);
+      partRef.current = part;
+    } else {
+      partRef.current = null;
+    }
+
+    transport.start(`+${SYNTHESIA_AUDIO_CONFIG.lookAheadSeconds.toFixed(2)}`);
     return true;
-  }, [ensureAudioContext, notes, playbackRate]);
+  }, [ensureSampler, notes, playbackRate]);
 
   const startPlayback = useCallback(async (startFrom = currentTime) => {
     if (!notes.length) {
@@ -413,11 +432,10 @@ export default function SynthesiaClone() {
       resizeObserver.disconnect();
       window.removeEventListener('resize', updatePianoRollHeight);
       stopScheduledAudio();
-      if (audioContextRef.current) {
-        void audioContextRef.current.close();
-      }
+      samplerRef.current?.dispose();
+      samplerRef.current = null;
     };
-  }, [error, stopScheduledAudio]);
+  }, [stopScheduledAudio]);
 
   return (
     <Box ref={containerRef} className={styles.synthesiaShell} sx={{ height: 'calc(100dvh - 90px)', minHeight: 0 }}>

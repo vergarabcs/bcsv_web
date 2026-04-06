@@ -63,8 +63,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--minimum-note-length-ms",
         type=float,
-        default=127.7,
-        help="Minimum note length for MIDI events in milliseconds",
+        default=170.0,
+        help="Minimum note length for MIDI events in milliseconds (higher values reduce short noise notes)",
+    )
+    parser.add_argument(
+        "--onset-threshold",
+        type=float,
+        default=0.58,
+        help="Minimum onset confidence from 0 to 1. Higher values reduce false notes.",
+    )
+    parser.add_argument(
+        "--frame-threshold",
+        type=float,
+        default=0.35,
+        help="Minimum sustain confidence from 0 to 1. Higher values reduce faint notes.",
+    )
+    parser.add_argument(
+        "--minimum-note-amplitude",
+        type=float,
+        default=0.12,
+        help="Drop detected notes with amplitudes below this value from 0 to 1.",
     )
     parser.add_argument(
         "--minimum-frequency",
@@ -83,6 +101,16 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=120.0,
         help="Tempo to encode in the resulting MIDI file",
+    )
+    parser.add_argument(
+        "--digital-piano",
+        action="store_true",
+        help="Use a cleaner preset for rendered or digital piano audio to reduce harmonic over-detection.",
+    )
+    parser.add_argument(
+        "--no-melodia",
+        action="store_true",
+        help="Disable melodia post-processing. This can reduce extra notes on noisy audio.",
     )
     parser.add_argument(
         "--keep-intermediate",
@@ -112,6 +140,23 @@ def require_ffmpeg() -> str:
     )
 
 
+def apply_input_presets(args: argparse.Namespace) -> None:
+    if args.digital_piano:
+        if args.minimum_note_length_ms == 170.0:
+            args.minimum_note_length_ms = 210.0
+        if args.onset_threshold == 0.58:
+            args.onset_threshold = 0.68
+        if args.frame_threshold == 0.35:
+            args.frame_threshold = 0.40
+        if args.minimum_note_amplitude == 0.12:
+            args.minimum_note_amplitude = 0.16
+        if args.minimum_frequency is None:
+            args.minimum_frequency = 55.0
+        if args.maximum_frequency is None:
+            args.maximum_frequency = 1760.0
+        args.no_melodia = True
+
+
 def validate_args(args: argparse.Namespace) -> None:
     if args.start < 0:
         raise ValueError("--start must be greater than or equal to 0")
@@ -121,6 +166,15 @@ def validate_args(args: argparse.Namespace) -> None:
 
     if args.minimum_note_length_ms <= 0:
         raise ValueError("--minimum-note-length-ms must be positive")
+
+    if not 0 <= args.onset_threshold <= 1:
+        raise ValueError("--onset-threshold must be between 0 and 1")
+
+    if not 0 <= args.frame_threshold <= 1:
+        raise ValueError("--frame-threshold must be between 0 and 1")
+
+    if not 0 <= args.minimum_note_amplitude <= 1:
+        raise ValueError("--minimum-note-amplitude must be between 0 and 1")
 
     if args.midi_tempo <= 0:
         raise ValueError("--midi-tempo must be positive")
@@ -201,37 +255,57 @@ def write_note_events_csv(note_events: list[tuple[Any, ...]], output_path: Path)
         writer.writerows(note_events)
 
 
+def filter_note_events(
+    note_events: list[tuple[Any, ...]],
+    minimum_note_amplitude: float,
+) -> list[tuple[Any, ...]]:
+    if minimum_note_amplitude <= 0:
+        return note_events
+
+    return [note for note in note_events if float(note[3]) >= minimum_note_amplitude]
+
+
 def transcribe_to_midi(
     audio_path: Path,
     midi_path: Path,
     note_events_path: Path | None,
     minimum_note_length_ms: float,
+    onset_threshold: float,
+    frame_threshold: float,
+    minimum_note_amplitude: float,
     minimum_frequency: float | None,
     maximum_frequency: float | None,
     midi_tempo: float,
-) -> int:
+    use_melodia: bool,
+) -> tuple[int, int]:
     try:
         from basic_pitch import ICASSP_2022_MODEL_PATH
         from basic_pitch.inference import predict
+        from basic_pitch.note_creation import note_events_to_midi
     except ImportError as exc:
         raise RuntimeError(
             "Missing dependency 'basic-pitch'. Run `python -m pip install -r tools/requirements.txt`, and on Python 3.12 also run `python -m pip install basic-pitch==0.4.0 --no-deps`."
         ) from exc
 
-    _, midi_data, note_events = predict(
+    _, _, note_events = predict(
         audio_path,
         model_or_model_path=ICASSP_2022_MODEL_PATH,
+        onset_threshold=onset_threshold,
+        frame_threshold=frame_threshold,
         minimum_note_length=minimum_note_length_ms,
         minimum_frequency=minimum_frequency,
         maximum_frequency=maximum_frequency,
+        melodia_trick=use_melodia,
         midi_tempo=midi_tempo,
     )
+    filtered_note_events = filter_note_events(note_events, minimum_note_amplitude)
+    midi_data = note_events_to_midi(filtered_note_events, midi_tempo=midi_tempo)
     midi_data.write(str(midi_path))
 
     if note_events_path is not None:
-        write_note_events_csv(note_events, note_events_path)
+        write_note_events_csv(filtered_note_events, note_events_path)
 
-    return len(note_events)
+    return len(filtered_note_events), len(note_events) - len(filtered_note_events)
 
 
 def build_default_output_path(info: dict[str, Any]) -> Path:
@@ -245,6 +319,7 @@ def build_default_note_events_path(midi_path: Path) -> Path:
 
 def main() -> int:
     args = parse_args()
+    apply_input_presets(args)
 
     try:
         validate_args(args)
@@ -278,20 +353,28 @@ def main() -> int:
             note_events_output_path = build_default_note_events_path(midi_output_path)
 
         print("Running piano transcription...")
-        note_count = transcribe_to_midi(
+        if args.digital_piano:
+            print("Using digital piano preset for cleaner note detection...")
+        note_count, filtered_out_count = transcribe_to_midi(
             trimmed_audio_path,
             midi_output_path,
             note_events_output_path,
             args.minimum_note_length_ms,
+            args.onset_threshold,
+            args.frame_threshold,
+            args.minimum_note_amplitude,
             args.minimum_frequency,
             args.maximum_frequency,
             args.midi_tempo,
+            not args.no_melodia,
         )
 
         print(f"MIDI written to: {midi_output_path}")
         if note_events_output_path is not None:
             print(f"Note events written to: {note_events_output_path}")
         print(f"Detected note events: {note_count}")
+        if filtered_out_count > 0:
+            print(f"Filtered out weak note events: {filtered_out_count}")
         if args.end is None:
             print(f"Trimmed region: {args.start:.3f}s to end")
         else:
