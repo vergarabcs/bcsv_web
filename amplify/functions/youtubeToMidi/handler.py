@@ -15,6 +15,10 @@ DEFAULT_ONSET_THRESHOLD = 0.58
 DEFAULT_FRAME_THRESHOLD = 0.35
 DEFAULT_MINIMUM_NOTE_AMPLITUDE = 0.12
 DEFAULT_MIDI_TEMPO = 120.0
+YOUTUBE_USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+)
 
 #todo: secure this lambda handler from public access before enabling public access.
 def sanitize_stem(value: str) -> str:
@@ -71,6 +75,52 @@ def validate_options(options: dict[str, Any]) -> None:
         raise ValueError("midi_tempo must be positive")
 
 
+def build_ydl_option_sets(output_template: str) -> list[dict[str, Any]]:
+    base_options: dict[str, Any] = {
+        "noplaylist": True,
+        "outtmpl": {"default": output_template},
+        "quiet": False,
+        "no_warnings": False,
+        "http_headers": {
+            "User-Agent": YOUTUBE_USER_AGENT,
+        },
+    }
+
+    if shutil.which("node"):
+        base_options["js_runtimes"] = {"node": {}}
+        base_options["remote_components"] = ["ejs:github"]
+
+    return [
+        {
+            **base_options,
+            "format": "bestaudio[ext=m4a]/bestaudio[ext=mp4]/bestaudio/best",
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["web", "android"],
+                }
+            },
+        },
+        {
+            **base_options,
+            "format": "bestaudio[ext=mp4]/bestaudio/best",
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android"],
+                }
+            },
+        },
+        {
+            **base_options,
+            "format": "18/bestaudio/best",
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["web", "android"],
+                }
+            },
+        },
+    ]
+
+
 def download_audio(url: str, working_dir: Path) -> tuple[Path, dict[str, Any]]:
     try:
         import yt_dlp
@@ -78,26 +128,29 @@ def download_audio(url: str, working_dir: Path) -> tuple[Path, dict[str, Any]]:
         raise RuntimeError("Missing dependency 'yt-dlp' in the Lambda image.") from exc
 
     output_template = str(working_dir / "downloaded.%(ext)s")
-    ydl_opts = {
-        "format": "bestaudio/best",
-        "noplaylist": True,
-        "outtmpl": {"default": output_template},
-        "quiet": False,
-        "no_warnings": False,
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["web", "android"],
-            }
-        },
-    }
-    if shutil.which("node"):
-        ydl_opts["js_runtimes"] = {"node": {}}
+    last_error: Exception | None = None
+    info: dict[str, Any] | None = None
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
+    for ydl_opts in build_ydl_option_sets(output_template):
+        try:
+            for stale_file in working_dir.glob("downloaded*"):
+                if stale_file.is_file():
+                    stale_file.unlink(missing_ok=True)
 
-    if isinstance(info, dict) and info.get("entries"):
-        info = info["entries"][0]
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                extracted_info = ydl.extract_info(url, download=True)
+
+            info = extracted_info["entries"][0] if isinstance(extracted_info, dict) and extracted_info.get("entries") else extracted_info
+            break
+        except Exception as exc:
+            last_error = exc
+
+    if info is None:
+        raise RuntimeError(
+            f"Unable to download audio from YouTube after multiple attempts. {last_error}"
+            if last_error
+            else "Unable to download audio from YouTube."
+        )
 
     candidates = [
         path

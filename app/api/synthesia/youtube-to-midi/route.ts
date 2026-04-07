@@ -9,6 +9,7 @@ import amplifyOutputs from '../../../../amplify_outputs.json';
 
 const execFileAsync = promisify(execFile);
 const YOUTUBE_URL_PATTERN = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i;
+const BOT_CHECK_PATTERN = /not a bot|please sign in|cookies(?:-from-browser)?/i;
 const LOCAL_TIMEOUT_MS = 4 * 60 * 1000;
 const LOCAL_PYTHON_CANDIDATES = [
   path.join(process.cwd(), '.venv', 'bin', 'python'),
@@ -113,6 +114,14 @@ const resolveLambdaUrl = () => {
   return process.env.YOUTUBE_TO_MIDI_LAMBDA_URL || process.env.AMPLIFY_YOUTUBE_TO_MIDI_FUNCTION_URL || configuredUrl;
 };
 
+const normalizeConversionError = (message: string) => {
+  if (BOT_CHECK_PATTERN.test(message)) {
+    return 'This YouTube video is blocking automated download. Try another public video, or configure YouTube cookies for the converter.';
+  }
+
+  return message;
+};
+
 const convertWithLambda = async (
   url: string,
   start?: number,
@@ -169,7 +178,9 @@ export async function POST(request: Request) {
     try {
       payload = await convertWithLambda(url, start, end);
     } catch (error) {
-      lambdaError = error instanceof Error ? error.message : 'Unknown Lambda conversion failure.';
+      lambdaError = normalizeConversionError(
+        error instanceof Error ? error.message : 'Unknown Lambda conversion failure.'
+      );
     }
 
     if (!payload && canUseLocalScript()) {
@@ -181,7 +192,7 @@ export async function POST(request: Request) {
         {
           error: lambdaError || 'The YouTube-to-MIDI service is currently unavailable.',
         },
-        { status: lambdaError ? 502 : 503 }
+        { status: BOT_CHECK_PATTERN.test(lambdaError) ? 422 : lambdaError ? 502 : 503 }
       );
     }
 
