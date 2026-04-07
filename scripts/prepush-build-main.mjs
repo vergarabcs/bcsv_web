@@ -29,14 +29,24 @@ process.stdin.on('end', () => {
   }
 
   console.log('Pre-push check: push targets main, running build...');
+  const buildCommand = 'NEXT_DISABLE_SWC_WORKER=1 npm run build';
 
   try {
-    execSync('npm run build', { stdio: 'inherit' });
+    execSync(buildCommand, { stdio: 'inherit' });
     console.log('Pre-push check: build succeeded. Continuing push.');
     process.exit(0);
   } catch {
-    console.error('Pre-push check: build failed. Push blocked.');
-    process.exit(1);
+    console.warn('Pre-push check: build failed. Retrying once after clearing .next cache...');
+
+    try {
+      execSync('rm -rf .next', { stdio: 'inherit' });
+      execSync(buildCommand, { stdio: 'inherit' });
+      console.log('Pre-push check: build succeeded on retry. Continuing push.');
+      process.exit(0);
+    } catch {
+      console.error('Pre-push check: build failed. Push blocked.');
+      process.exit(1);
+    }
   }
 });
 
