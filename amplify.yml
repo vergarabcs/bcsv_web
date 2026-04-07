@@ -3,6 +3,7 @@ backend:
   phases:
     build:
       commands:
+        - export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm install 20 && nvm use 20 && node -v
         - /usr/local/bin/dockerd-entrypoint.sh
         - npm ci --cache .npm --prefer-offline
         - NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first" npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID --debug
@@ -10,6 +11,7 @@ frontend:
   phases:
     build:
       commands:
+        - export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm install 20 && nvm use 20 && node -v
         - NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first" NEXT_DISABLE_SWC_WORKER=1 npm run build
   artifacts:
     baseDirectory: .next
