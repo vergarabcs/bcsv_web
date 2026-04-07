@@ -84,7 +84,14 @@ def download_audio(url: str, working_dir: Path) -> tuple[Path, dict[str, Any]]:
         "outtmpl": {"default": output_template},
         "quiet": False,
         "no_warnings": False,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["web", "android"],
+            }
+        },
     }
+    if shutil.which("node"):
+        ydl_opts["js_runtimes"] = {"node": {}}
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)

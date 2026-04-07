@@ -27,11 +27,11 @@ for binary_name in ('ffmpeg', 'ffprobe'):
 PY
 
 RUN if command -v yum >/dev/null 2>&1; then \
-        yum install -y gcc gcc-c++ make cmake && yum clean all; \
+        yum install -y gcc gcc-c++ make cmake nodejs libsndfile && yum clean all; \
     elif command -v dnf >/dev/null 2>&1; then \
-        dnf install -y gcc gcc-c++ make cmake && dnf clean all; \
+        dnf install -y gcc gcc-c++ make cmake nodejs libsndfile && dnf clean all; \
     elif command -v microdnf >/dev/null 2>&1; then \
-        microdnf install -y gcc gcc-c++ make cmake && microdnf clean all; \
+        microdnf install -y gcc gcc-c++ make cmake nodejs libsndfile && microdnf clean all; \
     else \
         echo 'No supported package manager found for Lambda build tools.' && exit 1; \
     fi

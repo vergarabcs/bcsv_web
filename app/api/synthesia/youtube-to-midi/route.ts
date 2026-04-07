@@ -10,6 +10,11 @@ import amplifyOutputs from '../../../../amplify_outputs.json';
 const execFileAsync = promisify(execFile);
 const YOUTUBE_URL_PATTERN = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i;
 const LOCAL_TIMEOUT_MS = 4 * 60 * 1000;
+const LOCAL_PYTHON_CANDIDATES = [
+  path.join(process.cwd(), '.venv', 'bin', 'python'),
+  '/usr/bin/python3',
+  '/usr/local/bin/python3',
+];
 
 type ConvertRequestBody = {
   url?: string;
@@ -35,10 +40,22 @@ const parseNumber = (value: unknown) => {
   return Number.isFinite(value) ? value : undefined;
 };
 
+const resolveLocalPythonPath = () =>
+  LOCAL_PYTHON_CANDIDATES.find((candidate) => existsSync(candidate));
+
+const canUseLocalScript = () =>
+  process.env.NODE_ENV !== 'production' &&
+  existsSync(path.join(process.cwd(), 'tools', 'youtube_to_piano_midi.py')) &&
+  Boolean(resolveLocalPythonPath());
+
 const buildPythonCommand = (url: string, start?: number, end?: number) => {
-  const pythonPath = existsSync(path.join(process.cwd(), '.venv', 'bin', 'python'))
-    ? path.join(process.cwd(), '.venv', 'bin', 'python')
-    : 'python3';
+  const pythonPath = resolveLocalPythonPath();
+
+  if (!pythonPath) {
+    throw new Error(
+      'Local YouTube-to-MIDI conversion is unavailable because no Python 3 runtime was found on this server.'
+    );
+  }
 
   const scriptPath = path.join(process.cwd(), 'tools', 'youtube_to_piano_midi.py');
   const args = [scriptPath, url, '--force'];
@@ -155,8 +172,17 @@ export async function POST(request: Request) {
       lambdaError = error instanceof Error ? error.message : 'Unknown Lambda conversion failure.';
     }
 
-    if (!payload) {
+    if (!payload && canUseLocalScript()) {
       payload = await convertWithLocalScript(url, start, end);
+    }
+
+    if (!payload) {
+      return NextResponse.json(
+        {
+          error: lambdaError || 'The YouTube-to-MIDI service is currently unavailable.',
+        },
+        { status: lambdaError ? 502 : 503 }
+      );
     }
 
     return NextResponse.json(
