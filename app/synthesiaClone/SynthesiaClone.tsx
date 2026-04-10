@@ -51,8 +51,8 @@ const MIN_PIANO_ROLL_HEIGHT = 320;
 const navItems: NavItem[] = [
   {
     view: 'browser',
-    label: 'MIDI browser & download',
-    caption: 'Convert, browse, and download stored MIDI files.',
+    label: 'MIDI library',
+    caption: 'Upload, browse, and download stored MIDI files.',
     icon: <LibraryMusicIcon />,
   },
   {
@@ -236,7 +236,7 @@ export default function SynthesiaClone() {
         <Box sx={{ p: 2 }}>
           <Typography variant="h6">Synthesia workspace</Typography>
           <Typography variant="body2" color="text.secondary">
-            Switch between preparing MIDI files and playing them in the piano roll.
+            Switch between your MIDI library and the piano roll.
           </Typography>
         </Box>
 

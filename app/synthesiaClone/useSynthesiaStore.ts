@@ -5,9 +5,7 @@ import { create } from 'zustand';
 import {
   buildStoredMidiId,
   deleteStoredMidi as deleteStoredMidiFromLibrary,
-  findStoredMidiBySourceUrl,
   listStoredMidis,
-  normalizeYoutubeUrl,
   saveStoredMidi,
   type StoredMidiRecord,
 } from './browserMidiStore';
@@ -15,22 +13,11 @@ import type { MidiNote } from './types';
 
 export type SynthesiaView = 'browser' | 'piano-roll';
 
-type ConvertMidiResponse = {
-  fileName?: string;
-  midiBase64?: string;
-  sourceUrl?: string;
-  usedLambda?: boolean;
-  lambdaError?: string;
-  error?: string;
-};
-
 type SynthesiaStore = {
   currentView: SynthesiaView;
-  youtubeUrl: string;
   storedMidis: StoredMidiRecord[];
   selectedStoredId: string | null;
   isLibraryReady: boolean;
-  isConverting: boolean;
   error: string;
   statusMessage: string;
   notes: MidiNote[];
@@ -39,30 +26,20 @@ type SynthesiaStore = {
   trackCount: number;
   tempo: number | null;
   setCurrentView: (view: SynthesiaView) => void;
-  setYoutubeUrl: (value: string) => void;
   clearMessages: () => void;
   refreshStoredMidis: () => Promise<void>;
   loadMidiFromArrayBuffer: (arrayBuffer: ArrayBuffer, fileName: string) => Promise<boolean>;
   loadStoredMidiRecord: (record: StoredMidiRecord) => Promise<boolean>;
   saveUploadedMidiFile: (file: File) => Promise<boolean>;
-  convertYoutubeToMidi: () => Promise<boolean>;
   deleteStoredMidiRecord: (record: StoredMidiRecord) => Promise<void>;
   downloadStoredMidiRecord: (record: StoredMidiRecord) => void;
 };
 
-const base64ToArrayBuffer = (value: string) => {
-  const binary = window.atob(value);
-  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  return bytes.buffer;
-};
-
 export const useSynthesiaStore = create<SynthesiaStore>((set, get) => ({
   currentView: 'browser',
-  youtubeUrl: '',
   storedMidis: [],
   selectedStoredId: null,
   isLibraryReady: false,
-  isConverting: false,
   error: '',
   statusMessage: '',
   notes: [],
@@ -72,7 +49,6 @@ export const useSynthesiaStore = create<SynthesiaStore>((set, get) => ({
   tempo: null,
 
   setCurrentView: (view) => set({ currentView: view }),
-  setYoutubeUrl: (value) => set({ youtubeUrl: value }),
   clearMessages: () => set({ error: '', statusMessage: '' }),
 
   refreshStoredMidis: async () => {
@@ -198,83 +174,6 @@ export const useSynthesiaStore = create<SynthesiaStore>((set, get) => ({
     }
   },
 
-  convertYoutubeToMidi: async () => {
-    const normalizedUrl = normalizeYoutubeUrl(get().youtubeUrl);
-
-    if (!normalizedUrl) {
-      set({ error: 'Paste a YouTube URL first.', statusMessage: '' });
-      return false;
-    }
-
-    set({
-      youtubeUrl: normalizedUrl,
-      error: '',
-      statusMessage: '',
-      isConverting: true,
-    });
-
-    try {
-      const cachedRecord = await findStoredMidiBySourceUrl(normalizedUrl);
-
-      if (cachedRecord) {
-        return await get().loadStoredMidiRecord(cachedRecord);
-      }
-
-      const response = await fetch('/api/synthesia/youtube-to-midi', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: normalizedUrl }),
-      });
-
-      const payload = (await response.json()) as ConvertMidiResponse;
-
-      if (!response.ok || !payload.midiBase64 || !payload.fileName) {
-        throw new Error(payload.error ?? 'Unable to convert that YouTube URL to MIDI.');
-      }
-
-      const arrayBuffer = base64ToArrayBuffer(payload.midiBase64);
-      const record: StoredMidiRecord = {
-        id: buildStoredMidiId({
-          sourceType: 'youtube',
-          sourceUrl: normalizedUrl,
-          name: payload.fileName,
-        }),
-        name: payload.fileName,
-        createdAt: new Date().toISOString(),
-        sourceType: 'youtube',
-        sourceUrl: payload.sourceUrl ?? normalizedUrl,
-        size: arrayBuffer.byteLength,
-        bytes: arrayBuffer.slice(0),
-      };
-
-      await saveStoredMidi(record);
-      await get().refreshStoredMidis();
-      set({ selectedStoredId: record.id });
-
-      const loaded = await get().loadMidiFromArrayBuffer(arrayBuffer, record.name);
-      if (!loaded) {
-        return false;
-      }
-
-      set({
-        statusMessage: payload.lambdaError
-          ? `Saved the MIDI locally after falling back from Lambda: ${payload.lambdaError}`
-          : `${payload.usedLambda ? 'Lambda' : 'Server'} conversion complete. MIDI saved to browser storage.`,
-        currentView: 'piano-roll',
-      });
-      return true;
-    } catch (conversionError) {
-      set({
-        error: conversionError instanceof Error ? conversionError.message : 'Unable to convert that YouTube URL.',
-        statusMessage: '',
-      });
-      return false;
-    } finally {
-      set({ isConverting: false });
-    }
-  },
 
   deleteStoredMidiRecord: async (record) => {
     try {

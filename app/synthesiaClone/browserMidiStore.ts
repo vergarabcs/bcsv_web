@@ -2,8 +2,7 @@ export type StoredMidiRecord = {
   id: string;
   name: string;
   createdAt: string;
-  sourceType: 'youtube' | 'upload';
-  sourceUrl?: string;
+  sourceType: string;
   size: number;
   bytes: ArrayBuffer;
 };
@@ -18,29 +17,6 @@ const slugify = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '') || 'midi';
-
-export const normalizeYoutubeUrl = (value: string) => {
-  const trimmedValue = value.trim();
-
-  try {
-    const url = new URL(trimmedValue);
-    const host = url.hostname.replace(/^www\./, '').toLowerCase();
-
-    if (host === 'youtu.be') {
-      const videoId = url.pathname.split('/').filter(Boolean)[0];
-      return videoId ? `https://www.youtube.com/watch?v=${videoId}` : trimmedValue;
-    }
-
-    if (host.endsWith('youtube.com')) {
-      const videoId = url.searchParams.get('v');
-      return videoId ? `https://www.youtube.com/watch?v=${videoId}` : trimmedValue;
-    }
-  } catch {
-    return trimmedValue;
-  }
-
-  return trimmedValue;
-};
 
 const ensureIndexedDb = () => {
   if (typeof window === 'undefined' || !window.indexedDB) {
@@ -88,20 +64,11 @@ const requestToPromise = <T>(request: IDBRequest<T>) =>
   });
 
 export const buildStoredMidiId = ({
-  sourceType,
-  sourceUrl,
   name,
 }: {
-  sourceType: StoredMidiRecord['sourceType'];
-  sourceUrl?: string;
+  sourceType?: string;
   name: string;
-}) => {
-  if (sourceType === 'youtube' && sourceUrl) {
-    return `youtube:${normalizeYoutubeUrl(sourceUrl)}`;
-  }
-
-  return `upload:${slugify(name)}:${Date.now()}`;
-};
+}) => `upload:${slugify(name)}:${Date.now()}`;
 
 export const listStoredMidis = () =>
   withStore('readonly', async (store) => {
@@ -113,9 +80,6 @@ export const listStoredMidis = () =>
 
 export const getStoredMidi = (id: string) =>
   withStore('readonly', (store) => requestToPromise(store.get(id) as IDBRequest<StoredMidiRecord | undefined>));
-
-export const findStoredMidiBySourceUrl = (sourceUrl: string) =>
-  getStoredMidi(`youtube:${normalizeYoutubeUrl(sourceUrl)}`);
 
 export const saveStoredMidi = (record: StoredMidiRecord) =>
   withStore('readwrite', async (store) => {

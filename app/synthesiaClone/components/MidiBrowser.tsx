@@ -9,7 +9,6 @@ import {
   IconButton,
   Paper,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -18,7 +17,6 @@ import PianoIcon from '@mui/icons-material/Piano';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SettingsIcon from '@mui/icons-material/Settings';
-import YouTubeIcon from '@mui/icons-material/YouTube';
 import { useSynthesiaStore } from '../useSynthesiaStore';
 
 type MidiBrowserProps = {
@@ -30,10 +28,6 @@ type MidiBrowserProps = {
 export function MidiBrowser({ onOpenControls, onWarmUpAudio, formatTime }: MidiBrowserProps) {
   const currentView = useSynthesiaStore((state) => state.currentView);
   const setCurrentView = useSynthesiaStore((state) => state.setCurrentView);
-  const youtubeUrl = useSynthesiaStore((state) => state.youtubeUrl);
-  const setYoutubeUrl = useSynthesiaStore((state) => state.setYoutubeUrl);
-  const convertYoutubeToMidi = useSynthesiaStore((state) => state.convertYoutubeToMidi);
-  const isConverting = useSynthesiaStore((state) => state.isConverting);
   const storedMidis = useSynthesiaStore((state) => state.storedMidis);
   const selectedStoredId = useSynthesiaStore((state) => state.selectedStoredId);
   const isLibraryReady = useSynthesiaStore((state) => state.isLibraryReady);
@@ -54,39 +48,14 @@ export function MidiBrowser({ onOpenControls, onWarmUpAudio, formatTime }: MidiB
       <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
         <Stack spacing={1.5}>
           <Box>
-            <Typography variant="h6">MIDI browser & download</Typography>
+            <Typography variant="h6">MIDI library</Typography>
             <Typography variant="body2" color="text.secondary">
-              Paste a YouTube URL to convert it into MIDI, cache it in this browser, and load or download it later.
+              Upload a MIDI file, keep it in this browser, and load or download it later.
             </Typography>
           </Box>
 
           <Stack direction={{ xs: 'column', lg: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', lg: 'center' }}>
-            <TextField
-              fullWidth
-              label="YouTube URL"
-              placeholder="https://www.youtube.com/watch?v=..."
-              value={youtubeUrl}
-              onChange={(event) => setYoutubeUrl(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  void convertYoutubeToMidi();
-                }
-              }}
-            />
-
-            <Button
-              variant="contained"
-              color="error"
-              startIcon={isConverting ? <CircularProgress size={18} color="inherit" /> : <YouTubeIcon />}
-              onClick={() => void convertYoutubeToMidi()}
-              disabled={isConverting}
-              sx={{ minWidth: { lg: 180 } }}
-            >
-              {isConverting ? 'Converting...' : 'Convert & Save'}
-            </Button>
-
-            <Button variant="outlined" startIcon={<SettingsIcon />} onClick={onOpenControls}>
+            <Button variant="contained" startIcon={<SettingsIcon />} onClick={onOpenControls} sx={{ minWidth: { lg: 180 } }}>
               Upload MIDI
             </Button>
 
@@ -122,10 +91,10 @@ export function MidiBrowser({ onOpenControls, onWarmUpAudio, formatTime }: MidiB
         >
           <Box>
             <Typography variant="subtitle1" fontWeight={600}>
-              Browser MIDI library
+              Saved MIDI library
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Browse saved conversions and download or load them into the piano roll.
+              Browse uploaded MIDI files and download or load them into the piano roll.
             </Typography>
           </Box>
 
@@ -143,7 +112,7 @@ export function MidiBrowser({ onOpenControls, onWarmUpAudio, formatTime }: MidiB
           <Stack spacing={1} sx={{ maxHeight: 'calc(100dvh - 340px)', overflowY: 'auto' }}>
             {storedMidis.map((record) => {
               const isSelected = selectedStoredId === record.id;
-              const sourceLabel = record.sourceType === 'youtube' ? 'YouTube cache' : 'Uploaded file';
+              const sourceLabel = record.sourceType === 'upload' ? 'Uploaded file' : 'Saved file';
 
               return (
                 <Box
@@ -168,11 +137,6 @@ export function MidiBrowser({ onOpenControls, onWarmUpAudio, formatTime }: MidiB
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                       {sourceLabel} • {new Date(record.createdAt).toLocaleString()} • {(record.size / 1024).toFixed(1)} KB
                     </Typography>
-                    {record.sourceUrl ? (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', wordBreak: 'break-all' }}>
-                        {record.sourceUrl}
-                      </Typography>
-                    ) : null}
                   </Box>
 
                   <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -206,7 +170,7 @@ export function MidiBrowser({ onOpenControls, onWarmUpAudio, formatTime }: MidiB
           </Stack>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            No saved MIDI yet. Convert a YouTube link or upload a `.mid` file to start your library.
+            No saved MIDI yet. Upload a `.mid` file to start your library.
           </Typography>
         )}
       </Paper>
