@@ -121,6 +121,43 @@ describe('useDoublesQueueStore undo', () => {
     expect(queueEntries.map(entry => entry.playerId)).toEqual(['a', 'c', 'b']);
   });
 
+  test('games played priority uses wait time to break ties', () => {
+    const olderJoinTime = new Date(Date.now() - 15 * 60 * 1000);
+    const newerJoinTime = new Date(Date.now() - 5 * 60 * 1000);
+
+    const createWaitingPlayer = (id: string, name: string, joinedQueueTime: Date): Player => ({
+      id,
+      name,
+      rating: 1500,
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      currentStreak: 0,
+      joinedQueueTime,
+      status: PlayerStatus.WAITING,
+    });
+
+    const players = [
+      createWaitingPlayer('a', 'Alice', olderJoinTime),
+      createWaitingPlayer('b', 'Bea', newerJoinTime),
+      createWaitingPlayer('c', 'Cara', newerJoinTime),
+    ];
+
+    const queueEntries = new QueueManager({
+      ...DEFAULT_SETTINGS,
+      queuePriorityScheme: QueuePriorityScheme.GAMES_PLAYED,
+    }).generateQueueEntries(
+      players,
+      new Map([
+        ['a', 1],
+        ['b', 1],
+        ['c', 2],
+      ])
+    );
+
+    expect(queueEntries.map(entry => entry.playerId)).toEqual(['a', 'b', 'c']);
+  });
+
   test('final match selection ignores individual priority once candidate players are chosen', () => {
     const createWaitingPlayer = (id: string, name: string, rating: number): Player => ({
       id,
@@ -288,7 +325,11 @@ describe('useDoublesQueueStore undo', () => {
       act(() => {
         const store = useDoublesQueueStore.getState();
         store.initializeSession();
-        store.updateSettings({ kFactorNew: 0, kFactorExperienced: 0 });
+        store.updateSettings({
+          kFactorNew: 0, 
+          kFactorExperienced: 0,
+          queuePriorityScheme: QueuePriorityScheme.GAMES_PLAYED
+        });
 
         for (let index = 1; index <= 18; index += 1) {
           store.addPlayer(`Player ${index}`, 1500);

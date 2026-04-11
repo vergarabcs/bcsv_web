@@ -163,8 +163,8 @@ export class QueueManager {
   /**
    * Generate priority queue entries
    *
-   * Individual queue order is wait-based;
-   * downstream group match selection rather than folded into per-player priority.
+   * Individual queue order uses the active priority scheme,
+   * with wait time as the secondary tie-breaker.
    */
   generateQueueEntries(
     players: Player[], 
@@ -188,7 +188,14 @@ export class QueueManager {
         priority,
         waitTimeScore
       };
-    }).sort((a, b) => b.priority - a.priority);
+    }).sort((a, b) => {
+      const priorityDifference = b.priority - a.priority;
+      if (priorityDifference !== 0) {
+        return priorityDifference;
+      }
+
+      return b.waitTimeScore - a.waitTimeScore;
+    });
   }
 
   /**
