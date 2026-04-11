@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, test } from '@jest/globals';
 import { act } from '@testing-library/react';
 
-import { CourtStatus, GameStatus, PlayerStatus } from './types';
+import { CourtStatus, GameStatus, Player, PlayerStatus } from './types';
+import { QueueManager } from './algorithms';
 import { useDoublesQueueStore } from './useDoublesQueueStore';
 import { getInitialState } from './storeState';
 
@@ -17,6 +18,35 @@ const resetStore = () => {
 describe('useDoublesQueueStore undo', () => {
   beforeEach(() => {
     resetStore();
+  });
+
+  test('individual queue priority ignores balance score differences', () => {
+    const joinedQueueTime = new Date(Date.now() - 10 * 60 * 1000);
+    const createWaitingPlayer = (id: string, name: string, rating: number): Player => ({
+      id,
+      name,
+      rating,
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      currentStreak: 0,
+      joinedQueueTime,
+      status: PlayerStatus.WAITING,
+    });
+
+    const players = [
+      createWaitingPlayer('a', 'Alice', 1500),
+      createWaitingPlayer('b', 'Bea', 1510),
+      createWaitingPlayer('c', 'Cara', 1490),
+      createWaitingPlayer('d', 'Dylan', 1900),
+    ];
+
+    const queueEntries = new QueueManager().generateQueueEntries(players, new Map());
+    const aliceEntry = queueEntries.find(entry => entry.playerId === 'a');
+    const dylanEntry = queueEntries.find(entry => entry.playerId === 'd');
+
+    expect(aliceEntry?.waitTimeScore).toBe(dylanEntry?.waitTimeScore);
+    expect(aliceEntry?.priority).toBe(dylanEntry?.priority);
   });
 
   test('undoes the most recent player addition', () => {

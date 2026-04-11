@@ -147,30 +147,6 @@ export class QueueManager {
   }
 
   /**
-   * Calculate balance score - how well a player fits into balanced combinations
-   */
-  calculateBalanceScore(player: Player, waitingPlayers: Player[]): number {
-    // This is a simplified version - in reality, we'd calculate all possible team combinations
-    // and see how many balanced matches this player enables
-    
-    let balanceablePartners = 0;
-    const playerRating = player.rating;
-
-    // Count how many other players could form balanced teams with this player
-    for (const other of waitingPlayers) {
-      if (other.id === player.id) continue;
-      
-      const ratingDiff = Math.abs(playerRating - other.rating);
-      if (ratingDiff <= this.settings.ratingBalanceTolerance) {
-        balanceablePartners++;
-      }
-    }
-
-    // Score based on how many balanced options this player provides
-    return balanceablePartners * 10;
-  }
-
-  /**
    * Calculate partnership penalty for recent partners
    */
   getPartnershipPenalty(player1: Player, player2: Player, partnershipHistory: PartnershipHistory[]): number {
@@ -192,6 +168,9 @@ export class QueueManager {
 
   /**
    * Generate priority queue entries
+   *
+   * Individual queue order is wait-based;
+   * downstream group match selection rather than folded into per-player priority.
    */
   generateQueueEntries(
     players: Player[], 
@@ -203,16 +182,13 @@ export class QueueManager {
     return waitingPlayers.map(player => {
       const playerSessionGames = sessionGamesPlayed.get(player.id) || 0;
       const waitTimeScore = this.calculateWaitTimeScore(player, playerSessionGames);
-      const balanceScore = this.calculateBalanceScore(player, waitingPlayers);
       
-      const priority = (waitTimeScore * this.priorityConfig.waitTimeWeight) + 
-                      (balanceScore * this.priorityConfig.balanceWeight);
+      const priority = waitTimeScore * this.priorityConfig.waitTimeWeight;
 
       return {
         playerId: player.id,
         priority,
-        waitTimeScore,
-        balanceScore
+        waitTimeScore
       };
     }).sort((a, b) => b.priority - a.priority);
   }

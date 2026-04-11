@@ -226,8 +226,7 @@ export const normalizePersistedQueueEntry = (entry: any): QueueEntry | null => {
   return {
     playerId,
     priority: typeof entry?.priority === 'number' ? entry.priority : 0,
-    waitTimeScore: typeof entry?.waitTimeScore === 'number' ? entry.waitTimeScore : 0,
-    balanceScore: typeof entry?.balanceScore === 'number' ? entry.balanceScore : 0
+    waitTimeScore: typeof entry?.waitTimeScore === 'number' ? entry.waitTimeScore : 0
   };
 };
 

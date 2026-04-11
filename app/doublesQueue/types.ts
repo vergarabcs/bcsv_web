@@ -92,7 +92,6 @@ export interface QueueEntry {
   playerId: string;
   priority: number;
   waitTimeScore: number;
-  balanceScore: number;
 }
 
 export interface MatchSuggestion {
