@@ -13,9 +13,9 @@
     "prepare": "husky",
     "prepush:main": "node scripts/prepush-build-main.mjs",
     "backend": "npx ampx sandbox",
-    "test": "jest '/Users/billcarlo.vergara/Projects/bcsv_web/app/hooks/__tests__/customAuthorization.test.ts'",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test": "jest app"
   },
   "dependencies": {
     "@aws-amplify/adapter-nextjs": "^1.6.1",

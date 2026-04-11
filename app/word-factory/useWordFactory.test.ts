@@ -1,8 +1,15 @@
-import test, { describe } from "node:test";
-import {expect} from '@jest/globals';
+import { describe, expect, test } from '@jest/globals';
+import { renderHook } from '@testing-library/react';
+
+import { TGameStatus } from '../types';
+import { useWordFactory } from './useWordFactory';
 
 describe("useWordFactory", () => {
-    test("it should give correct distribution", () => {
+    test('initializes in standby state', () => {
+        const { result } = renderHook(() => useWordFactory());
 
-    })
-})
+        expect(result.current.gameStatus).toBe(TGameStatus.STANDBY);
+        expect(result.current.board).toEqual([]);
+        expect(result.current.userName).toBe('Player');
+    });
+});

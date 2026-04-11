@@ -79,7 +79,7 @@ describe('BadmintonStore', () => {
 
       // Game should be over
       expect(finalState.gameOver).toBe(true);
-      expect(finalState.winner).toBe('Player 1');
+      expect(finalState.winner).toBe('Team 1');
     });
 
     test('should not end game when leading score equals max score but without required lead', () => {
@@ -135,7 +135,7 @@ describe('BadmintonStore', () => {
 
       // Game should be over as Player 1 has a 2-point lead and exceeded max score
       expect(finalState.gameOver).toBe(true);
-      expect(finalState.winner).toBe('Player 1');
+      expect(finalState.winner).toBe('Team 1');
     });
   });
 

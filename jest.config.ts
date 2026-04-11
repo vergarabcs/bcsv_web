@@ -8,9 +8,13 @@ import type {Config} from 'jest';
 const config: Config = {
   // Use jsdom for React component tests
   testEnvironment: "jsdom",
+  setupFiles: ["<rootDir>/jest.setup.ts"],
 
   clearMocks: true,
   collectCoverage: true,
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/$1',
+  },
 
   coverageDirectory: "coverage",
   coverageProvider: "v8",
