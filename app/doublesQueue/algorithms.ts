@@ -13,6 +13,7 @@ import {
   DEFAULT_PRIORITY_CONFIG,
   PlayerStatus 
 } from './types';
+import { getMostRecentPlayerActivityTime } from './playerActivity';
 
 /**
  * Rating System - Elo-based rating calculations
@@ -125,23 +126,14 @@ export class QueueManager {
     let score = 0;
 
     // Base wait time score
-    if (player.joinedQueueTime) {
-      const waitMinutes = (Date.now() - player.joinedQueueTime.getTime()) / (1000 * 60);
+    const waitFrom = getMostRecentPlayerActivityTime(player);
+    if (waitFrom) {
+      const waitMinutes = (Date.now() - waitFrom.getTime()) / (1000 * 60);
       score += waitMinutes * this.priorityConfig.waitTimeMultiplier;
-    }
-
-    // First game bonus
-    if (sessionGamesPlayed === 0) {
-      score += this.priorityConfig.firstGameBonus;
     }
 
     // Games played penalty (diminishing returns)
     score -= sessionGamesPlayed * this.priorityConfig.gamesPlayedPenalty;
-
-    // Losing streak bonus
-    if (player.currentStreak < -2) {
-      score += this.priorityConfig.streakBonus;
-    }
 
     return Math.max(0, score);
   }

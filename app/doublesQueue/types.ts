@@ -125,10 +125,8 @@ export interface PriorityConfig {
   waitTimeWeight: number; // 0.6
   balanceWeight: number; // 0.4
   waitTimeMultiplier: number; // 10 points per minute
-  firstGameBonus: number; // 50 points
   gamesPlayedPenalty: number; // -20 points per game
   partnershipPenalty: number; // -30 points for recent partners
-  streakBonus: number; // +10 points for 3+ losses
 }
 
 // Rating calculation types
@@ -158,10 +156,8 @@ export const DEFAULT_PRIORITY_CONFIG: PriorityConfig = {
   waitTimeWeight: 0.6,
   balanceWeight: 0.4,
   waitTimeMultiplier: 10,
-  firstGameBonus: 50,
   gamesPlayedPenalty: 20,
-  partnershipPenalty: 30,
-  streakBonus: 10
+  partnershipPenalty: 30
 };
 
 // Rating categories for display

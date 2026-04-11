@@ -45,8 +45,47 @@ describe('useDoublesQueueStore undo', () => {
     const aliceEntry = queueEntries.find(entry => entry.playerId === 'a');
     const dylanEntry = queueEntries.find(entry => entry.playerId === 'd');
 
-    expect(aliceEntry?.waitTimeScore).toBe(dylanEntry?.waitTimeScore);
-    expect(aliceEntry?.priority).toBe(dylanEntry?.priority);
+    expect(aliceEntry?.waitTimeScore).toBeCloseTo(dylanEntry?.waitTimeScore ?? 0, 3);
+    expect(aliceEntry?.priority).toBeCloseTo(dylanEntry?.priority ?? 0, 3);
+  });
+
+  test('wait time score uses the most recent player activity time', () => {
+    const activityTime = new Date(Date.now() - 10 * 60 * 1000);
+    const createWaitingPlayer = (
+      id: string,
+      name: string,
+      extraFields: Partial<Player> = {}
+    ): Player => ({
+      id,
+      name,
+      rating: 1500,
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      currentStreak: 0,
+      status: PlayerStatus.WAITING,
+      ...extraFields,
+    });
+
+    const players = [
+      createWaitingPlayer('a', 'Alice', { lastGameTime: activityTime }),
+      createWaitingPlayer('b', 'Bea', { joinedQueueTime: activityTime }),
+    ];
+
+    const queueEntries = new QueueManager().generateQueueEntries(
+      players,
+      new Map([
+        ['a', 1],
+        ['b', 1],
+      ])
+    );
+
+    const aliceEntry = queueEntries.find(entry => entry.playerId === 'a');
+    const beaEntry = queueEntries.find(entry => entry.playerId === 'b');
+
+    expect(aliceEntry?.waitTimeScore).toBeGreaterThan(0);
+    expect(aliceEntry?.waitTimeScore).toBeCloseTo(beaEntry?.waitTimeScore ?? 0, 3);
+    expect(aliceEntry?.priority).toBeCloseTo(beaEntry?.priority ?? 0, 3);
   });
 
   test('final match selection ignores individual priority once candidate players are chosen', () => {

@@ -12,6 +12,7 @@ import {
   CourtStatus,
 } from './types';
 import { RatingSystem } from './algorithms';
+import { getMostRecentPlayerActivityTime } from './playerActivity';
 
 // ID Generation
 export const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -37,20 +38,7 @@ export const createCourt = (name: string): Court => ({
 // Date Utilities
 export const today = () => new Date().toISOString().split('T')[0];
 
-export const getMostRecentPlayerActivityTime = (player: Player): Date | undefined => {
-  const lastGameTime = player.lastGameTime ? new Date(player.lastGameTime) : null;
-  const joinedQueueTime = player.joinedQueueTime ? new Date(player.joinedQueueTime) : null;
-
-  if (!lastGameTime) {
-    return joinedQueueTime ?? undefined;
-  }
-
-  if (!joinedQueueTime) {
-    return lastGameTime;
-  }
-
-  return lastGameTime > joinedQueueTime ? lastGameTime : joinedQueueTime;
-};
+export { getMostRecentPlayerActivityTime };
 
 // Data Transformation Helpers
 export const toGamesPlayedMap = (value: unknown): Map<string, number> => {
