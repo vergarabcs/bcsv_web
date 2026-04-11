@@ -116,7 +116,6 @@ export interface AppSettings {
   courtCount: number;
   maxWaitTime: number; // minutes
   ratingBalanceTolerance: number; // points
-  emergencyWaitTime: number; // minutes
   kFactorNew: number; // for players with <30 games
   kFactorExperienced: number; // for players with 30+ games
 }
@@ -151,7 +150,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   courtCount: 2,
   maxWaitTime: 30,
   ratingBalanceTolerance: 200,
-  emergencyWaitTime: 30,
   kFactorNew: 32,
   kFactorExperienced: 16
 };

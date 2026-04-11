@@ -278,7 +278,7 @@ export class QueueManager {
 
     // Take top 8-12 players by priority for consideration
     const candidatePlayers = queueEntries
-      .slice(0, Math.min(12, queueEntries.length))
+      .slice(0, Math.min(10, queueEntries.length))
       .map(entry => playerById.get(entry.playerId))
       .filter((player): player is Player => !!player);
 
@@ -308,26 +308,10 @@ export class QueueManager {
           return sum + (entry?.priority || 0);
         }, 0);
 
-      // Combined score favoring balance and high priority players
-      const score = (balanceQuality * 1) + (totalPriority * 1) - partnershipPenalty;
+      // Once candidate players are chosen, final matchup selection is driven by balance only.
+      const score = balanceQuality - partnershipPenalty;
 
-      // Emergency rule: if someone has waited too long, prioritize them
-      const hasEmergencyWait = [team1.player1, team1.player2, team2.player1, team2.player2]
-        .some(player => {
-          if (!player.joinedQueueTime) return false;
-          const waitMinutes = (Date.now() - player.joinedQueueTime.getTime()) / (1000 * 60);
-          return waitMinutes >= this.settings.emergencyWaitTime;
-        });
-
-      if (hasEmergencyWait && !bestMatch) {
-        bestMatch = {
-          playerIds: [team1.player1.id, team1.player2.id, team2.player1.id, team2.player2.id],
-          teams: [this.toMatchTeam(team1), this.toMatchTeam(team2)],
-          balanceQuality,
-          totalPriority,
-          ratingDifference
-        };
-      } else if (score > bestScore && ratingDifference <= this.settings.ratingBalanceTolerance) {
+      if (score > bestScore && ratingDifference <= this.settings.ratingBalanceTolerance) {
         bestScore = score;
         bestMatch = {
           playerIds: [team1.player1.id, team1.player2.id, team2.player1.id, team2.player2.id],

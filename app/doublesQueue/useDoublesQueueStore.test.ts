@@ -49,6 +49,43 @@ describe('useDoublesQueueStore undo', () => {
     expect(aliceEntry?.priority).toBe(dylanEntry?.priority);
   });
 
+  test('final match selection ignores individual priority once candidate players are chosen', () => {
+    const createWaitingPlayer = (id: string, name: string, rating: number): Player => ({
+      id,
+      name,
+      rating,
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      currentStreak: 0,
+      status: PlayerStatus.WAITING,
+    });
+
+    const players = [
+      createWaitingPlayer('a', 'Alice', 1500),
+      createWaitingPlayer('b', 'Bea', 1500),
+      createWaitingPlayer('c', 'Cara', 1500),
+      createWaitingPlayer('d', 'Dylan', 1500),
+      createWaitingPlayer('e', 'Eli', 1300),
+      createWaitingPlayer('f', 'Finn', 1400),
+    ];
+
+    const queueEntries = [
+      { playerId: 'e', priority: 1000, waitTimeScore: 1000 },
+      { playerId: 'f', priority: 1000, waitTimeScore: 1000 },
+      { playerId: 'a', priority: 0, waitTimeScore: 0 },
+      { playerId: 'b', priority: 0, waitTimeScore: 0 },
+      { playerId: 'c', priority: 0, waitTimeScore: 0 },
+      { playerId: 'd', priority: 0, waitTimeScore: 0 },
+    ];
+
+    const match = new QueueManager().findBestMatch(queueEntries, players, []);
+
+    expect(match).toBeDefined();
+    expect([...(match?.playerIds ?? [])].sort()).toEqual(['a', 'b', 'c', 'd']);
+    expect(match?.ratingDifference).toBe(0);
+  });
+
   test('undoes the most recent player addition', () => {
     act(() => {
       useDoublesQueueStore.getState().addPlayer('Alice');
