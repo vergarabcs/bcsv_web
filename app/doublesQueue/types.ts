@@ -118,11 +118,16 @@ export interface AppSettings {
   ratingBalanceTolerance: number; // points
   kFactorNew: number; // for players with <30 games
   kFactorExperienced: number; // for players with 30+ games
+  queuePriorityScheme: QueuePriorityScheme;
+}
+
+export enum QueuePriorityScheme {
+  WAIT_TIME = 'waitTime',
+  GAMES_PLAYED = 'gamesPlayed'
 }
 
 // Priority scoring configuration
 export interface PriorityConfig {
-  waitTimeWeight: number; // 0.6
   balanceWeight: number; // 0.4
   waitTimeMultiplier: number; // 10 points per minute
   gamesPlayedPenalty: number; // -20 points per game
@@ -149,11 +154,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   maxWaitTime: 30,
   ratingBalanceTolerance: 200,
   kFactorNew: 32,
-  kFactorExperienced: 16
+  kFactorExperienced: 16,
+  queuePriorityScheme: QueuePriorityScheme.WAIT_TIME
 };
 
 export const DEFAULT_PRIORITY_CONFIG: PriorityConfig = {
-  waitTimeWeight: 0.6,
   balanceWeight: 0.4,
   waitTimeMultiplier: 10,
   gamesPlayedPenalty: 20,

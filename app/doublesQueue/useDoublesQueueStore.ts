@@ -619,6 +619,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           ratingSystem: new RatingSystem(updatedSettings),
           queueManager: new QueueManager(updatedSettings)
         }));
+        get().refreshQueue();
       },
 
       // Data management

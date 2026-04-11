@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, test } from '@jest/globals';
+import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 import { act } from '@testing-library/react';
 
-import { CourtStatus, GameStatus, Player, PlayerStatus } from './types';
+import { CourtStatus, DEFAULT_SETTINGS, Game, GameStatus, Player, PlayerStatus, QueuePriorityScheme } from './types';
 import { QueueManager } from './algorithms';
 import { useDoublesQueueStore } from './useDoublesQueueStore';
 import { getInitialState } from './storeState';
@@ -88,6 +88,39 @@ describe('useDoublesQueueStore undo', () => {
     expect(aliceEntry?.priority).toBeCloseTo(beaEntry?.priority ?? 0, 3);
   });
 
+  test('games played priority favors players with fewer session games', () => {
+    const createWaitingPlayer = (id: string, name: string): Player => ({
+      id,
+      name,
+      rating: 1500,
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      currentStreak: 0,
+      status: PlayerStatus.WAITING,
+    });
+
+    const players = [
+      createWaitingPlayer('a', 'Alice'),
+      createWaitingPlayer('b', 'Bea'),
+      createWaitingPlayer('c', 'Cara'),
+    ];
+
+    const queueEntries = new QueueManager({
+      ...DEFAULT_SETTINGS,
+      queuePriorityScheme: QueuePriorityScheme.GAMES_PLAYED,
+    }).generateQueueEntries(
+      players,
+      new Map([
+        ['a', 0],
+        ['b', 3],
+        ['c', 1],
+      ])
+    );
+
+    expect(queueEntries.map(entry => entry.playerId)).toEqual(['a', 'c', 'b']);
+  });
+
   test('final match selection ignores individual priority once candidate players are chosen', () => {
     const createWaitingPlayer = (id: string, name: string, rating: number): Player => ({
       id,
@@ -141,6 +174,61 @@ describe('useDoublesQueueStore undo', () => {
     expect(useDoublesQueueStore.getState().canUndo).toBe(false);
   });
 
+  test('changing queue priority scheme refreshes queue entries', () => {
+    const olderJoinTime = new Date(Date.now() - 15 * 60 * 1000);
+    const newerJoinTime = new Date(Date.now() - 5 * 60 * 1000);
+
+    useDoublesQueueStore.setState(state => ({
+      ...state,
+      currentSession: {
+        ...state.currentSession,
+        isActive: true,
+        gamesPlayed: new Map([
+          ['a', 3],
+          ['b', 0],
+        ]),
+      },
+      players: [
+        {
+          id: 'a',
+          name: 'Alice',
+          rating: 1500,
+          gamesPlayed: 0,
+          wins: 0,
+          losses: 0,
+          currentStreak: 0,
+          joinedQueueTime: olderJoinTime,
+          status: PlayerStatus.WAITING,
+        },
+        {
+          id: 'b',
+          name: 'Bea',
+          rating: 1500,
+          gamesPlayed: 0,
+          wins: 0,
+          losses: 0,
+          currentStreak: 0,
+          joinedQueueTime: newerJoinTime,
+          status: PlayerStatus.WAITING,
+        },
+      ],
+    }));
+
+    act(() => {
+      useDoublesQueueStore.getState().refreshQueue();
+    });
+
+    expect(useDoublesQueueStore.getState().queueEntries.map(entry => entry.playerId)).toEqual(['a', 'b']);
+
+    act(() => {
+      useDoublesQueueStore.getState().updateSettings({
+        queuePriorityScheme: QueuePriorityScheme.GAMES_PLAYED,
+      });
+    });
+
+    expect(useDoublesQueueStore.getState().queueEntries.map(entry => entry.playerId)).toEqual(['b', 'a']);
+  });
+
   test('restores an in-progress game when undoing completion', () => {
     act(() => {
       const store = useDoublesQueueStore.getState();
@@ -188,5 +276,116 @@ describe('useDoublesQueueStore undo', () => {
     const activePlayers = restoredState.players.filter(player => match!.playerIds.includes(player.id));
     expect(activePlayers).toHaveLength(4);
     expect(activePlayers.every(player => player.status === PlayerStatus.PLAYING)).toBe(true);
+  });
+
+  test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-early departure', () => {
+    jest.useFakeTimers();
+
+    try {
+      const sessionStart = new Date('2026-04-11T18:00:00.000Z');
+      jest.setSystemTime(sessionStart);
+
+      act(() => {
+        const store = useDoublesQueueStore.getState();
+        store.initializeSession();
+        store.updateSettings({ kFactorNew: 0, kFactorExperienced: 0 });
+
+        for (let index = 1; index <= 18; index += 1) {
+          store.addPlayer(`Player ${index}`, 1500);
+        }
+      });
+
+      const playerIdsByName = new Map(
+        useDoublesQueueStore.getState().players.map(player => [player.name, player.id])
+      );
+      const latePlayerId = playerIdsByName.get('Player 18');
+      const earlyDeparturePlayerId = playerIdsByName.get('Player 17');
+
+      expect(latePlayerId).toBeDefined();
+      expect(earlyDeparturePlayerId).toBeDefined();
+
+      act(() => {
+        const store = useDoublesQueueStore.getState();
+
+        for (let index = 1; index <= 17; index += 1) {
+          const playerId = playerIdsByName.get(`Player ${index}`);
+          if (playerId) {
+            store.joinQueue(playerId);
+          }
+        }
+      });
+
+      const roundDurationMs = 20 * 60 * 1000;
+      const rounds = 9;
+
+      for (let round = 0; round < rounds; round += 1) {
+        if (round === 3 && latePlayerId) {
+          act(() => {
+            useDoublesQueueStore.getState().joinQueue(latePlayerId);
+          });
+        }
+
+        if (round === 6 && earlyDeparturePlayerId) {
+          act(() => {
+            useDoublesQueueStore.getState().leaveQueue(earlyDeparturePlayerId);
+          });
+        }
+
+        let startedGames: Game[] = [];
+        act(() => {
+          const store = useDoublesQueueStore.getState();
+          const games = [] as ReturnType<typeof store.startGame>[];
+
+          for (let courtIndex = 0; courtIndex < 2; courtIndex += 1) {
+            const currentStore = useDoublesQueueStore.getState();
+            const availableCourt = currentStore.courts.find(court => court.status === CourtStatus.AVAILABLE);
+            const nextMatch = currentStore.nextMatches[0];
+
+            expect(availableCourt).toBeDefined();
+            expect(nextMatch).toBeDefined();
+
+            games.push(currentStore.startGame(availableCourt!.id, nextMatch!));
+          }
+
+          startedGames = games;
+        });
+
+        jest.setSystemTime(new Date(sessionStart.getTime() + (round + 1) * roundDurationMs));
+
+        act(() => {
+          const store = useDoublesQueueStore.getState();
+
+          startedGames.forEach((game, gameIndex) => {
+            const winningTeam = ((round + gameIndex) % 2 === 0 ? 1 : 2) as 1 | 2;
+            store.completeGame(game.id, winningTeam);
+
+            [
+              game.team1.player1.id,
+              game.team1.player2.id,
+              game.team2.player1.id,
+              game.team2.player2.id,
+            ].forEach(playerId => {
+              store.joinQueue(playerId);
+            });
+          });
+        });
+      }
+
+      const finalState = useDoublesQueueStore.getState();
+      const gameCounts = Object.fromEntries(
+        [...finalState.players]
+          .map(player => [player.name, player.gamesPlayed])
+          .sort(([leftName], [rightName]) => leftName.localeCompare(rightName, undefined, { numeric: true }))
+      );
+
+      console.log('3-hour simulation game counts:', gameCounts);
+
+      expect(finalState.currentSession.totalGames).toBe(18);
+      expect(Object.values(gameCounts).reduce((sum, gamesPlayed) => sum + gamesPlayed, 0)).toBe(72);
+      expect(gameCounts['Player 18']).toBeDefined();
+      expect(gameCounts['Player 17']).toBeDefined();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

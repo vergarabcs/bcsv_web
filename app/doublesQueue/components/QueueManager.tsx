@@ -20,7 +20,11 @@ import {
   DialogActions,
   TextField,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -32,7 +36,7 @@ import {
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { useCurrentMinute } from '../hooks/useCurrentMinute';
-import { PlayerStatus, getRatingCategory, getRatingCategoryColor } from '../types';
+import { PlayerStatus, QueuePriorityScheme, getRatingCategory, getRatingCategoryColor } from '../types';
 import { getMostRecentPlayerActivityTime } from '../storeHelpers';
 
 const QueueManager: React.FC = () => {
@@ -40,10 +44,12 @@ const QueueManager: React.FC = () => {
     players,
     queueEntries,
     currentSession,
+    settings,
     addPlayer,
     joinQueue,
     leaveQueue,
-    updatePlayerStatus
+    updatePlayerStatus,
+    updateSettings
   } = useDoublesQueueStore();
 
   const [search, setSearch] = useState('');
@@ -189,6 +195,23 @@ const QueueManager: React.FC = () => {
           </Button>
         </Box>
 
+        <FormControl size="small" fullWidth sx={{ mb: 2 }}>
+          <InputLabel id="queue-priority-scheme-label">Priority Scheme</InputLabel>
+          <Select
+            labelId="queue-priority-scheme-label"
+            value={settings.queuePriorityScheme}
+            label="Priority Scheme"
+            onChange={event =>
+              updateSettings({
+                queuePriorityScheme: event.target.value as QueuePriorityScheme
+              })
+            }
+          >
+            <MenuItem value={QueuePriorityScheme.WAIT_TIME}>By wait time</MenuItem>
+            <MenuItem value={QueuePriorityScheme.GAMES_PLAYED}>By number of games</MenuItem>
+          </Select>
+        </FormControl>
+
         {/* Queue Status */}
         <Typography variant="h6" gutterBottom>
           🎯 Current Queue ({filteredQueueEntries.length}/{queueEntries.length} players)
@@ -255,7 +278,7 @@ const QueueManager: React.FC = () => {
                           Rating: {player.rating} | Priority: {Math.round(queueEntry.priority)}
                         </Box>
                         <Box component="span" sx={{ display: 'block', fontSize: '0.75rem', color: 'text.secondary' }}>
-                          Wait time: {waitTime} | W/L: {player.wins}/{player.losses}
+                            Wait time: {waitTime} | Session games: {currentSession.gamesPlayed.get(player.id) ?? 0} | W/L: {player.wins}/{player.losses}
                         </Box>
                       </Box>
                     }

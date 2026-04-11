@@ -11,7 +11,8 @@ import {
   PriorityConfig,
   DEFAULT_SETTINGS,
   DEFAULT_PRIORITY_CONFIG,
-  PlayerStatus 
+  PlayerStatus,
+  QueuePriorityScheme
 } from './types';
 import { getMostRecentPlayerActivityTime } from './playerActivity';
 
@@ -122,7 +123,7 @@ export class QueueManager {
   /**
    * Calculate wait time score for a player
    */
-  calculateWaitTimeScore(player: Player, sessionGamesPlayed: number = 0): number {
+  calculateWaitTimeScore(player: Player): number {
     let score = 0;
 
     // Base wait time score
@@ -132,10 +133,11 @@ export class QueueManager {
       score += waitMinutes * this.priorityConfig.waitTimeMultiplier;
     }
 
-    // Games played penalty (diminishing returns)
-    score -= sessionGamesPlayed * this.priorityConfig.gamesPlayedPenalty;
-
     return Math.max(0, score);
+  }
+
+  calculateGamesPlayedScore(sessionGamesPlayed: number): number {
+    return -sessionGamesPlayed * this.priorityConfig.gamesPlayedPenalty;
   }
 
   /**
@@ -171,11 +173,15 @@ export class QueueManager {
   ): QueueEntry[] {
     const waitingPlayers = players.filter(p => p.status === PlayerStatus.WAITING);
 
+    void partnershipHistory;
+
     return waitingPlayers.map(player => {
       const playerSessionGames = sessionGamesPlayed.get(player.id) || 0;
-      const waitTimeScore = this.calculateWaitTimeScore(player, playerSessionGames);
-      
-      const priority = waitTimeScore * this.priorityConfig.waitTimeWeight;
+      const waitTimeScore = this.calculateWaitTimeScore(player);
+      const gamesPlayedScore = this.calculateGamesPlayedScore(playerSessionGames);
+      const priority = this.settings.queuePriorityScheme === QueuePriorityScheme.GAMES_PLAYED
+        ? gamesPlayedScore
+        : waitTimeScore
 
       return {
         playerId: player.id,
