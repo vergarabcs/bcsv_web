@@ -17,6 +17,8 @@ import {
 import { getMostRecentPlayerActivityTime } from './playerActivity';
 import { logDev } from '../logger';
 
+const PARTNERSHIP_SPREAD_WEIGHT = 0.67;
+
 /**
  * Rating System - Elo-based rating calculations
  */
@@ -270,6 +272,13 @@ export class QueueManager {
     };
   }
 
+  private calculatePartnershipRatingSpread(team1: Team, team2: Team): number {
+    const team1Spread = Math.abs(team1.player1.rating - team1.player2.rating);
+    const team2Spread = Math.abs(team2.player1.rating - team2.player2.rating);
+
+    return (team1Spread + team2Spread) / 2;
+  }
+
   /**
    * Find the best match from available players
    */
@@ -293,7 +302,7 @@ export class QueueManager {
       ...requiredQueueEntries,
       ...queueEntries
         .filter(entry => !requiredPlayerIdSet.has(entry.playerId))
-        .slice(0, Math.max(0, 10 - requiredQueueEntries.length))
+        .slice(0, Math.max(0, 8 - requiredQueueEntries.length))
     ];
 
     const candidatePlayers = candidateQueueEntries
@@ -315,6 +324,7 @@ export class QueueManager {
       }
 
       const ratingDifference = Math.abs(team1.averageRating - team2.averageRating);
+      const partnershipRatingSpread = this.calculatePartnershipRatingSpread(team1, team2);
       
       // Check for recent partnerships
       let partnershipPenalty = 0;
@@ -331,8 +341,8 @@ export class QueueManager {
           return sum + (entry?.priority || 0);
         }, 0);
 
-      // Once candidate players are chosen, final matchup selection is driven by balance only.
-      const score = balanceQuality - partnershipPenalty;
+      // Team-vs-team balance stays primary, with partner rating spread as a secondary preference.
+      const score = balanceQuality - (partnershipRatingSpread * PARTNERSHIP_SPREAD_WEIGHT) - partnershipPenalty;
 
       if (score > bestScore && ratingDifference <= this.settings.ratingBalanceTolerance) {
         bestScore = score;

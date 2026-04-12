@@ -14,7 +14,7 @@ const POST_GAME_SETTLE_MS = 200;
 const COURT_NAMES = ['Court 1', 'Court 2'] as const;
 const simulationPlayers = Array.from({ length: 18 }, (_, index) => ({
   name: `Player ${index + 1}`,
-  rating: 1500,
+  rating: 1000 + index * 50,
 }));
 
 type CourtName = typeof COURT_NAMES[number];
@@ -264,7 +264,6 @@ test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-ear
 
         if (completedGames === PARTIAL_MANUAL_GAME_NUMBER) {
           await test.step('Partial Manual Test', async () => {
-            // await page.pause();
             await page.getByRole('tab', { name: 'Queue' }).click();
             const highestPriorityPlayerName = await getHighestPriorityPlayerName(page);
             await page.getByRole('tab', { name: 'Dashboard' }).click();

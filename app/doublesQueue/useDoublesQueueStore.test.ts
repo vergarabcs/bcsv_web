@@ -235,6 +235,85 @@ describe('useDoublesQueueStore undo', () => {
     expect(match?.ratingDifference).toBe(0);
   });
 
+  test('match selection prefers lower partnership spread when team balance is equal', () => {
+    const createWaitingPlayer = (id: string, name: string, rating: number): Player => ({
+      id,
+      name,
+      rating,
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      currentStreak: 0,
+      status: PlayerStatus.WAITING,
+    });
+
+    const players = [
+      createWaitingPlayer('a', 'Ava', 1300),
+      createWaitingPlayer('b', 'Bea', 1400),
+      createWaitingPlayer('c', 'Cara', 1600),
+      createWaitingPlayer('d', 'Dylan', 1700),
+      createWaitingPlayer('e', 'Eli', 1490),
+      createWaitingPlayer('f', 'Finn', 1500),
+      createWaitingPlayer('g', 'Gray', 1500),
+      createWaitingPlayer('h', 'Hope', 1510),
+    ];
+
+    const queueEntries = players.map((player, index) => ({
+      playerId: player.id,
+      priority: 100 - index,
+      waitTimeScore: 100 - index,
+    }));
+
+    const match = new QueueManager().findBestMatch(queueEntries, players, []);
+
+    expect(match).toBeDefined();
+    expect([...(match?.playerIds ?? [])].sort()).toEqual(['e', 'f', 'g', 'h']);
+    expect(match?.ratingDifference).toBe(0);
+  });
+
+  test('match selection still values team balance slightly more than partnership spread', () => {
+    const createWaitingPlayer = (id: string, name: string, rating: number): Player => ({
+      id,
+      name,
+      rating,
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      currentStreak: 0,
+      status: PlayerStatus.WAITING,
+    });
+
+    const players = [
+      createWaitingPlayer('a', 'Ava', 1300),
+      createWaitingPlayer('b', 'Bea', 1500),
+      createWaitingPlayer('c', 'Cara', 1600),
+      createWaitingPlayer('d', 'Dylan', 1700),
+    ];
+
+    const queueEntries = players.map((player, index) => ({
+      playerId: player.id,
+      priority: 100 - index,
+      waitTimeScore: 100 - index,
+    }));
+
+    const match = new QueueManager().findBestMatch(queueEntries, players, []);
+
+    expect(match).toBeDefined();
+    expect(match?.ratingDifference).toBe(50);
+    expect(match?.teams).toEqual([
+      {
+        player1Id: 'a',
+        player2Id: 'd',
+        averageRating: 1500,
+      },
+      {
+        player1Id: 'b',
+        player2Id: 'c',
+        averageRating: 1550,
+      },
+    ]);
+  });
+
   test('match selection can require preselected manual-match players', () => {
     const createWaitingPlayer = (id: string, name: string, rating: number): Player => ({
       id,
