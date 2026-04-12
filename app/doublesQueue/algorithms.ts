@@ -276,15 +276,27 @@ export class QueueManager {
   findBestMatch(
     queueEntries: QueueEntry[], 
     players: Player[],
-    partnershipHistory: PartnershipHistory[] = []
+    partnershipHistory: PartnershipHistory[] = [],
+    requiredPlayerIds: string[] = []
   ): MatchSuggestion | null {
-    if (queueEntries.length < 4) return null;
+    if (queueEntries.length < 4 || requiredPlayerIds.length > 4) return null;
 
     const playerById = new Map(players.map(player => [player.id, player]));
+    const requiredPlayerIdSet = new Set(requiredPlayerIds);
 
-    // Take top 7 players by priority for consideration
-    const candidatePlayers = queueEntries
-      .slice(0, Math.min(10, queueEntries.length))
+    const requiredQueueEntries = queueEntries.filter(entry => requiredPlayerIdSet.has(entry.playerId));
+    if (requiredQueueEntries.length !== requiredPlayerIdSet.size) {
+      return null;
+    }
+
+    const candidateQueueEntries = [
+      ...requiredQueueEntries,
+      ...queueEntries
+        .filter(entry => !requiredPlayerIdSet.has(entry.playerId))
+        .slice(0, Math.max(0, 10 - requiredQueueEntries.length))
+    ];
+
+    const candidatePlayers = candidateQueueEntries
       .map(entry => playerById.get(entry.playerId))
       .filter((player): player is Player => !!player);
 
@@ -296,6 +308,12 @@ export class QueueManager {
 
     for (const teams of teamCombinations) {
       const [team1, team2] = teams;
+      const teamPlayerIds = [team1.player1.id, team1.player2.id, team2.player1.id, team2.player2.id];
+
+      if (requiredPlayerIdSet.size > 0 && !requiredPlayerIds.every(playerId => teamPlayerIds.includes(playerId))) {
+        continue;
+      }
+
       const ratingDifference = Math.abs(team1.averageRating - team2.averageRating);
       
       // Check for recent partnerships

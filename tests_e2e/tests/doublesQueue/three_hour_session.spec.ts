@@ -9,6 +9,7 @@ const MAX_GAME_DURATION_MINUTES = 21;
 const TOTAL_GAMES = 18;
 const LATE_ARRIVAL_AFTER_GAMES = 6;
 const EARLY_DEPARTURE_AFTER_MS = 2 * 60 * 60 * 1000;
+const PARTIAL_MANUAL_GAME_NUMBER = 12;
 const POST_GAME_SETTLE_MS = 200;
 const COURT_NAMES = ['Court 1', 'Court 2'] as const;
 const simulationPlayers = Array.from({ length: 18 }, (_, index) => ({
@@ -71,6 +72,17 @@ const clickActionForPlayer = async (page: Page, playerName: string, actionName: 
   await row.getByRole('button', { name: actionName }).click();
 };
 
+const getHighestPriorityPlayerName = async (page: Page) => {
+  const highestPriorityRow = page.locator('#simple-tabpanel-1 li').first();
+  await expect(highestPriorityRow).toBeVisible();
+
+  const rowText = await highestPriorityRow.textContent();
+  const playerName = rowText?.match(/Player \d+/)?.[0];
+
+  expect(playerName).toBeDefined();
+  return playerName!;
+};
+
 const removePlayerIfQueued = async (page: Page, playerName: string) => {
   const row = page.locator('li').filter({ hasText: playerName }).first();
 
@@ -86,6 +98,26 @@ const startNextAvailableGame = async (page: Page) => {
   const startButtons = page.getByRole('button', { name: 'Start Game' });
   await expect(startButtons.first()).toBeVisible();
   await startButtons.first().click();
+};
+
+const startPartialManualFilledGame = async (page: Page, playerName: string) => {
+  await page.getByRole('button', { name: 'Manual' }).click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+
+  const playerRow = dialog.getByRole('row').filter({ hasText: playerName }).first();
+  await expect(playerRow).toBeVisible();
+  await playerRow.click();
+
+  await expect(dialog.getByText('Select Players (1/4)', { exact: false })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Fill' }).click();
+  await expect(dialog.getByText('Select Players (4/4)', { exact: false })).toBeVisible();
+
+  const createAndStartButton = dialog.getByRole('button', { name: 'Create & Start' });
+  await expect(createAndStartButton).toBeEnabled();
+  await createAndStartButton.click();
+  await expect(dialog).toBeHidden();
 };
 
 const getWinnerForGame = (completedGames: number, courtName: CourtName): 1 | 2 => {
@@ -194,8 +226,22 @@ test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-ear
       }
 
       if (startedGames < TOTAL_GAMES) {
+        const nextGameNumber = startedGames + 1;
         await page.getByRole('tab', { name: 'Dashboard' }).click();
-        await startNextAvailableGame(page);
+
+        if (completedGames === PARTIAL_MANUAL_GAME_NUMBER) {
+          await test.step('Partial Manual Test', async () => {
+            // await page.pause();
+            await page.getByRole('tab', { name: 'Queue' }).click();
+            const highestPriorityPlayerName = await getHighestPriorityPlayerName(page);
+            await page.getByRole('tab', { name: 'Dashboard' }).click();
+            await startPartialManualFilledGame(page, highestPriorityPlayerName);
+          })
+
+        } else {
+          await startNextAvailableGame(page);
+        }
+
         activeGames.push({
           courtName: nextCompletedGame!.courtName,
           remainingDurationMs: nextGameDurationMs(random),

@@ -196,6 +196,42 @@ describe('useDoublesQueueStore undo', () => {
     expect(match?.ratingDifference).toBe(0);
   });
 
+  test('match selection can require preselected manual-match players', () => {
+    const createWaitingPlayer = (id: string, name: string, rating: number): Player => ({
+      id,
+      name,
+      rating,
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      currentStreak: 0,
+      status: PlayerStatus.WAITING,
+    });
+
+    const players = [
+      createWaitingPlayer('a', 'Alice', 1500),
+      createWaitingPlayer('b', 'Bea', 1500),
+      createWaitingPlayer('c', 'Cara', 1500),
+      createWaitingPlayer('d', 'Dylan', 1500),
+      createWaitingPlayer('e', 'Eli', 1500),
+      createWaitingPlayer('f', 'Finn', 1500),
+    ];
+
+    const queueEntries = [
+      { playerId: 'a', priority: 100, waitTimeScore: 100 },
+      { playerId: 'b', priority: 90, waitTimeScore: 90 },
+      { playerId: 'c', priority: 80, waitTimeScore: 80 },
+      { playerId: 'd', priority: 70, waitTimeScore: 70 },
+      { playerId: 'e', priority: 10, waitTimeScore: 10 },
+      { playerId: 'f', priority: 5, waitTimeScore: 5 },
+    ];
+
+    const match = new QueueManager().findBestMatch(queueEntries, players, [], ['e']);
+
+    expect(match).toBeDefined();
+    expect(match?.playerIds).toContain('e');
+  });
+
   test('undoes the most recent player addition', () => {
     act(() => {
       useDoublesQueueStore.getState().addPlayer('Alice');

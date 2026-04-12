@@ -16,7 +16,7 @@ import {
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { useCurrentMinute } from '../hooks/useCurrentMinute';
 import { CourtStatus, MatchSuggestion, MatchTeam, Player } from '../types';
-import { getMostRecentPlayerActivityTime } from '../storeHelpers';
+import { derivePartnershipHistoryFromGames, getMostRecentPlayerActivityTime } from '../storeHelpers';
 
 interface ManualMatchDialogProps {
   open: boolean;
@@ -31,13 +31,19 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     addManualMatch,
     startGame,
     manualMatches,
-    currentSession
+    currentSession,
+    queueManager,
+    games
   } = useDoublesQueueStore();
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
   const now = useCurrentMinute();
   const playersById = useMemo(
     () => new Map(players.map(player => [player.id, player])),
     [players]
+  );
+  const partnershipHistory = useMemo(
+    () => derivePartnershipHistoryFromGames(games),
+    [games]
   );
 
   const formatElapsed = (dateValue?: Date) => {
@@ -100,6 +106,18 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     () => courts.find(court => court.status === CourtStatus.AVAILABLE),
     [courts]
   );
+  const fillMatch = useMemo(() => {
+    if (selectedPlayerIds.length === 0 || selectedPlayerIds.length >= 4) {
+      return null;
+    }
+
+    return queueManager.findBestMatch(
+      availableQueueEntries.map(({ entry }) => entry),
+      players,
+      partnershipHistory,
+      selectedPlayerIds
+    );
+  }, [availableQueueEntries, partnershipHistory, players, queueManager, selectedPlayerIds]);
 
   const handleTogglePlayer = (playerId: string) => {
     if (selectedPlayerIds.includes(playerId)) {
@@ -169,6 +187,14 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     handleClose();
   };
 
+  const handleFill = () => {
+    if (!fillMatch) {
+      return;
+    }
+
+    setSelectedPlayerIds(fillMatch.playerIds);
+  };
+
   const handleClose = () => {
     setSelectedPlayerIds([]);
     onClose();
@@ -182,6 +208,9 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
           First 2 selected = Team 1, next 2 selected = Team 2
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+          Fill keeps your selected players in the match and uses the automatic algorithm to complete the lineup.
         </Typography>
         <Paper variant="outlined" sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
           <TableContainer sx={{ height: '100%' }}>
@@ -255,6 +284,9 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleFill} variant="outlined" disabled={!fillMatch}>
+          Fill
+        </Button>
         <Button
           onClick={handleCreateAndStartMatch}
           variant="contained"
