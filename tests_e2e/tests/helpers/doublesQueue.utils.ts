@@ -2,6 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import type { Page } from '@playwright/test';
 
+export interface MockPlayer {
+	name: string;
+	rating: number;
+}
+
 /**
  * Save the persisted zustand store from localStorage to a timestamped file.
  * Returns the written filename.
@@ -38,6 +43,19 @@ export async function clickWin(page: Page, courtName: string, team: 1 | 2): Prom
 	} else {
 		await page.click(`[data-testid="${tid}"]`);
 	}
+}
+
+/**
+ * Mock the doubles queue players API with a deterministic response.
+ */
+export async function mockPlayersApi(page: Page, players: MockPlayer[] = []): Promise<void> {
+	await page.route('**/api/players', async route => {
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({ players }),
+		});
+	});
 }
 
 export default saveZustandState;

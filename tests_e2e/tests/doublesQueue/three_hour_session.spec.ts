@@ -1,21 +1,15 @@
 import { test, expect, type Page } from '@playwright/test';
 
-import { clickWin } from '../helpers/doublesQueue.utils';
+import { clickWin, mockPlayersApi } from '../helpers/doublesQueue.utils';
 
 const STORE_KEY = 'doubles-queue-store';
 const SESSION_START = '2026-04-11T18:00:00.000Z';
 const ROUND_DURATION_MS = 20 * 60 * 1000;
 const ROUNDS = 9;
-
-const addPlayer = async (page: Page, name: string, rating = '1500') => {
-  await page.getByRole('button', { name: 'add player' }).click();
-  const addDialog = page.getByRole('dialog');
-  await addDialog.waitFor();
-  await addDialog.getByLabel('Player Name').fill(name);
-  await addDialog.getByLabel('Initial Rating').fill(rating);
-  await addDialog.getByRole('button', { name: 'Add Player' }).click();
-  await expect(page.getByText(name, { exact: true })).toBeVisible();
-};
+const simulationPlayers = Array.from({ length: 18 }, (_, index) => ({
+  name: `Player ${index + 1}`,
+  rating: 1500,
+}));
 
 const setPriorityScheme = async (page: Page, optionName: 'By wait time' | 'By number of games') => {
   const playersPanel = page.locator('#simple-tabpanel-3');
@@ -31,6 +25,16 @@ const clearPersistedState = async (page: Page) => {
   await page.addInitScript((key) => {
     window.localStorage.removeItem(key);
   }, STORE_KEY);
+};
+
+const assertGamesPlayedPriorityMode = async (page: Page) => {
+  const queuePanel = page.locator('#simple-tabpanel-1');
+  const priorityScheme = queuePanel.getByLabel('Priority Scheme');
+  const oneGameRow = queuePanel.locator('li').filter({ hasText: 'Session games: 1' }).first();
+
+  await expect(priorityScheme).toContainText('By number of games');
+  await expect(oneGameRow).toBeVisible();
+  await expect(oneGameRow).toContainText('Priority: -20');
 };
 
 const clickActionForPlayer = async (page: Page, playerName: string, actionName: 'Check In' | 'Remove') => {
@@ -80,17 +84,15 @@ test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-ear
   test.setTimeout(120000);
 
   await clearPersistedState(page);
+  await mockPlayersApi(page, simulationPlayers);
   await page.clock.install({ time: new Date(SESSION_START) });
   await page.goto('http://localhost:3000/doublesQueue');
 
-  await test.step('Start session and add players', async () => {
+  await test.step('Start session and load mocked players', async () => {
     await page.getByRole('button', { name: 'Start Session' }).click();
     await page.getByRole('tab', { name: 'Players' }).click();
+    await expect(page.getByText('Player 18', { exact: true })).toBeVisible();
     await setPriorityScheme(page, 'By number of games');
-
-    for (let index = 1; index <= 18; index += 1) {
-      await addPlayer(page, `Player ${index}`);
-    }
   });
 
   await test.step('Check in the initial 17 players', async () => {
@@ -107,6 +109,7 @@ test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-ear
 
       if (round === 3) {
         await clickActionForPlayer(page, 'Player 18', 'Check In');
+        await assertGamesPlayedPriorityMode(page);
       }
 
       if (round === 6) {

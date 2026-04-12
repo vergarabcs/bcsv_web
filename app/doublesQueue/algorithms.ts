@@ -284,7 +284,7 @@ export class QueueManager {
 
     // Take top 7 players by priority for consideration
     const candidatePlayers = queueEntries
-      .slice(0, Math.min(8, queueEntries.length))
+      .slice(0, Math.min(10, queueEntries.length))
       .map(entry => playerById.get(entry.playerId))
       .filter((player): player is Player => !!player);
 
