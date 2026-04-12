@@ -143,6 +143,8 @@ export const formatDurationMs = (durationMs: number): string => {
   return `${hours}h ${minutes}m`;
 };
 
+export const clampPlayerRating = (rating: number) => Math.max(1000, Math.min(3000, Math.round(rating)));
+
 export const stripPlayerHistory = (player: Player): Player => ({
   ...player
 });
@@ -340,6 +342,79 @@ export const normalizePersistedMatchSuggestion = (match: any): MatchSuggestion |
     balanceQuality: typeof match?.balanceQuality === 'number' ? match.balanceQuality : 0,
     totalPriority: typeof match?.totalPriority === 'number' ? match.totalPriority : 0,
     ratingDifference: typeof match?.ratingDifference === 'number' ? match.ratingDifference : 0
+  };
+};
+
+export const recalculateMatchSuggestion = (
+  match: MatchSuggestion,
+  playersById: Map<string, Player>
+): MatchSuggestion => {
+  const [team1Player1, team1Player2, team2Player1, team2Player2] = match.playerIds
+    .map(playerId => playersById.get(playerId));
+
+  if (!team1Player1 || !team1Player2 || !team2Player1 || !team2Player2) {
+    return match;
+  }
+
+  const team1: MatchTeam = {
+    player1Id: team1Player1.id,
+    player2Id: team1Player2.id,
+    averageRating: (team1Player1.rating + team1Player2.rating) / 2
+  };
+
+  const team2: MatchTeam = {
+    player1Id: team2Player1.id,
+    player2Id: team2Player2.id,
+    averageRating: (team2Player1.rating + team2Player2.rating) / 2
+  };
+
+  const ratingDifference = Math.abs(team1.averageRating - team2.averageRating);
+
+  return {
+    ...match,
+    teams: [team1, team2],
+    ratingDifference,
+    balanceQuality: Math.max(0, 100 - ratingDifference)
+  };
+};
+
+const updateTeamPlayerRating = (team: Team, playerId: string, rating: number): Team => {
+  const players = [team.player1, team.player2];
+
+  if (!players.some(player => player.id === playerId)) {
+    return team;
+  }
+
+  const [player1, player2] = players.map(player =>
+    player.id === playerId
+      ? { ...player, rating }
+      : player
+  );
+
+  return {
+    ...team,
+    player1,
+    player2,
+    averageRating: (player1.rating + player2.rating) / 2
+  };
+};
+
+export const updateInProgressGamePlayerRating = (game: Game, playerId: string, rating: number): Game => {
+  if (game.status !== GameStatus.IN_PROGRESS) {
+    return game;
+  }
+
+  const team1 = updateTeamPlayerRating(game.team1, playerId, rating);
+  const team2 = updateTeamPlayerRating(game.team2, playerId, rating);
+
+  if (team1 === game.team1 && team2 === game.team2) {
+    return game;
+  }
+
+  return {
+    ...game,
+    team1,
+    team2
   };
 };
 

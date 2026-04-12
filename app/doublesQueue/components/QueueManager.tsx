@@ -15,10 +15,6 @@ import {
   Chip,
   Fab,
   InputAdornment,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   Switch,
   FormControlLabel,
@@ -29,6 +25,7 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
+  Edit as EditIcon,
   Remove as RemoveIcon,
   ArrowUpward as ArrowUpIcon,
   ArrowDownward as ArrowDownIcon,
@@ -39,6 +36,7 @@ import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { useCurrentMinute } from '../hooks/useCurrentMinute';
 import { PlayerStatus, QueuePriorityScheme, getRatingCategory, getRatingCategoryColor } from '../types';
 import { formatDurationMs, getMostRecentPlayerActivityTime } from '../storeHelpers';
+import PlayerRatingDialog from './PlayerRatingDialog';
 
 const QueueManager: React.FC = () => {
   const {
@@ -49,11 +47,13 @@ const QueueManager: React.FC = () => {
     addPlayer,
     joinQueue,
     leaveQueue,
+    updatePlayerRating,
     updatePlayerStatus,
     updateSettings
   } = useDoublesQueueStore();
 
   const [search, setSearch] = useState('');
+  const [ratingDialogPlayerId, setRatingDialogPlayerId] = useState<string | null>(null);
   const now = useCurrentMinute();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
@@ -84,6 +84,9 @@ const QueueManager: React.FC = () => {
     player.status !== PlayerStatus.WAITING &&
     player.name.toLowerCase().includes(normalizedSearch)
   );
+  const ratingDialogPlayer = ratingDialogPlayerId
+    ? playersById.get(ratingDialogPlayerId) ?? null
+    : null;
 
   const handleJoinQueue = (playerId: string) => {
     joinQueue(playerId);
@@ -146,6 +149,29 @@ const QueueManager: React.FC = () => {
 
   const handleLeaveQueue = (playerId: string) => {
     leaveQueue(playerId);
+  };
+
+  const openRatingDialog = (playerId: string) => {
+    const player = playersById.get(playerId);
+
+    if (!player || player.status === PlayerStatus.INACTIVE) {
+      return;
+    }
+
+    setRatingDialogPlayerId(playerId);
+  };
+
+  const closeRatingDialog = () => {
+    setRatingDialogPlayerId(null);
+  };
+
+  const handleSaveRating = (rating: number) => {
+    if (!ratingDialogPlayer) {
+      return;
+    }
+
+    updatePlayerRating(ratingDialogPlayer.id, rating);
+    closeRatingDialog();
   };
 
   const handleTogglePlayerActive = (playerId: string, isActive: boolean) => {
@@ -345,14 +371,24 @@ const QueueManager: React.FC = () => {
                   />
                   
                   <ListItemSecondaryAction>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleLeaveQueue(player.id)}
-                      startIcon={<RemoveIcon />}
-                    >
-                      Remove
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => openRatingDialog(player.id)}
+                        startIcon={<EditIcon />}
+                      >
+                        Rating
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleLeaveQueue(player.id)}
+                        startIcon={<RemoveIcon />}
+                      >
+                        Remove
+                      </Button>
+                    </Box>
                   </ListItemSecondaryAction>
                 </ListItem>
               );
@@ -370,7 +406,7 @@ const QueueManager: React.FC = () => {
         </Paper>
       )}
 
-      {search.trim() && filteredActiveNonQueue.length > 0 && (
+      {filteredActiveNonQueue.length > 0 && (
         <>
           <Typography variant="h6" gutterBottom>
             ✅ Active Players ({filteredActiveNonQueue.length})
@@ -408,6 +444,16 @@ const QueueManager: React.FC = () => {
                       }
                       secondary={`Rating: ${player.rating} | Games: ${player.gamesPlayed}`}
                     />
+                    <ListItemSecondaryAction>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => openRatingDialog(player.id)}
+                        startIcon={<EditIcon />}
+                      >
+                        Rating
+                      </Button>
+                    </ListItemSecondaryAction>
                   </ListItem>
                 );
               })}
@@ -468,6 +514,13 @@ const QueueManager: React.FC = () => {
           </Paper>
         </>
       )}
+
+      <PlayerRatingDialog
+        open={!!ratingDialogPlayer}
+        player={ratingDialogPlayer}
+        onClose={closeRatingDialog}
+        onSave={handleSaveRating}
+      />
     </Box>
   );
 };

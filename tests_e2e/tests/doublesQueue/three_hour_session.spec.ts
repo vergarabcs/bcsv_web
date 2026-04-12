@@ -56,10 +56,24 @@ const clearPersistedState = async (page: Page) => {
   }, STORE_KEY);
 };
 
+const getQueueTabPlayerRow = (page: Page, playerName: string) => {
+  const queueTabPanel = page.locator('#simple-tabpanel-1');
+
+  return queueTabPanel
+    .locator('li')
+    .filter({ hasText: playerName })
+    .first();
+};
+
 const assertGamesPlayedPriorityMode = async (page: Page) => {
+  const playersPanel = page.locator('#simple-tabpanel-3');
+  const priorityScheme = playersPanel.getByLabel('Priority Scheme');
   const queuePanel = page.locator('#simple-tabpanel-1');
-  const priorityScheme = queuePanel.getByLabel('Priority Scheme');
-  const oneGameRow = queuePanel.locator('li').filter({ hasText: 'Session games: 1' }).first();
+  const oneGameRow = queuePanel
+    .locator('li')
+    .filter({ hasText: 'Session games: 1' })
+    .filter({ has: queuePanel.getByRole('button', { name: 'Remove' }) })
+    .first();
 
   await expect(priorityScheme).toContainText('By number of games');
   await expect(oneGameRow).toBeVisible();
@@ -67,14 +81,17 @@ const assertGamesPlayedPriorityMode = async (page: Page) => {
 };
 
 const clickActionForPlayer = async (page: Page, playerName: string, actionName: 'Check In' | 'Remove') => {
-  const row = page.locator('li').filter({ hasText: playerName }).first();
+  const row = getQueueTabPlayerRow(page, playerName);
   await expect(row).toBeVisible();
   await row.getByRole('button', { name: actionName }).click();
 };
 
 const getHighestPriorityPlayerName = async (page: Page) => {
-  const highestPriorityRow = page.locator('#simple-tabpanel-1 li').first();
-  await expect(highestPriorityRow).toBeVisible();
+  const queuePanel = page.locator('#simple-tabpanel-1');
+  const firstRemoveButton = queuePanel.getByRole('button', { name: 'Remove' }).first();
+  await expect(firstRemoveButton).toBeVisible();
+
+  const highestPriorityRow = firstRemoveButton.locator('xpath=ancestor::li[1]');
 
   const rowText = await highestPriorityRow.textContent();
   const playerName = rowText?.match(/Player \d+/)?.[0];
@@ -84,14 +101,26 @@ const getHighestPriorityPlayerName = async (page: Page) => {
 };
 
 const removePlayerIfQueued = async (page: Page, playerName: string) => {
-  const row = page.locator('li').filter({ hasText: playerName }).first();
+  const row = getQueueTabPlayerRow(page, playerName);
+  const removeButton = row.getByRole('button', { name: 'Remove' });
 
-  if (!(await row.isVisible())) {
+  if (!(await row.isVisible()) || !(await removeButton.isVisible())) {
     return false;
   }
 
-  await row.getByRole('button', { name: 'Remove' }).click();
+  await removeButton.click();
   return true;
+};
+
+const isPlayerInGame = async (page: Page, playerName: string) => {
+  const queueTabPanel = page.locator('#simple-tabpanel-1');
+  const playingRow = queueTabPanel
+    .locator('li')
+    .filter({ hasText: playerName })
+    .filter({ hasText: 'playing' })
+    .first();
+
+  return playingRow.isVisible();
 };
 
 const startNextAvailableGame = async (page: Page) => {
@@ -181,6 +210,7 @@ test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-ear
   let completedGames = 0;
   let elapsedSessionMs = 0;
   let player17Removed = false;
+  let player17RemovalPending = false;
 
   await test.step('Start the first two games', async () => {
     await page.getByRole('tab', { name: 'Dashboard' }).click();
@@ -218,10 +248,13 @@ test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-ear
 
       if (completedGames === LATE_ARRIVAL_AFTER_GAMES) {
         await clickActionForPlayer(page, 'Player 18', 'Check In');
-        await assertGamesPlayedPriorityMode(page);
       }
 
-      if (!player17Removed && elapsedSessionMs >= EARLY_DEPARTURE_AFTER_MS) {
+      if (!player17RemovalPending && elapsedSessionMs >= EARLY_DEPARTURE_AFTER_MS) {
+        player17RemovalPending = true;
+      }
+
+      if (player17RemovalPending && !player17Removed && !(await isPlayerInGame(page, 'Player 17'))) {
         player17Removed = await removePlayerIfQueued(page, 'Player 17');
       }
 

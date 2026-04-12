@@ -287,6 +287,67 @@ describe('useDoublesQueueStore undo', () => {
     expect(useDoublesQueueStore.getState().canUndo).toBe(false);
   });
 
+  test('manually updates a checked-in player rating and active game snapshot', () => {
+    act(() => {
+      const store = useDoublesQueueStore.getState();
+      store.initializeSession();
+      ['Alice', 'Bob', 'Cara', 'Dylan'].forEach(name => store.addPlayer(name));
+    });
+
+    const playerIds = useDoublesQueueStore.getState().players.map(player => player.id);
+
+    act(() => {
+      const store = useDoublesQueueStore.getState();
+      playerIds.forEach(playerId => store.joinQueue(playerId));
+    });
+
+    const preGameState = useDoublesQueueStore.getState();
+    const match = preGameState.nextMatches[0];
+    const courtId = preGameState.courts[0].id;
+
+    expect(match).toBeDefined();
+
+    let gameId = '';
+    act(() => {
+      const game = useDoublesQueueStore.getState().startGame(courtId, match!);
+      gameId = game.id;
+    });
+
+    const targetPlayerId = match!.playerIds[0];
+
+    act(() => {
+      useDoublesQueueStore.getState().updatePlayerRating(targetPlayerId, 1705);
+    });
+
+    const updatedState = useDoublesQueueStore.getState();
+    const updatedGame = updatedState.games.find(game => game.id === gameId);
+    const currentCourtGame = updatedState.courts.find(court => court.id === courtId)?.currentGame;
+
+    expect(updatedState.players.find(player => player.id === targetPlayerId)?.rating).toBe(1705);
+    expect(
+      [
+        updatedGame?.team1.player1,
+        updatedGame?.team1.player2,
+        updatedGame?.team2.player1,
+        updatedGame?.team2.player2,
+      ].find(player => player?.id === targetPlayerId)?.rating
+    ).toBe(1705);
+    expect(
+      [
+        currentCourtGame?.team1.player1,
+        currentCourtGame?.team1.player2,
+        currentCourtGame?.team2.player1,
+        currentCourtGame?.team2.player2,
+      ].find(player => player?.id === targetPlayerId)?.rating
+    ).toBe(1705);
+
+    act(() => {
+      useDoublesQueueStore.getState().undoLastAction();
+    });
+
+    expect(useDoublesQueueStore.getState().players.find(player => player.id === targetPlayerId)?.rating).toBe(1500);
+  });
+
   test('changing queue priority scheme refreshes queue entries', () => {
     const olderJoinTime = new Date(Date.now() - 15 * 60 * 1000);
     const newerJoinTime = new Date(Date.now() - 5 * 60 * 1000);

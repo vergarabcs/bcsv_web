@@ -24,12 +24,15 @@ import {
   toGamesPlayedMap,
   toGameDurationMap,
   toWaitDurationMap,
+  clampPlayerRating,
   stripPlayerHistory,
   derivePartnershipHistoryFromGames,
   getMostRecentPlayerActivityTime,
   normalizePersistedQueueEntry,
   normalizePersistedMatchTeam,
   normalizePersistedMatchSuggestion,
+  recalculateMatchSuggestion,
+  updateInProgressGamePlayerRating,
   resolveMatchTeam
 } from './storeHelpers';
 import { getInitialState } from './storeState';
@@ -82,6 +85,7 @@ interface DoublesQueueState {
   // Player management
   addPlayer: (name: string, initialRating?: number) => void;
   removePlayer: (playerId: string) => void;
+  updatePlayerRating: (playerId: string, rating: number) => void;
   updatePlayerStatus: (playerId: string, status: PlayerStatus) => void;
   joinQueue: (playerId: string) => void;
   leaveQueue: (playerId: string) => void;
@@ -177,7 +181,6 @@ const accumulateWaitDurationForPlayers = (
 
   return updatedWaitDurationByPlayerMs;
 };
-
 export const useDoublesQueueStore = create<DoublesQueueState>()(
   persist(
     (set, get) => ({
@@ -282,6 +285,49 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           players: state.players.filter(p => p.id !== playerId),
           queueEntries: state.queueEntries.filter(entry => entry.playerId !== playerId)
         }));
+        get().refreshQueue();
+      },
+
+      updatePlayerRating: (playerId: string, rating: number) => {
+        const normalizedRating = clampPlayerRating(rating);
+        const existingPlayer = get().players.find(player => player.id === playerId);
+
+        if (!existingPlayer || existingPlayer.rating === normalizedRating) {
+          return;
+        }
+
+        set(state => {
+          const players = state.players.map(player =>
+            player.id === playerId
+              ? { ...player, rating: normalizedRating }
+              : player
+          );
+          const playersById = new Map(players.map(player => [player.id, player]));
+
+          return {
+            ...withUndoState(state),
+            players,
+            games: state.games.map(game =>
+              updateInProgressGamePlayerRating(game, playerId, normalizedRating)
+            ),
+            courts: state.courts.map(court =>
+              court.currentGame
+                ? {
+                    ...court,
+                    currentGame: updateInProgressGamePlayerRating(
+                      court.currentGame,
+                      playerId,
+                      normalizedRating
+                    )
+                  }
+                : court
+            ),
+            manualMatches: state.manualMatches.map(match =>
+              recalculateMatchSuggestion(match, playersById)
+            )
+          };
+        });
+
         get().refreshQueue();
       },
 
