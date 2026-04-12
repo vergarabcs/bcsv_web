@@ -4,12 +4,40 @@ import { clickWin, mockPlayersApi } from '../helpers/doublesQueue.utils';
 
 const STORE_KEY = 'doubles-queue-store';
 const SESSION_START = '2026-04-11T18:00:00.000Z';
-const ROUND_DURATION_MS = 20 * 60 * 1000;
-const ROUNDS = 9;
+const MIN_GAME_DURATION_MINUTES = 18;
+const MAX_GAME_DURATION_MINUTES = 21;
+const TOTAL_GAMES = 18;
+const GAMES_PER_BATCH = 2;
+const LATE_ARRIVAL_AFTER_GAMES = 6;
+const EARLY_DEPARTURE_AFTER_GAMES = 12;
+const COURT_NAMES = ['Court 1', 'Court 2'] as const;
 const simulationPlayers = Array.from({ length: 18 }, (_, index) => ({
   name: `Player ${index + 1}`,
   rating: 1500,
 }));
+
+type CourtName = typeof COURT_NAMES[number];
+
+interface ActiveGameSchedule {
+  courtName: CourtName;
+  remainingDurationMs: number;
+}
+
+const createDeterministicRandom = (seed: number) => {
+  let state = seed;
+
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
+};
+
+const nextGameDurationMs = (random: () => number) => {
+  const durationMinutes = Math.floor(random() * (MAX_GAME_DURATION_MINUTES - MIN_GAME_DURATION_MINUTES + 1))
+    + MIN_GAME_DURATION_MINUTES;
+
+  return durationMinutes * 60 * 1000;
+};
 
 const setPriorityScheme = async (page: Page, optionName: 'By wait time' | 'By number of games') => {
   const playersPanel = page.locator('#simple-tabpanel-3');
@@ -43,23 +71,24 @@ const clickActionForPlayer = async (page: Page, playerName: string, actionName: 
   await row.getByRole('button', { name: actionName }).click();
 };
 
-const startAvailableGames = async (page: Page) => {
-  for (let index = 0; index < 2; index += 1) {
-    const startButtons = page.getByRole('button', { name: 'Start Game' });
-    await expect(startButtons.first()).toBeVisible();
-    await startButtons.first().click();
-  }
+const startNextAvailableGame = async (page: Page) => {
+  const startButtons = page.getByRole('button', { name: 'Start Game' });
+  await expect(startButtons.first()).toBeVisible();
+  await startButtons.first().click();
 };
 
-const completeRoundGames = async (page: Page, round: number) => {
-  if (round % 2 === 0) {
-    await clickWin(page, 'Court 1', 1);
-    await clickWin(page, 'Court 2', 2);
-  } else {
-    await clickWin(page, 'Court 1', 2);
-    await clickWin(page, 'Court 2', 1);
+const getWinnerForGame = (completedGames: number, courtName: CourtName): 1 | 2 => {
+  const isEvenGame = completedGames % 2 === 0;
+
+  if (courtName === 'Court 1') {
+    return isEvenGame ? 1 : 2;
   }
 
+  return isEvenGame ? 2 : 1;
+};
+
+const completeScheduledGame = async (page: Page, completedGames: number, courtName: CourtName) => {
+  await clickWin(page, courtName, getWinnerForGame(completedGames, courtName));
   await page.clock.fastForward(200);
 };
 
@@ -82,6 +111,7 @@ const readPersistedState = async (page: Page) => {
 
 test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-early departure', async ({ page }) => {
   test.setTimeout(120000);
+  const random = createDeterministicRandom(18021);
 
   await clearPersistedState(page);
   await mockPlayersApi(page, simulationPlayers);
@@ -103,23 +133,61 @@ test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-ear
     }
   });
 
-  for (let round = 0; round < ROUNDS; round += 1) {
-    await test.step(`Play round ${round + 1}`, async () => {
+  const activeGames: ActiveGameSchedule[] = [];
+  let startedGames = 0;
+  let completedGames = 0;
+
+  await test.step('Start the first two games', async () => {
+    await page.getByRole('tab', { name: 'Dashboard' }).click();
+
+    for (const courtName of COURT_NAMES) {
+      await startNextAvailableGame(page);
+      activeGames.push({
+        courtName,
+        remainingDurationMs: nextGameDurationMs(random),
+      });
+      startedGames += 1;
+    }
+  });
+
+  while (completedGames < TOTAL_GAMES) {
+    await test.step(`Complete game ${completedGames + 1}`, async () => {
+      activeGames.sort((left, right) => left.remainingDurationMs - right.remainingDurationMs);
+      const nextCompletedGame = activeGames.shift();
+
+      expect(nextCompletedGame).toBeDefined();
+
+      const elapsedMs = nextCompletedGame!.remainingDurationMs;
+      await page.clock.fastForward(elapsedMs);
+
+      activeGames.forEach(game => {
+        game.remainingDurationMs -= elapsedMs;
+      });
+
+      await page.getByRole('tab', { name: 'Dashboard' }).click();
+      await completeScheduledGame(page, completedGames, nextCompletedGame!.courtName);
+      completedGames += 1;
+
       await page.getByRole('tab', { name: 'Queue' }).click();
 
-      if (round === 3) {
+      if (completedGames === LATE_ARRIVAL_AFTER_GAMES) {
         await clickActionForPlayer(page, 'Player 18', 'Check In');
         await assertGamesPlayedPriorityMode(page);
       }
 
-      if (round === 6) {
+      if (completedGames === EARLY_DEPARTURE_AFTER_GAMES) {
         await clickActionForPlayer(page, 'Player 17', 'Remove');
       }
 
-      await page.getByRole('tab', { name: 'Dashboard' }).click();
-      await startAvailableGames(page);
-      await page.clock.fastForward(ROUND_DURATION_MS);
-      await completeRoundGames(page, round);
+      if (startedGames < TOTAL_GAMES) {
+        await page.getByRole('tab', { name: 'Dashboard' }).click();
+        await startNextAvailableGame(page);
+        activeGames.push({
+          courtName: nextCompletedGame!.courtName,
+          remainingDurationMs: nextGameDurationMs(random),
+        });
+        startedGames += 1;
+      }
     });
   }
 
