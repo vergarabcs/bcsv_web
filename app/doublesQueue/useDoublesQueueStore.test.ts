@@ -298,9 +298,18 @@ describe('useDoublesQueueStore undo', () => {
     });
 
     const completedState = useDoublesQueueStore.getState();
-    expect(completedState.games.find(game => game.id === gameId)?.status).toBe(GameStatus.COMPLETED);
+    const completedGame = completedState.games.find(game => game.id === gameId);
+    const completedGameDurationMs = completedGame?.endTime && completedGame?.startTime
+      ? completedGame.endTime.getTime() - completedGame.startTime.getTime()
+      : 0;
+    const completedPlayerIds = match!.playerIds;
+
+    expect(completedGame?.status).toBe(GameStatus.COMPLETED);
     expect(completedState.courts.find(court => court.id === courtId)?.status).toBe(CourtStatus.AVAILABLE);
     expect(completedState.currentSession.totalGames).toBe(1);
+    completedPlayerIds.forEach(playerId => {
+      expect(completedState.currentSession.gameDurationByPlayerMs.get(playerId)).toBe(completedGameDurationMs);
+    });
 
     act(() => {
       useDoublesQueueStore.getState().undoLastAction();
@@ -310,6 +319,7 @@ describe('useDoublesQueueStore undo', () => {
     expect(restoredState.games.find(game => game.id === gameId)?.status).toBe(GameStatus.IN_PROGRESS);
     expect(restoredState.courts.find(court => court.id === courtId)?.status).toBe(CourtStatus.OCCUPIED);
     expect(restoredState.currentSession.totalGames).toBe(0);
+    expect(restoredState.currentSession.gameDurationByPlayerMs.size).toBe(0);
 
     const activePlayers = restoredState.players.filter(player => match!.playerIds.includes(player.id));
     expect(activePlayers).toHaveLength(4);
@@ -425,6 +435,9 @@ describe('useDoublesQueueStore undo', () => {
       console.log('3-hour simulation game counts:', gameCounts);
 
       expect(finalState.currentSession.totalGames).toBe(18);
+      const totalPlayerGameDurationMs = Array.from(finalState.currentSession.gameDurationByPlayerMs.values())
+        .reduce((sum, durationMs) => sum + durationMs, 0);
+      expect(totalPlayerGameDurationMs).toBe(72 * roundDurationMs);
       expect(Object.values(gameCounts).reduce((sum, gamesPlayed) => sum + gamesPlayed, 0)).toBe(72);
       expect(gameCounts['Player 18']).toBeDefined();
       expect(gameCounts['Player 17']).toBeDefined();

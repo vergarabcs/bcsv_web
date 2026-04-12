@@ -25,7 +25,7 @@ import {
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { useCurrentMinute } from '../hooks/useCurrentMinute';
 import { Court, CourtStatus, getRatingCategory, getRatingCategoryColor } from '../types';
-import { getMostRecentPlayerActivityTime } from '../storeHelpers';
+import { formatDurationMs, getMostRecentPlayerActivityTime } from '../storeHelpers';
 import ManualMatchDialog from './ManualMatchDialog';
 import BadmintonCard from './BadmintonCard';
 
@@ -278,6 +278,7 @@ const Dashboard: React.FC = () => {
                 ? formatTime(waitFrom)
                 : '0m';
               const sessionGamesPlayed = currentSession.gamesPlayed.get(player.id) ?? 0;
+              const sessionGameDuration = currentSession.gameDurationByPlayerMs.get(player.id) ?? 0;
               const category = getRatingCategory(player.rating);
               
               return (
@@ -314,6 +315,7 @@ const Dashboard: React.FC = () => {
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', pr: 8 }}>
                         <span>Rating: {player.rating}</span>
                         <span>Games: {sessionGamesPlayed}</span>
+                        <span>Time: {formatDurationMs(sessionGameDuration)}</span>
                         <span>Wait: {waitTime}</span>
                       </Box>
                     }

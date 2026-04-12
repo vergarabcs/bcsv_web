@@ -22,6 +22,7 @@ import {
   createCourt,
   today,
   toGamesPlayedMap,
+  toGameDurationMap,
   stripPlayerHistory,
   derivePartnershipHistoryFromGames,
   normalizePersistedQueueEntry,
@@ -54,6 +55,7 @@ interface DoublesQueueState {
     isActive: boolean;
     gamesPlayed: Map<string, number>; // playerId -> games count
     totalGames: number;
+    gameDurationByPlayerMs: Map<string, number>; // playerId -> total game duration in ms
   };
   
   // Queue management
@@ -155,7 +157,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
             date: currentDate,
             isActive: true,
             gamesPlayed: new Map(),
-            totalGames: 0
+            totalGames: 0,
+            gameDurationByPlayerMs: new Map()
           }
         }));
         get().refreshQueue();
@@ -451,9 +454,12 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
         // Update session games count
         const updatedSessionGamesPlayed = toGamesPlayedMap(state.currentSession.gamesPlayed);
+        const updatedGameDurationByPlayerMs = toGameDurationMap(state.currentSession.gameDurationByPlayerMs);
+        const gameDurationMs = Math.max(0, endTime.getTime() - game.startTime.getTime());
         [game.team1.player1.id, game.team1.player2.id, game.team2.player1.id, game.team2.player2.id]
           .forEach(playerId => {
             updatedSessionGamesPlayed.set(playerId, (updatedSessionGamesPlayed.get(playerId) || 0) + 1);
+            updatedGameDurationByPlayerMs.set(playerId, (updatedGameDurationByPlayerMs.get(playerId) || 0) + gameDurationMs);
           });
 
         set({
@@ -463,7 +469,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           currentSession: {
             ...state.currentSession,
             gamesPlayed: updatedSessionGamesPlayed,
-            totalGames: state.currentSession.totalGames + 1
+            totalGames: state.currentSession.totalGames + 1,
+            gameDurationByPlayerMs: updatedGameDurationByPlayerMs
           },
           // Free up the court
           courts: state.courts.map(court =>
@@ -647,7 +654,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
             date: today(),
             isActive: false,
             gamesPlayed: new Map(),
-            totalGames: 0
+            totalGames: 0,
+            gameDurationByPlayerMs: new Map()
           }
         }));
       }
@@ -692,7 +700,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         settings: state.settings,
         currentSession: {
           ...state.currentSession,
-          gamesPlayed: Array.from(state.currentSession.gamesPlayed.entries())
+          gamesPlayed: Array.from(state.currentSession.gamesPlayed.entries()),
+          gameDurationByPlayerMs: Array.from(state.currentSession.gameDurationByPlayerMs.entries())
         }
       }),
       onRehydrateStorage: () => (state) => {
@@ -732,7 +741,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
 
           state.currentSession = {
             ...state.currentSession,
-            gamesPlayed: toGamesPlayedMap(state.currentSession?.gamesPlayed)
+            gamesPlayed: toGamesPlayedMap(state.currentSession?.gamesPlayed),
+            gameDurationByPlayerMs: toGameDurationMap(state.currentSession?.gameDurationByPlayerMs)
           };
         }
       }

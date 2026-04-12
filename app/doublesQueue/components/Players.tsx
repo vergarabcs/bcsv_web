@@ -63,14 +63,11 @@ const Players: React.FC = () => {
 
   const {
     players,
-    games,
     currentSession,
     settings,
     updateSettings
   } = useDoublesQueueStore();
 
-  const completedGames = games.filter(g => g.status === GameStatus.COMPLETED);
-  
   // Calculate session stats
   const sessionStats = {
     totalGames: currentSession.totalGames,
@@ -113,7 +110,7 @@ const Players: React.FC = () => {
         <Typography variant="h6" gutterBottom>
           📈 Player Overview
         </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h5">{sessionStats.totalGames}</Typography>
             <Typography variant="caption">Games</Typography>

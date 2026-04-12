@@ -37,7 +37,7 @@ import {
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { useCurrentMinute } from '../hooks/useCurrentMinute';
 import { PlayerStatus, QueuePriorityScheme, getRatingCategory, getRatingCategoryColor } from '../types';
-import { getMostRecentPlayerActivityTime } from '../storeHelpers';
+import { formatDurationMs, getMostRecentPlayerActivityTime } from '../storeHelpers';
 
 const QueueManager: React.FC = () => {
   const {
@@ -223,6 +223,7 @@ const QueueManager: React.FC = () => {
               const waitTime = waitFrom
                 ? formatTime(waitFrom)
                 : '0m';
+              const sessionGameDuration = currentSession.gameDurationByPlayerMs.get(player.id) ?? 0;
               const category = getRatingCategory(player.rating);
               
               return (
@@ -278,7 +279,7 @@ const QueueManager: React.FC = () => {
                           Rating: {player.rating} | Priority: {Math.round(queueEntry.priority)}
                         </Box>
                         <Box component="span" sx={{ display: 'block', fontSize: '0.75rem', color: 'text.secondary' }}>
-                            Wait time: {waitTime} | Session games: {currentSession.gamesPlayed.get(player.id) ?? 0} | W/L: {player.wins}/{player.losses}
+                            Wait time: {waitTime} | Session games: {currentSession.gamesPlayed.get(player.id) ?? 0} | Game time: {formatDurationMs(sessionGameDuration)} | W/L: {player.wins}/{player.losses}
                         </Box>
                       </Box>
                     }
