@@ -195,23 +195,6 @@ const QueueManager: React.FC = () => {
           </Button>
         </Box>
 
-        <FormControl size="small" fullWidth sx={{ mb: 2 }}>
-          <InputLabel id="queue-priority-scheme-label">Priority Scheme</InputLabel>
-          <Select
-            labelId="queue-priority-scheme-label"
-            value={settings.queuePriorityScheme}
-            label="Priority Scheme"
-            onChange={event =>
-              updateSettings({
-                queuePriorityScheme: event.target.value as QueuePriorityScheme
-              })
-            }
-          >
-            <MenuItem value={QueuePriorityScheme.WAIT_TIME}>By wait time</MenuItem>
-            <MenuItem value={QueuePriorityScheme.GAMES_PLAYED}>By number of games</MenuItem>
-          </Select>
-        </FormControl>
-
         {/* Queue Status */}
         <Typography variant="h6" gutterBottom>
           🎯 Current Queue ({filteredQueueEntries.length}/{queueEntries.length} players)
