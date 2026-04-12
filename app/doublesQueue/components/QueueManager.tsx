@@ -2,6 +2,7 @@
 
 import React, { useMemo, useRef, useState } from 'react';
 import {
+  Autocomplete,
   Box,
   Typography,
   Paper,
@@ -63,6 +64,12 @@ const QueueManager: React.FC = () => {
 
   const inactivePlayers = players.filter(p => p.status === PlayerStatus.INACTIVE);
   const activePlayers = players.filter(p => p.status !== PlayerStatus.INACTIVE);
+  const checkInCandidates = players.filter(
+    player => player.status !== PlayerStatus.WAITING && player.status !== PlayerStatus.PLAYING
+  );
+  const filteredCheckInCandidates = checkInCandidates.filter(player =>
+    player.name.toLowerCase().includes(normalizedSearch)
+  );
   const filteredQueueEntries = queueEntries
     .map(entry => {
       const player = playersById.get(entry.playerId);
@@ -97,12 +104,20 @@ const QueueManager: React.FC = () => {
       return;
     }
 
+    const existingCheckInCandidate = checkInCandidates.find(
+      player => player.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (existingCheckInCandidate) {
+      handleCheckIn(existingCheckInCandidate.id);
+      return;
+    }
+
     const existingPlayer = players.find(
       player => player.name.toLowerCase() === name.toLowerCase()
     );
 
     if (existingPlayer) {
-      handleCheckIn(existingPlayer.id);
       return;
     }
 
@@ -122,10 +137,10 @@ const QueueManager: React.FC = () => {
       return;
     }
 
-    // Enter only checks in automatically when exactly one player matches.
-    if (filteredInactive.length === 1) {
+    // Enter only checks in automatically when exactly one player can be checked in.
+    if (filteredCheckInCandidates.length === 1) {
       event.preventDefault();
-      handleCheckIn(filteredInactive[0].id);
+      handleCheckIn(filteredCheckInCandidates[0].id);
     }
   };
 
@@ -169,21 +184,82 @@ const QueueManager: React.FC = () => {
         maxHeight: 'calc(100vh - 200px)'
       }}>
         <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-          <TextField
-            size="small"
-            placeholder="Search players..."
+          <Autocomplete
+            freeSolo
+            disablePortal
             fullWidth
-            value={search}
-            inputRef={searchInputRef}
-            onChange={e => setSearch(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              )
+            options={filteredCheckInCandidates}
+            inputValue={search}
+            onInputChange={(_event, newInputValue, reason) => {
+              if (reason === 'reset') {
+                return;
+              }
+
+              setSearch(newInputValue);
             }}
+            getOptionLabel={option =>
+              typeof option === 'string' ? option : option.name
+            }
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            onChange={(_event, selectedPlayer) => {
+              if (selectedPlayer && typeof selectedPlayer !== 'string') {
+                handleCheckIn(selectedPlayer.id);
+              }
+            }}
+            renderOption={(props, option) => {
+              const category = getRatingCategory(option.rating);
+
+              return (
+                <Box component="li" {...props} key={option.id}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 1 }}>
+                    <Typography variant="body1">{option.name}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip
+                        label={category}
+                        size="small"
+                        sx={{
+                          bgcolor: getRatingCategoryColor(category),
+                          color: 'white',
+                          fontSize: '0.7rem',
+                          height: 20
+                        }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {option.rating}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              );
+            }}
+            renderInput={params => (
+              <TextField
+                {...params}
+                size="small"
+                placeholder="Search players..."
+                autoComplete="off"
+                inputRef={searchInputRef}
+                onKeyDown={handleSearchKeyDown}
+                inputProps={{
+                  ...params.inputProps,
+                  autoCorrect: 'off',
+                  autoCapitalize: 'none',
+                  spellCheck: false,
+                  enterKeyHint: 'search'
+                }}
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <>
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" />
+                      </InputAdornment>
+                      {params.InputProps.startAdornment}
+                    </>
+                  )
+                }}
+              />
+            )}
           />
           <Button
             variant="contained"
