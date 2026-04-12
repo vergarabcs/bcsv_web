@@ -15,6 +15,7 @@ import {
   QueuePriorityScheme
 } from './types';
 import { getMostRecentPlayerActivityTime } from './playerActivity';
+import { logDev } from '../logger';
 
 /**
  * Rating System - Elo-based rating calculations
@@ -281,14 +282,13 @@ export class QueueManager {
 
     const playerById = new Map(players.map(player => [player.id, player]));
 
-    // Take top 8-12 players by priority for consideration
+    // Take top 7 players by priority for consideration
     const candidatePlayers = queueEntries
-      .slice(0, Math.min(10, queueEntries.length))
+      .slice(0, Math.min(8, queueEntries.length))
       .map(entry => playerById.get(entry.playerId))
       .filter((player): player is Player => !!player);
 
     if (candidatePlayers.length < 4) return null;
-
     const teamCombinations = this.generateTeamCombinations(candidatePlayers);
 
     let bestMatch: MatchSuggestion | null = null;

@@ -277,6 +277,7 @@ const Dashboard: React.FC = () => {
               const waitTime = waitFrom
                 ? formatTime(waitFrom)
                 : '0m';
+              const sessionGamesPlayed = currentSession.gamesPlayed.get(player.id) ?? 0;
               const category = getRatingCategory(player.rating);
               
               return (
@@ -312,6 +313,7 @@ const Dashboard: React.FC = () => {
                     secondary={
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', pr: 8 }}>
                         <span>Rating: {player.rating}</span>
+                        <span>Games: {sessionGamesPlayed}</span>
                         <span>Wait: {waitTime}</span>
                       </Box>
                     }

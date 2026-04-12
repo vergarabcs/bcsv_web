@@ -19,19 +19,20 @@ test('Fifty Days Simulation', async ({ page }) => {
     for (let i = 1; i <= 18; i++) {
       // Click the floating action button to add a player
       await page.getByRole('button', { name: 'add player' }).click();
+      const addDialog = page.getByRole('dialog');
   
       // Wait for the dialog to open
-      await page.waitForSelector('text=Add New Player');
+      await expect(addDialog).toBeVisible();
   
       // Fill in the player name
-      await page.locator('input').first().fill(`Player ${i}`);
+      await addDialog.getByLabel('Player Name').fill(`Player ${i}`);
   
       // Fill in the rating (randomize slightly between 1400 and 1800)
       const rating = Math.floor(Math.random() * 400) + 1400;
-      await page.locator('input').nth(1).fill(rating.toString());
+      await addDialog.getByLabel('Initial Rating').fill(rating.toString());
   
       // Click the Add Player button
-      await page.getByRole('button', { name: 'Add Player' }).click();
+      await addDialog.getByRole('button', { name: 'Add Player' }).click();
   
       // Verify the player is added
       await expect(page.getByText(`Player ${i}`, {exact: true})).toBeVisible();

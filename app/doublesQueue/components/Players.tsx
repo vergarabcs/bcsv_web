@@ -25,14 +25,18 @@ import {
   Tabs,
   Tab,
   Divider,
-  LinearProgress
+  LinearProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   EmojiEvents as TrophyIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
-import { getRatingCategory, getRatingCategoryColor, GameStatus } from '../types';
+import { getRatingCategory, getRatingCategoryColor, GameStatus, QueuePriorityScheme } from '../types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -60,7 +64,9 @@ const Players: React.FC = () => {
   const {
     players,
     games,
-    currentSession
+    currentSession,
+    settings,
+    updateSettings
   } = useDoublesQueueStore();
 
   const completedGames = games.filter(g => g.status === GameStatus.COMPLETED);
@@ -80,6 +86,9 @@ const Players: React.FC = () => {
     .filter(p => p.gamesPlayed > 0)
     .sort((a, b) => (b.wins / b.gamesPlayed) - (a.wins / a.gamesPlayed));
   const playersByGames = [...players].sort((a, b) => b.gamesPlayed - a.gamesPlayed);
+  const prioritySchemeDescription = settings.queuePriorityScheme === QueuePriorityScheme.GAMES_PLAYED
+    ? 'Players with fewer session games are prioritized first.'
+    : 'Players with the longest current wait time are prioritized first.';
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -119,6 +128,31 @@ const Players: React.FC = () => {
           </Box>
         </Box>
       </Box>
+
+      <Paper sx={{ p: 2, m: 2, mt: 2 }}>
+        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+          Queue Priority
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {prioritySchemeDescription}
+        </Typography>
+        <FormControl size="small" fullWidth>
+          <InputLabel id="players-priority-scheme-label">Priority Scheme</InputLabel>
+          <Select
+            labelId="players-priority-scheme-label"
+            value={settings.queuePriorityScheme}
+            label="Priority Scheme"
+            onChange={event =>
+              updateSettings({
+                queuePriorityScheme: event.target.value as QueuePriorityScheme
+              })
+            }
+          >
+            <MenuItem value={QueuePriorityScheme.WAIT_TIME}>By wait time</MenuItem>
+            <MenuItem value={QueuePriorityScheme.GAMES_PLAYED}>By number of games</MenuItem>
+          </Select>
+        </FormControl>
+      </Paper>
 
       {/* Player Tabs */}
       <Paper square>

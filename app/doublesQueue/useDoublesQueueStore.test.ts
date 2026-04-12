@@ -5,6 +5,7 @@ import { CourtStatus, DEFAULT_SETTINGS, Game, GameStatus, Player, PlayerStatus, 
 import { QueueManager } from './algorithms';
 import { useDoublesQueueStore } from './useDoublesQueueStore';
 import { getInitialState } from './storeState';
+import { logDev } from '../logger';
 
 const resetStore = () => {
   window.localStorage.clear();
@@ -315,6 +316,7 @@ describe('useDoublesQueueStore undo', () => {
     expect(activePlayers.every(player => player.status === PlayerStatus.PLAYING)).toBe(true);
   });
 
+  // npm run test -- --testNamePattern='simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-early departure' app/doublesQueue/useDoublesQueueStore.test.ts
   test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-early departure', () => {
     jest.useFakeTimers();
 
@@ -375,6 +377,7 @@ describe('useDoublesQueueStore undo', () => {
         let startedGames: Game[] = [];
         act(() => {
           const store = useDoublesQueueStore.getState();
+          logDev(JSON.stringify(store.queueEntries))
           const games = [] as ReturnType<typeof store.startGame>[];
 
           for (let courtIndex = 0; courtIndex < 2; courtIndex += 1) {

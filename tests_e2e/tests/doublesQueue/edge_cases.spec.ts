@@ -11,7 +11,7 @@ test.describe('Doubles Queue Edge Cases', () => {
     await page.getByRole('button', { name: 'add player' }).click();
     
     const addDialog = page.getByRole('dialog');
-    const nameInput = addDialog.locator('input').first();
+    const nameInput = addDialog.getByLabel('Player Name');
     const addButton = addDialog.getByRole('button', { name: 'Add Player' });
 
     // Test empty name
@@ -41,8 +41,9 @@ test.describe('Doubles Queue Edge Cases', () => {
     await page.getByRole('tab', { name: 'Players' }).click();
     for (let i = 1; i <= 4; i++) {
         await page.getByRole('button', { name: 'add player' }).click();
-        await page.locator('input').first().fill(`Player ${i}`);
-        await page.getByRole('button', { name: 'Add Player' }).click();
+      const addDialog = page.getByRole('dialog');
+      await addDialog.getByLabel('Player Name').fill(`Player ${i}`);
+      await addDialog.getByRole('button', { name: 'Add Player' }).click();
     }
 
     // Check them in
@@ -95,8 +96,9 @@ test.describe('Doubles Queue Edge Cases', () => {
     await page.getByRole('tab', { name: 'Players' }).click();
     for (let i = 1; i <= 3; i++) {
         await page.getByRole('button', { name: 'add player' }).click();
-        await page.locator('input').first().fill(`Player ${i}`);
-        await page.getByRole('button', { name: 'Add Player' }).click();
+      const addDialog = page.getByRole('dialog');
+      await addDialog.getByLabel('Player Name').fill(`Player ${i}`);
+      await addDialog.getByRole('button', { name: 'Add Player' }).click();
     }
 
     // Go to Dashboard and try Manual Match

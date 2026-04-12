@@ -15,18 +15,19 @@ test('Comprehensive Test', async ({ page }) => {
     for (let i = 1; i <= 18; i++) {
       // Click the floating action button to add a player
       await page.getByRole('button', { name: 'add player' }).click();
+      const addDialog = page.getByRole('dialog');
   
       // Wait for the dialog to open
-      await page.waitForSelector('text=Add New Player');
+      await expect(addDialog).toBeVisible();
   
       // Fill in the player name
-      await page.locator('input').first().fill(`Test Player ${i}`);
+      await addDialog.getByLabel('Player Name').fill(`Test Player ${i}`);
   
       // Fill in the rating (optional, default is 1500)
-      await page.locator('input').nth(1).fill('1600');
+      await addDialog.getByLabel('Initial Rating').fill('1600');
   
       // Click the Add Player button
-      await page.getByRole('button', { name: 'Add Player' }).click();
+      await addDialog.getByRole('button', { name: 'Add Player' }).click();
   
       // Verify the player is added by checking if the name appears
       await expect(page.getByText(`Test Player ${i}`, {exact: true})).toBeVisible();
