@@ -7,9 +7,9 @@ const SESSION_START = '2026-04-11T18:00:00.000Z';
 const MIN_GAME_DURATION_MINUTES = 18;
 const MAX_GAME_DURATION_MINUTES = 21;
 const TOTAL_GAMES = 18;
-const GAMES_PER_BATCH = 2;
 const LATE_ARRIVAL_AFTER_GAMES = 6;
-const EARLY_DEPARTURE_AFTER_GAMES = 12;
+const EARLY_DEPARTURE_AFTER_MS = 2 * 60 * 60 * 1000;
+const POST_GAME_SETTLE_MS = 200;
 const COURT_NAMES = ['Court 1', 'Court 2'] as const;
 const simulationPlayers = Array.from({ length: 18 }, (_, index) => ({
   name: `Player ${index + 1}`,
@@ -71,6 +71,17 @@ const clickActionForPlayer = async (page: Page, playerName: string, actionName: 
   await row.getByRole('button', { name: actionName }).click();
 };
 
+const removePlayerIfQueued = async (page: Page, playerName: string) => {
+  const row = page.locator('li').filter({ hasText: playerName }).first();
+
+  if (!(await row.isVisible())) {
+    return false;
+  }
+
+  await row.getByRole('button', { name: 'Remove' }).click();
+  return true;
+};
+
 const startNextAvailableGame = async (page: Page) => {
   const startButtons = page.getByRole('button', { name: 'Start Game' });
   await expect(startButtons.first()).toBeVisible();
@@ -89,7 +100,7 @@ const getWinnerForGame = (completedGames: number, courtName: CourtName): 1 | 2 =
 
 const completeScheduledGame = async (page: Page, completedGames: number, courtName: CourtName) => {
   await clickWin(page, courtName, getWinnerForGame(completedGames, courtName));
-  await page.clock.fastForward(200);
+  await page.clock.fastForward(POST_GAME_SETTLE_MS);
 };
 
 const readPersistedState = async (page: Page) => {
@@ -136,6 +147,8 @@ test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-ear
   const activeGames: ActiveGameSchedule[] = [];
   let startedGames = 0;
   let completedGames = 0;
+  let elapsedSessionMs = 0;
+  let player17Removed = false;
 
   await test.step('Start the first two games', async () => {
     await page.getByRole('tab', { name: 'Dashboard' }).click();
@@ -167,6 +180,7 @@ test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-ear
       await page.getByRole('tab', { name: 'Dashboard' }).click();
       await completeScheduledGame(page, completedGames, nextCompletedGame!.courtName);
       completedGames += 1;
+      elapsedSessionMs += elapsedMs + POST_GAME_SETTLE_MS;
 
       await page.getByRole('tab', { name: 'Queue' }).click();
 
@@ -175,8 +189,8 @@ test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-ear
         await assertGamesPlayedPriorityMode(page);
       }
 
-      if (completedGames === EARLY_DEPARTURE_AFTER_GAMES) {
-        await clickActionForPlayer(page, 'Player 17', 'Remove');
+      if (!player17Removed && elapsedSessionMs >= EARLY_DEPARTURE_AFTER_MS) {
+        player17Removed = await removePlayerIfQueued(page, 'Player 17');
       }
 
       if (startedGames < TOTAL_GAMES) {
@@ -190,6 +204,8 @@ test('simulates a 3 hour session with one 1-hour-late arrival and one 1-hour-ear
       }
     });
   }
+
+  expect(player17Removed).toBe(true);
 
   const persistedState = await readPersistedState(page);
   expect(persistedState?.state?.currentSession?.totalGames).toBe(18);
