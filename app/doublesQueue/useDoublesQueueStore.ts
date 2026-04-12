@@ -23,8 +23,10 @@ import {
   today,
   toGamesPlayedMap,
   toGameDurationMap,
+  toWaitDurationMap,
   stripPlayerHistory,
   derivePartnershipHistoryFromGames,
+  getMostRecentPlayerActivityTime,
   normalizePersistedQueueEntry,
   normalizePersistedMatchTeam,
   normalizePersistedMatchSuggestion,
@@ -56,6 +58,7 @@ interface DoublesQueueState {
     gamesPlayed: Map<string, number>; // playerId -> games count
     totalGames: number;
     gameDurationByPlayerMs: Map<string, number>; // playerId -> total game duration in ms
+    waitDurationByPlayerMs: Map<string, number>; // playerId -> accumulated wait duration in ms
   };
   
   // Queue management
@@ -143,6 +146,38 @@ const withUndoState = (state: DoublesQueueState) => {
   };
 };
 
+const accumulateWaitDurationForPlayers = (
+  state: DoublesQueueState,
+  playerIds: string[],
+  effectiveUntil: Date
+) => {
+  const trackedPlayerIds = new Set(playerIds);
+  const updatedWaitDurationByPlayerMs = toWaitDurationMap(state.currentSession.waitDurationByPlayerMs);
+
+  state.players.forEach(player => {
+    if (!trackedPlayerIds.has(player.id) || player.status !== PlayerStatus.WAITING) {
+      return;
+    }
+
+    const waitFrom = getMostRecentPlayerActivityTime(player);
+    if (!waitFrom) {
+      return;
+    }
+
+    const waitDurationMs = Math.max(0, effectiveUntil.getTime() - waitFrom.getTime());
+    if (waitDurationMs === 0) {
+      return;
+    }
+
+    updatedWaitDurationByPlayerMs.set(
+      player.id,
+      (updatedWaitDurationByPlayerMs.get(player.id) || 0) + waitDurationMs
+    );
+  });
+
+  return updatedWaitDurationByPlayerMs;
+};
+
 export const useDoublesQueueStore = create<DoublesQueueState>()(
   persist(
     (set, get) => ({
@@ -158,18 +193,25 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
             isActive: true,
             gamesPlayed: new Map(),
             totalGames: 0,
-            gameDurationByPlayerMs: new Map()
+            gameDurationByPlayerMs: new Map(),
+            waitDurationByPlayerMs: new Map()
           }
         }));
         get().refreshQueue();
       },
 
       endSession: () => {
+        const endedAt = new Date();
         set(state => ({
           ...withUndoState(state),
           currentSession: {
             ...state.currentSession,
-            isActive: false
+            isActive: false,
+            waitDurationByPlayerMs: accumulateWaitDurationForPlayers(
+              state,
+              state.players.filter(player => player.status === PlayerStatus.WAITING).map(player => player.id),
+              endedAt
+            )
           },
           // Reset all players to inactive
           players: state.players.map(player => ({
@@ -244,8 +286,16 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
       },
 
       updatePlayerStatus: (playerId: string, status: PlayerStatus) => {
+        const updatedAt = new Date();
         set(state => ({
           ...withUndoState(state),
+          currentSession: {
+            ...state.currentSession,
+            waitDurationByPlayerMs:
+              status === PlayerStatus.WAITING
+                ? state.currentSession.waitDurationByPlayerMs
+                : accumulateWaitDurationForPlayers(state, [playerId], updatedAt)
+          },
           players: state.players.map(player =>
             player.id === playerId 
               ? {
@@ -282,8 +332,13 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
       },
 
       leaveQueue: (playerId: string) => {
+        const leftAt = new Date();
         set(state => ({
           ...withUndoState(state),
+          currentSession: {
+            ...state.currentSession,
+            waitDurationByPlayerMs: accumulateWaitDurationForPlayers(state, [playerId], leftAt)
+          },
           players: state.players.map(player =>
             player.id === playerId
               ? { 
@@ -355,6 +410,7 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         if (manualMatchIndex !== -1) {
             newManualMatches = state.manualMatches.filter((_, i) => i !== manualMatchIndex);
         }
+        const updatedWaitDurationByPlayerMs = accumulateWaitDurationForPlayers(state, match.playerIds, game.startTime);
 
         // Update court status
         set(state => ({
@@ -366,6 +422,10 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           ),
           games: keepMostRecentGames([...state.games, game]),
           manualMatches: newManualMatches,
+          currentSession: {
+            ...state.currentSession,
+            waitDurationByPlayerMs: updatedWaitDurationByPlayerMs
+          },
           // Update player statuses to playing
           players: state.players.map(player => {
             if (match.playerIds.includes(player.id)) {
@@ -655,7 +715,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
             isActive: false,
             gamesPlayed: new Map(),
             totalGames: 0,
-            gameDurationByPlayerMs: new Map()
+            gameDurationByPlayerMs: new Map(),
+            waitDurationByPlayerMs: new Map()
           }
         }));
       }
@@ -701,7 +762,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
         currentSession: {
           ...state.currentSession,
           gamesPlayed: Array.from(state.currentSession.gamesPlayed.entries()),
-          gameDurationByPlayerMs: Array.from(state.currentSession.gameDurationByPlayerMs.entries())
+          gameDurationByPlayerMs: Array.from(state.currentSession.gameDurationByPlayerMs.entries()),
+          waitDurationByPlayerMs: Array.from(state.currentSession.waitDurationByPlayerMs.entries())
         }
       }),
       onRehydrateStorage: () => (state) => {
@@ -742,7 +804,8 @@ export const useDoublesQueueStore = create<DoublesQueueState>()(
           state.currentSession = {
             ...state.currentSession,
             gamesPlayed: toGamesPlayedMap(state.currentSession?.gamesPlayed),
-            gameDurationByPlayerMs: toGameDurationMap(state.currentSession?.gameDurationByPlayerMs)
+            gameDurationByPlayerMs: toGameDurationMap(state.currentSession?.gameDurationByPlayerMs),
+            waitDurationByPlayerMs: toWaitDurationMap(state.currentSession?.waitDurationByPlayerMs)
           };
         }
       }

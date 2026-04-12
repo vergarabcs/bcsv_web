@@ -279,6 +279,10 @@ const Dashboard: React.FC = () => {
                 : '0m';
               const sessionGamesPlayed = currentSession.gamesPlayed.get(player.id) ?? 0;
               const sessionGameDuration = currentSession.gameDurationByPlayerMs.get(player.id) ?? 0;
+              const currentWaitDurationMs = waitFrom
+                ? Math.max(0, now.getTime() - waitFrom.getTime())
+                : 0;
+              const totalWaitDurationMs = (currentSession.waitDurationByPlayerMs.get(player.id) ?? 0) + currentWaitDurationMs;
               const category = getRatingCategory(player.rating);
               
               return (
@@ -312,10 +316,11 @@ const Dashboard: React.FC = () => {
                       </Box>
                     }
                     secondary={
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', pr: 8 }}>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, pr: 8 }}>
                         <span>Rating: {player.rating}</span>
                         <span>Games: {sessionGamesPlayed}</span>
                         <span>Time: {formatDurationMs(sessionGameDuration)}</span>
+                        <span>Total Wait: {formatDurationMs(totalWaitDurationMs)}</span>
                         <span>Wait: {waitTime}</span>
                       </Box>
                     }

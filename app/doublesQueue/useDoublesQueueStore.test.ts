@@ -159,6 +159,45 @@ describe('useDoublesQueueStore undo', () => {
     expect(queueEntries.map(entry => entry.playerId)).toEqual(['a', 'b', 'c']);
   });
 
+  test('accumulates total wait time for the current session when starting a game', () => {
+    jest.useFakeTimers();
+
+    try {
+      const sessionStart = new Date('2026-04-11T18:00:00.000Z');
+      jest.setSystemTime(sessionStart);
+
+      act(() => {
+        const store = useDoublesQueueStore.getState();
+        store.initializeSession();
+        ['Alice', 'Bea', 'Cara', 'Dylan'].forEach(name => store.addPlayer(name));
+      });
+
+      const playerIds = useDoublesQueueStore.getState().players.map(player => player.id);
+
+      act(() => {
+        const store = useDoublesQueueStore.getState();
+        playerIds.forEach(playerId => store.joinQueue(playerId));
+      });
+
+      jest.setSystemTime(new Date(sessionStart.getTime() + 15 * 60 * 1000));
+
+      const nextMatch = useDoublesQueueStore.getState().nextMatches[0];
+      const courtId = useDoublesQueueStore.getState().courts[0].id;
+
+      act(() => {
+        useDoublesQueueStore.getState().startGame(courtId, nextMatch!);
+      });
+
+      const waitDurationByPlayerMs = useDoublesQueueStore.getState().currentSession.waitDurationByPlayerMs;
+
+      playerIds.forEach(playerId => {
+        expect(waitDurationByPlayerMs.get(playerId)).toBe(15 * 60 * 1000);
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   test('final match selection ignores individual priority once candidate players are chosen', () => {
     const createWaitingPlayer = (id: string, name: string, rating: number): Player => ({
       id,
@@ -329,6 +368,10 @@ describe('useDoublesQueueStore undo', () => {
       gameId = game.id;
     });
 
+    const preCompletionWaitDurationByPlayerMs = new Map(
+      useDoublesQueueStore.getState().currentSession.waitDurationByPlayerMs
+    );
+
     act(() => {
       useDoublesQueueStore.getState().completeGame(gameId, 1);
     });
@@ -356,6 +399,9 @@ describe('useDoublesQueueStore undo', () => {
     expect(restoredState.courts.find(court => court.id === courtId)?.status).toBe(CourtStatus.OCCUPIED);
     expect(restoredState.currentSession.totalGames).toBe(0);
     expect(restoredState.currentSession.gameDurationByPlayerMs.size).toBe(0);
+    expect(Array.from(restoredState.currentSession.waitDurationByPlayerMs.entries())).toEqual(
+      Array.from(preCompletionWaitDurationByPlayerMs.entries())
+    );
 
     const activePlayers = restoredState.players.filter(player => match!.playerIds.includes(player.id));
     expect(activePlayers).toHaveLength(4);

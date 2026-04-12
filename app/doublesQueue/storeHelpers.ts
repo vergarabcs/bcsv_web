@@ -101,6 +101,36 @@ export const toGameDurationMap = (value: unknown): Map<string, number> => {
   return new Map();
 };
 
+export const toWaitDurationMap = (value: unknown): Map<string, number> => {
+  if (value instanceof Map) {
+    return new Map(value);
+  }
+
+  if (Array.isArray(value)) {
+    return new Map(
+      value
+        .filter(
+          (entry): entry is [string, number] =>
+            Array.isArray(entry) &&
+            entry.length >= 2 &&
+            typeof entry[0] === 'string' &&
+            typeof entry[1] === 'number'
+        )
+        .map(([playerId, durationMs]) => [playerId, durationMs])
+    );
+  }
+
+  if (value && typeof value === 'object') {
+    return new Map(
+      Object.entries(value)
+        .filter(([, durationMs]) => typeof durationMs === 'number')
+        .map(([playerId, durationMs]) => [playerId, durationMs])
+    );
+  }
+
+  return new Map();
+};
+
 export const formatDurationMs = (durationMs: number): string => {
   const totalMinutes = Math.floor(durationMs / (1000 * 60));
   const hours = Math.floor(totalMinutes / 60);

@@ -22,7 +22,8 @@ export const getInitialState = () => ({
     isActive: false,
     gamesPlayed: new Map(),
     totalGames: 0,
-    gameDurationByPlayerMs: new Map()
+    gameDurationByPlayerMs: new Map(),
+    waitDurationByPlayerMs: new Map()
   },
   
   // Queue management
