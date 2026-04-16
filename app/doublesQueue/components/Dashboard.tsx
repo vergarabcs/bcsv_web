@@ -27,7 +27,7 @@ import {
 } from '@mui/icons-material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { useCurrentMinute } from '../hooks/useCurrentMinute';
-import { Court, CourtStatus, getRatingCategory, getRatingCategoryColor } from '../types';
+import { Court, CourtStatus, PlayerStatus, getRatingCategory, getRatingCategoryColor } from '../types';
 import { formatDurationMs, getMostRecentPlayerActivityTime } from '../storeHelpers';
 import ManualMatchDialog from './ManualMatchDialog';
 import BadmintonCard from './BadmintonCard';
@@ -93,16 +93,40 @@ const Dashboard: React.FC = () => {
         ),
     [nextMatches, playersById]
   );
-  const resolvedQueueEntries = useMemo(
-    () =>
-      queueEntries
-        .map(entry => {
-          const player = playersById.get(entry.playerId);
-          return player ? { entry, player } : null;
-        })
-        .filter((item): item is { entry: typeof queueEntries[number]; player: typeof players[number] } => !!item),
-    [playersById, queueEntries]
+  const queueEntryByPlayerId = useMemo(
+    () => new Map(queueEntries.map((entry, index) => [entry.playerId, { entry, index }])),
+    [queueEntries]
   );
+  const displayedPlayers = useMemo(() => {
+    const statusOrder: Record<PlayerStatus, number> = {
+      [PlayerStatus.WAITING]: 0,
+      [PlayerStatus.PLAYING]: 1,
+      [PlayerStatus.RESTING]: 2,
+      [PlayerStatus.INACTIVE]: 3,
+    };
+
+    return players
+      .filter(player => player.status !== PlayerStatus.INACTIVE)
+      .map(player => ({
+        player,
+        queueInfo: queueEntryByPlayerId.get(player.id),
+      }))
+      .sort((left, right) => {
+        if (left.queueInfo && right.queueInfo) {
+          return left.queueInfo.index - right.queueInfo.index;
+        }
+
+        if (left.queueInfo) return -1;
+        if (right.queueInfo) return 1;
+
+        const statusDifference = statusOrder[left.player.status] - statusOrder[right.player.status];
+        if (statusDifference !== 0) {
+          return statusDifference;
+        }
+
+        return left.player.name.localeCompare(right.player.name, undefined, { numeric: true });
+      });
+  }, [players, queueEntryByPlayerId]);
 
   const availableCourts = courts.filter(c => c.status === CourtStatus.AVAILABLE);
 
@@ -288,15 +312,15 @@ const Dashboard: React.FC = () => {
             </Card>
           ))}
 
-      {/* Current Queue */}
-      {resolvedQueueEntries.length > 0 && (
+      {/* Current Players */}
+      {displayedPlayers.length > 0 && (
         <>
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            ⏳ Queue ({resolvedQueueEntries.length} waiting)
+            ⏳ Players ({displayedPlayers.length} active)
           </Typography>
           
           <List dense>
-            {resolvedQueueEntries.map(({ entry, player }, index) => {
+            {displayedPlayers.map(({ player, queueInfo }, index) => {
               const waitFrom = getMostRecentPlayerActivityTime(player);
               const waitTime = waitFrom
                 ? formatTime(waitFrom)
@@ -308,12 +332,17 @@ const Dashboard: React.FC = () => {
                 : 0;
               const totalWaitDurationMs = (currentSession.waitDurationByPlayerMs.get(player.id) ?? 0) + currentWaitDurationMs;
               const category = getRatingCategory(player.rating);
+              const statusColor = player.status === PlayerStatus.PLAYING
+                ? 'warning'
+                : player.status === PlayerStatus.WAITING
+                  ? 'success'
+                  : 'default';
               
               return (
                 <ListItem
                   key={player.id}
                   sx={{
-                    bgcolor: index < 4 ? 'action.selected' : 'background.paper',
+                    bgcolor: 'background.paper',
                     borderRadius: 1,
                     mb: 0.5,
                     display: 'flex',
@@ -327,6 +356,11 @@ const Dashboard: React.FC = () => {
                         <Typography variant="body2" fontWeight="bold">
                           #{index + 1} {player.name}
                         </Typography>
+                        <Chip
+                          label={player.status}
+                          size="small"
+                          color={statusColor}
+                        />
                         <Chip
                           label={category}
                           size="small"
@@ -342,6 +376,7 @@ const Dashboard: React.FC = () => {
                     secondary={
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, pr: 8 }}>
                         <span>Rating: {player.rating}</span>
+                        <span>W/L: {player.wins}-{player.losses}</span>
                         <span>Games: {sessionGamesPlayed}</span>
                         <span>Time: {formatDurationMs(sessionGameDuration)}</span>
                         <span>Total Wait: {formatDurationMs(totalWaitDurationMs)}</span>
@@ -358,7 +393,7 @@ const Dashboard: React.FC = () => {
                     alignItems: 'center' 
                   }}>
                     <Typography variant="caption" color="primary" fontWeight="bold">
-                      Priority: {Math.round(entry.priority)}
+                      {queueInfo ? `Priority: ${Math.round(queueInfo.entry.priority)}` : player.status === PlayerStatus.PLAYING ? 'In Game' : 'Off Queue'}
                     </Typography>
                   </Box>
                 </ListItem>
@@ -370,11 +405,11 @@ const Dashboard: React.FC = () => {
         </>
       )}
 
-      {resolvedQueueEntries.length === 0 && (
+      {displayedPlayers.length === 0 && (
         <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'grey.50' }}>
           <GroupIcon sx={{ fontSize: 48, color: 'grey.400', mb: 1 }} />
           <Typography variant="body1" color="text.secondary">
-            No players in queue
+            No active players
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Add players and have them join the queue to start
