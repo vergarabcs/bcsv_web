@@ -12,7 +12,7 @@ interface BadmintonCardProps {
 }
 
 const DIMENSIONS = {
-  length: 13.4,
+  length: 9.1,
   width: 6.1,
   singlesWidth: 5.18,
   lineWidth: 0.04,
