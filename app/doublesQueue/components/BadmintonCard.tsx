@@ -1,13 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, IconButton, Typography } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import { Court } from '../types';
 
 interface BadmintonCardProps {
   court: Court;
   formatTime: (date: Date) => string;
   onWin: (winner: 1 | 2) => void;
+  onCancel?: () => void;
   orientation?: 'horizontal' | 'vertical';
 }
 
@@ -36,6 +38,7 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({
   court,
   formatTime,
   onWin,
+  onCancel,
   orientation = 'horizontal'
 }) => {
   const game = court.currentGame;
@@ -65,6 +68,7 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({
           left: 0,
           right: 0,
           p: 1,
+          pr: 6,
           zIndex: 10,
           fontSize: '1.25rem',
           color: 'rgba(255, 255, 255, 0.8)'
@@ -72,6 +76,28 @@ const BadmintonCard: React.FC<BadmintonCardProps> = ({
       >
         {court.name} • {game ? `${formatTime(game.startTime)}` : 'Available'}
       </Box>
+
+      {game && onCancel && (
+        <IconButton
+          size="small"
+          onClick={onCancel}
+          aria-label={`Cancel game on ${court.name}`}
+          data-testid={`cancel-game-${court.name.replace(/\s+/g, '_')}`}
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 11,
+            color: 'common.white',
+            bgcolor: 'rgba(0, 0, 0, 0.32)',
+            '&:hover': {
+              bgcolor: 'rgba(0, 0, 0, 0.48)'
+            }
+          }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      )}
 
       {/* SVG overlay for crisp, scalable court lines */}
       <Box

@@ -12,9 +12,12 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   IconButton,
-  LinearProgress
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -39,10 +42,12 @@ const Dashboard: React.FC = () => {
     startGame,
     refreshQueue,
     completeGame,
+    cancelGame,
     joinQueue
   } = useDoublesQueueStore();
 
   const [manualMatchOpen, setManualMatchOpen] = useState(false);
+  const [courtPendingCancel, setCourtPendingCancel] = useState<Court | null>(null);
   const now = useCurrentMinute();
   const playersById = useMemo(
     () => new Map(players.map(player => [player.id, player])),
@@ -135,6 +140,24 @@ const Dashboard: React.FC = () => {
     }, 100);
   };
 
+  const handleCancel = (court: Court) => {
+    if (!court.currentGame) {
+      return;
+    }
+
+    setCourtPendingCancel(court);
+  };
+
+  const handleConfirmCancel = () => {
+    if (!courtPendingCancel?.currentGame) {
+      setCourtPendingCancel(null);
+      return;
+    }
+
+    cancelGame(courtPendingCancel.currentGame.id);
+    setCourtPendingCancel(null);
+  };
+
   if (!currentSession.isActive) {
     return (
       <Box sx={{ p: 2, textAlign: 'center' }}>
@@ -178,6 +201,7 @@ const Dashboard: React.FC = () => {
             court={court}
             formatTime={formatTime}
             onWin={(winner) => handleWin(court, winner)}
+            onCancel={() => handleCancel(court)}
             orientation="vertical"
           />
         ))}
@@ -362,6 +386,28 @@ const Dashboard: React.FC = () => {
         open={manualMatchOpen} 
         onClose={() => setManualMatchOpen(false)} 
       />
+
+      <Dialog
+        open={courtPendingCancel !== null}
+        onClose={() => setCourtPendingCancel(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Cancel game?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {courtPendingCancel?.currentGame
+              ? `Cancel the current game on ${courtPendingCancel.name}? ${courtPendingCancel.currentGame.team1.player1.name} and ${courtPendingCancel.currentGame.team1.player2.name} vs ${courtPendingCancel.currentGame.team2.player1.name} and ${courtPendingCancel.currentGame.team2.player2.name} will be returned to the queue.`
+              : 'Cancel the current game?'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCourtPendingCancel(null)}>Keep Game</Button>
+          <Button color="error" variant="contained" onClick={handleConfirmCancel}>
+            Cancel Game
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
