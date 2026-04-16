@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import {
+  Box,
   Dialog,
   DialogContent,
   DialogActions,
   Button,
+  Chip,
   Table,
   TableBody,
   TableCell,
@@ -15,7 +17,7 @@ import {
 } from '@mui/material';
 import { useDoublesQueueStore } from '../useDoublesQueueStore';
 import { useCurrentMinute } from '../hooks/useCurrentMinute';
-import { CourtStatus, MatchSuggestion, MatchTeam, Player } from '../types';
+import { CourtStatus, MatchSuggestion, MatchTeam, Player, PlayerStatus } from '../types';
 import { derivePartnershipHistoryFromGames, getMostRecentPlayerActivityTime } from '../storeHelpers';
 
 interface ManualMatchDialogProps {
@@ -41,9 +43,17 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     () => new Map(players.map(player => [player.id, player])),
     [players]
   );
+  const queueEntryByPlayerId = useMemo(
+    () => new Map(queueEntries.map((entry, index) => [entry.playerId, { entry, index }])),
+    [queueEntries]
+  );
   const partnershipHistory = useMemo(
     () => derivePartnershipHistoryFromGames(games),
     [games]
+  );
+  const manualMatchPlayerIds = useMemo(
+    () => new Set(manualMatches.flatMap(match => match.playerIds)),
+    [manualMatches]
   );
 
   const formatElapsed = (dateValue?: Date) => {
@@ -59,47 +69,37 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
   };
 
-  // Filter out players already in manual matches
-  const availableQueueEntries = useMemo(() => {
-    const manualMatchPlayerIds = new Set(
-      manualMatches.flatMap(match => match.playerIds)
-    );
-    return queueEntries
-      .filter(entry => !manualMatchPlayerIds.has(entry.playerId))
-      .map(entry => {
-        const player = playersById.get(entry.playerId);
-        if (!player) {
-          return null;
-        }
+  const eligibleFillEntries = useMemo(
+    () => queueEntries.filter(entry => !manualMatchPlayerIds.has(entry.playerId)),
+    [manualMatchPlayerIds, queueEntries]
+  );
 
-        const gamesInSession = currentSession.gamesPlayed.get(player.id) ?? 0;
-        const waitFrom = getMostRecentPlayerActivityTime(player);
-
-        return {
-          entry,
-          player,
-          gamesInSession,
-          waitLabel: formatElapsed(waitFrom)
-        };
-      })
-      .filter(
-        (
-          item
-        ): item is {
-          entry: typeof queueEntries[number];
-          player: Player;
-          gamesInSession: number;
-          waitLabel: string;
-        } => !!item
-      );
-  }, [currentSession.gamesPlayed, manualMatches, now, playersById, queueEntries]);
-
-  const sortedAvailableQueueEntries = useMemo(
+  const availablePlayers = useMemo(
     () =>
-      [...availableQueueEntries].sort((a, b) =>
+      players
+        .filter(player => player.status !== PlayerStatus.INACTIVE)
+        .map(player => {
+          const gamesInSession = currentSession.gamesPlayed.get(player.id) ?? 0;
+          const waitFrom = getMostRecentPlayerActivityTime(player);
+
+          return {
+            player,
+            queueInfo: queueEntryByPlayerId.get(player.id),
+            gamesInSession,
+            waitLabel: formatElapsed(waitFrom),
+            isInGame: player.status === PlayerStatus.PLAYING,
+            isOnCreatedMatch: manualMatchPlayerIds.has(player.id),
+          };
+        }),
+    [currentSession.gamesPlayed, manualMatchPlayerIds, now, players, queueEntryByPlayerId]
+  );
+
+  const sortedAvailablePlayers = useMemo(
+    () =>
+      [...availablePlayers].sort((a, b) =>
         a.player.name.localeCompare(b.player.name, undefined, { sensitivity: 'base' })
       ),
-    [availableQueueEntries]
+    [availablePlayers]
   );
 
   const availableCourt = useMemo(
@@ -112,12 +112,18 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
     }
 
     return queueManager.findBestMatch(
-      availableQueueEntries.map(({ entry }) => entry),
+      eligibleFillEntries,
       players,
       partnershipHistory,
       selectedPlayerIds
     );
-  }, [availableQueueEntries, partnershipHistory, players, queueManager, selectedPlayerIds]);
+  }, [eligibleFillEntries, partnershipHistory, players, queueManager, selectedPlayerIds]);
+
+  const selectedPlayers = useMemo(
+    () => selectedPlayerIds.map(playerId => playersById.get(playerId)).filter((player): player is Player => !!player),
+    [playersById, selectedPlayerIds]
+  );
+  const hasSelectedInGamePlayer = selectedPlayers.some(player => player.status === PlayerStatus.PLAYING);
 
   const handleTogglePlayer = (playerId: string) => {
     if (selectedPlayerIds.includes(playerId)) {
@@ -217,14 +223,14 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
             <Table stickyHeader size="small" sx={{ tableLayout: 'fixed' }}>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ width: '46%' }}>Name</TableCell>
+                  <TableCell sx={{ width: '50%' }}>Name</TableCell>
                   <TableCell sx={{ width: '16%' }} align="right">Rating</TableCell>
-                  <TableCell sx={{ width: '16%' }} align="right">Games</TableCell>
-                  <TableCell sx={{ width: '22%' }} align="right">Wait</TableCell>
+                  <TableCell sx={{ width: '14%' }} align="right">Games</TableCell>
+                  <TableCell sx={{ width: '20%' }} align="right">Wait</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {sortedAvailableQueueEntries.map((entry) => {
+                {sortedAvailablePlayers.map((entry) => {
                   const selectedIndex = selectedPlayerIds.indexOf(entry.player.id);
                   const isSelected = selectedIndex !== -1;
                   const isTeam1 = selectedIndex >= 0 && selectedIndex < 2;
@@ -261,8 +267,21 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
                         })
                       }}
                     >
-                      <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {entry.player.name}
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, flexWrap: 'wrap' }}>
+                          <Box component="span" sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
+                            {entry.player.name}
+                          </Box>
+                          {entry.isInGame && (
+                            <Chip label="In Game" size="small" color="warning" sx={{ height: 18 }} />
+                          )}
+                          {entry.isOnCreatedMatch && (
+                            <Chip label="Created Match" size="small" variant="outlined" sx={{ height: 18 }} />
+                          )}
+                          {!entry.queueInfo && !entry.isInGame && (
+                            <Chip label={entry.player.status} size="small" variant="outlined" sx={{ height: 18, textTransform: 'capitalize' }} />
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell align="right">{Math.round(entry.player.rating)}</TableCell>
                       <TableCell align="right">{entry.gamesInSession}</TableCell>
@@ -270,10 +289,10 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
                     </TableRow>
                   );
                 })}
-                {availableQueueEntries.length === 0 && (
+                {availablePlayers.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} align="center">
-                      No available players in queue
+                      No checked-in players available
                     </TableCell>
                   </TableRow>
                 )}
@@ -291,7 +310,7 @@ const ManualMatchDialog: React.FC<ManualMatchDialogProps> = ({ open, onClose }) 
           onClick={handleCreateAndStartMatch}
           variant="contained"
           color="secondary"
-          disabled={selectedPlayerIds.length !== 4 || !availableCourt}
+          disabled={selectedPlayerIds.length !== 4 || !availableCourt || hasSelectedInGamePlayer}
         >
           Create & Start
         </Button>

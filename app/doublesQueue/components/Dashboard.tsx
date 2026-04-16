@@ -37,12 +37,14 @@ const Dashboard: React.FC = () => {
     courts,
     queueEntries,
     nextMatches,
+    manualMatches,
     currentSession,
     players,
     startGame,
     refreshQueue,
     completeGame,
     cancelGame,
+    removeManualMatch,
     joinQueue
   } = useDoublesQueueStore();
 
@@ -68,6 +70,10 @@ const Dashboard: React.FC = () => {
 
           return {
             match,
+            manualMatchIndex: manualMatches.findIndex((manualMatch) =>
+              manualMatch.playerIds.length === match.playerIds.length &&
+              manualMatch.playerIds.every((playerId) => match.playerIds.includes(playerId))
+            ),
             teams: [
               {
                 player1: team1Player1,
@@ -85,13 +91,14 @@ const Dashboard: React.FC = () => {
         .filter(
           (item): item is {
             match: typeof nextMatches[number];
+            manualMatchIndex: number;
             teams: [
               { player1: typeof players[number]; player2: typeof players[number]; averageRating: number },
               { player1: typeof players[number]; player2: typeof players[number]; averageRating: number }
             ];
           } => !!item
         ),
-    [nextMatches, playersById]
+    [manualMatches, nextMatches, playersById]
   );
   const queueEntryByPlayerId = useMemo(
     () => new Map(queueEntries.map((entry, index) => [entry.playerId, { entry, index }])),
@@ -145,6 +152,10 @@ const Dashboard: React.FC = () => {
     if (match) {
       startGame(courtId, match);
     }
+  };
+
+  const handleCancelManualMatch = (manualMatchIndex: number) => {
+    removeManualMatch(manualMatchIndex);
   };
 
   const handleWin = (court: Court, winner: 1 | 2) => {
@@ -252,7 +263,13 @@ const Dashboard: React.FC = () => {
         </Typography>
       )}
           
-      {resolvedNextMatches.map(({ match, teams }, index) => (
+      {resolvedNextMatches.map(({ match, teams, manualMatchIndex }, index) => {
+            const hasInGamePlayer = teams.some(
+              (team) => team.player1.status === PlayerStatus.PLAYING || team.player2.status === PlayerStatus.PLAYING
+            );
+        const isManualMatch = manualMatchIndex !== -1;
+
+            return (
             <Card key={index} sx={{ mb: 2 }} variant="outlined">
               <CardContent>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -292,25 +309,46 @@ const Dashboard: React.FC = () => {
                       color={match.ratingDifference < 100 ? 'success' : match.ratingDifference < 200 ? 'warning' : 'error'}
                       size="small"
                     />
+                    {isManualMatch && (
+                      <Chip
+                        label="Manual"
+                        color="info"
+                        size="small"
+                        sx={{ ml: 1 }}
+                      />
+                    )}
                     <Typography variant="caption" sx={{ ml: 1 }}>
                       Balance: {Math.round(match.balanceQuality)}%
                     </Typography>
                   </Box>
-                  
-                  {availableCourts.length > 0 && (
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={() => handleStartMatch(availableCourts[0].id, index)}
-                      startIcon={<PlayIcon />}
-                    >
-                      Start Game
-                    </Button>
-                  )}
+
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {isManualMatch && (
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={() => handleCancelManualMatch(manualMatchIndex)}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                    {availableCourts.length > 0 && (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        disabled={hasInGamePlayer}
+                        onClick={() => handleStartMatch(availableCourts[0].id, index)}
+                        startIcon={<PlayIcon />}
+                      >
+                        Start
+                      </Button>
+                    )}
+                  </Box>
                 </Box>
               </CardContent>
             </Card>
-          ))}
+          )})}
 
       {/* Current Players */}
       {displayedPlayers.length > 0 && (
