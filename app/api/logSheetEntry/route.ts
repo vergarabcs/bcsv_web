@@ -5,6 +5,7 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 
 type LogSheetEntryRequest = {
   date?: string;
+  start_time?: string;
   gameNumber?: string;
   team1p1?: string;
   team1p2?: string;
@@ -16,6 +17,7 @@ type LogSheetEntryRequest = {
 
 type LogSheetEntryRow = {
   date?: string;
+  start_time?: string;
   gameNumber?: string;
   team1p1: string;
   team1p2: string;
@@ -40,7 +42,7 @@ const normalizeWinnerForSheet = (entry: LogSheetEntryRow): string => {
 };
 
 const SPREADSHEET_ID = '1mPd-WUmyrwC5MEtBbADzyTmJJpOqr7MZPueloFUYyHo';
-const SHEET_RANGE = 'RawLogs!A:G';
+const SHEET_RANGE = 'RawLogs!A:H';
 const DEFAULT_SSM_PARAM_NAME = '/amplify/shared/d2i0ep7cpx287/GOOGLE_SERVICE_ACCOUNT_KEY';
 const ssmClient = new SSMClient({});
 
@@ -139,6 +141,7 @@ export async function POST(request: NextRequest) {
       ? body.entries
       : [{
           date: body.date,
+          start_time: body.start_time,
           gameNumber: body.gameNumber,
           team1p1: body.team1p1 ?? '',
           team1p2: body.team1p2 ?? '',
@@ -161,6 +164,15 @@ export async function POST(request: NextRequest) {
     if (hasInvalidEntry) {
       return NextResponse.json(
         { error: 'Each entry must include team1p1, team1p2, team2p1, team2p2, and winner' },
+        { status: 400 }
+      );
+    }
+
+    const hasInvalidDate = entries.some((entry) => !entry.date);
+
+    if (hasInvalidDate) {
+      return NextResponse.json(
+        { error: 'Each entry must include date as the game end time' },
         { status: 400 }
       );
     }
@@ -200,7 +212,8 @@ export async function POST(request: NextRequest) {
 
     const sheets = google.sheets({ version: 'v4', auth });
     const rows = entries.map((entry) => [
-      entry.date ?? new Date().toISOString(),
+      entry.date,
+      entry.start_time ?? '',
       entry.gameNumber ?? '',
       entry.team1p1,
       entry.team1p2,

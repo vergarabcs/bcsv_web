@@ -32,6 +32,7 @@ import { Game, GameStatus } from '../types';
 
 type SyncLogSheetEntry = {
   date: string;
+  start_time: string;
   gameNumber: string;
   team1p1: string;
   team1p2: string;
@@ -136,13 +137,14 @@ const GameResults: React.FC = () => {
   };
 
   const mapGameToSheetRow = (game: Game, fallbackGameNumber: number): SyncLogSheetEntry | null => {
-    if (!game.winner) return null;
+    if (!game.winner || !game.endTime) return null;
 
     const winningTeam = game.winner === 1 ? game.team1 : game.team2;
     const resolvedGameNumber = game.gameNumber ?? fallbackGameNumber;
 
     return {
-      date: (game.endTime ?? game.startTime).toISOString(),
+      date: game.endTime.toISOString(),
+      start_time: game.startTime.toISOString(),
       gameNumber: `Game ${resolvedGameNumber}`,
       team1p1: game.team1.player1.name,
       team1p2: game.team1.player2.name,
@@ -169,7 +171,7 @@ const GameResults: React.FC = () => {
       .filter((row): row is SyncLogSheetEntry => row !== null);
 
     if (rows.length === 0) {
-      setSyncError('No valid completed game rows to sync.');
+      setSyncError('No valid completed game rows to sync. Completed games must have both start and end times.');
       setSyncSuccess(null);
       return;
     }
